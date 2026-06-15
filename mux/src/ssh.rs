@@ -268,6 +268,12 @@ impl RemoteSshDomain {
         // embed the mux protocol in an escape sequence and just use the
         // existing terminal connection
         env.insert("WEZTERM_REMOTE_PANE".to_string(), pane_id.to_string());
+        if !env.contains_key("TEAMSH_TAB_ID") {
+            let predicted = crate::tab::next_tab_id() + 1;
+            env.insert("TEAMSH_TAB_ID".to_string(), predicted.to_string());
+            env.insert("TEAMSH_NAME".to_string(), format!("tab_{predicted}"));
+            env.insert("TEAMSH_PLATFORM".to_string(), std::env::consts::OS.to_string());
+        }
 
         fn build_env_command(
             dir: Option<String>,

@@ -717,6 +717,10 @@ fn build_initial_mux(
     setup_mux(domain, config, default_domain_name, default_workspace_name)
 }
 
+fn spawn_teamshell_server() {
+    wezterm_mux_server_impl::teamshell::server::spawn_server_thread();
+}
+
 fn run_terminal_gui(opts: StartCommand, default_domain_name: Option<String>) -> anyhow::Result<()> {
     if let Some(cls) = opts.class.as_ref() {
         crate::set_window_class(cls);
@@ -775,6 +779,7 @@ fn run_terminal_gui(opts: StartCommand, default_domain_name: Option<String>) -> 
         return Ok(());
     }
 
+    spawn_teamshell_server();
     let gui = crate::frontend::try_new()?;
     let activity = Activity::new();
 

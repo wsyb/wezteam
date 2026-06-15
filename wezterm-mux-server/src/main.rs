@@ -305,6 +305,7 @@ fn terminate_with_error(err: anyhow::Error) -> ! {
     std::process::exit(1);
 }
 
+#[cfg(not(windows))]
 mod ossl;
 
 pub fn spawn_listener() -> anyhow::Result<()> {
@@ -317,6 +318,7 @@ pub fn spawn_listener() -> anyhow::Result<()> {
         });
     }
 
+    #[cfg(not(windows))]
     for tls_server in &config.tls_servers {
         ossl::spawn_tls_listener(tls_server)?;
     }

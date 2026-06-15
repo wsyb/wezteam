@@ -1004,35 +1004,43 @@ impl Reconnectable {
             }
         }
 
-        let connector = connector.build();
-        let connector = connector
-            .configure()?
-            .verify_hostname(!tls_client.accept_invalid_hostnames);
-
-        ui.output_str(&format!("Connecting to {} using TLS\n", remote_address));
         let stream = TcpStream::connect(remote_address)
             .with_context(|| format!("connecting to {}", remote_address))?;
         stream.set_nodelay(true)?;
         stream.set_write_timeout(Some(tls_client.write_timeout))?;
         stream.set_read_timeout(Some(tls_client.read_timeout))?;
 
-        let stream = Box::new(Async::new(AsyncSslStream::new(
-            connector
-                .connect(
-                    tls_client
-                        .expected_cn
-                        .as_deref()
-                        .unwrap_or(remote_host_name),
-                    stream,
-                )
-                .with_context(|| {
-                    format!(
-                        "SslConnector for {} with host name {}",
-                        remote_address, remote_host_name,
+        #[cfg(not(windows))]
+        let stream = {
+            let connector = connector.build();
+            let connector = connector
+                .configure()?
+                .verify_hostname(!tls_client.accept_invalid_hostnames);
+            let stream = Box::new(Async::new(AsyncSslStream::new(
+                connector
+                    .connect(
+                        tls_client
+                            .expected_cn
+                            .as_deref()
+                            .unwrap_or(remote_host_name),
+                        stream,
                     )
-                })?,
-        ))?);
-        ui.output_str("TLS Connected!\n");
+                    .with_context(|| {
+                        format!(
+                            "SslConnector for {} with host name {}",
+                            remote_address, remote_host_name,
+                        )
+                    })?,
+            ))?);
+            ui.output_str("TLS Connected!\n");
+            stream
+        };
+        #[cfg(windows)]
+        let stream = {
+            let stream = Box::new(Async::new(AsyncSslStream::new(stream))?);
+            ui.output_str("Connected!\n");
+            stream
+        };
         Ok(stream)
     }
 }

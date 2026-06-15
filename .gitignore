@@ -1,67 +1,82 @@
-/.tag
+# =====================
+# Build artifacts
+# =====================
+/target/
+/termwiz/codegen/target
+/wezterm-char-props/codegen/target
+/pkg
+/AppDir
+/gh_pages/
+
+# =====================
+# Generated lock files
+# =====================
+Cargo.lock
+/termwiz/codegen/Cargo.lock
+/wezterm-char-props/codegen/Cargo.lock
+
+# =====================
+# Editor / IDE / Agent
+# =====================
+.idea/
+.*.sw*
 .DS_Store
-dhat-heap.json
+/.atomcode/
+/.codex/
+/.gemini/
+
+# =====================
+# Local environment
+# =====================
+/.tag
+/.cache/
+/__pycache__/
+**/*.rs.bk
+/nix/result
+
+# =====================
+# Installer / package outputs
+# =====================
+/WezTerm*.zip
+/WezTerm*.exe
+/WezTerm*.AppImage
+/WezTerm*.AppImage.zsync
+/WezTerm-macos-*
+/wezterm*.deb
+/wezterm*.tar.xz
+/wezterm*-src.tar.gz
+/wezteam-Setup.exe
+/PKGBUILD
+/wezterm-linuxbrew.rb
+/wezterm.rb
+/winget-pkgs
+
+# =====================
+# Performance & debug
+# =====================
+/dhat-heap.json
+/perf.data*
+/esctest.log
+
+# =====================
+# Docs generated content
+# =====================
 /docs/_site
 /docs/favicon.png
 /docs/favicon.svg
 /docs/fonts/*
 /mkdocs.yml
-/PKGBUILD
-/WezTerm*.zip
-/WezTerm*.exe
-/wezterm*.deb
-/wezterm*.tar.xz
-/pkg
-/target/
-/wezterm-char-props/codegen/target
-/wezterm-char-props/codegen/Cargo.lock
-/termwiz/codegen/target
-/termwiz/codegen/Cargo.lock
-/gh_pages/
-/.cache/
 /docs/releases.json
 /docs/SUMMARY.md
-/docs/cli/cli/index.md
-/docs/recipes/index.md
+/docs/mermaid.min.js
 /docs/colorschemes/**/index.md
 /docs/colorschemes/scheme.css
 /docs/colorschemes/scheme.js
-/docs/config/lua/color/index.md
-/docs/config/lua/config/index.md
-/docs/config/lua/gui-events/index.md
-/docs/config/lua/keyassignment/index.md
-/docs/config/lua/keyassignment/CopyMode/index.md
-/docs/config/lua/mux-events/index.md
-/docs/config/lua/mux-window/index.md
-/docs/config/lua/MuxDomain/index.md
-/docs/config/lua/MuxTab/index.md
-/docs/config/lua/MuxPane/index.md
-/docs/config/lua/pane/index.md
-/docs/config/lua/wezterm.color/index.md
-/docs/config/lua/wezterm.gui/index.md
-/docs/config/lua/wezterm.mux/index.md
-/docs/config/lua/wezterm.procinfo/index.md
-/docs/config/lua/wezterm.serde/index.md
-/docs/config/lua/wezterm.time/index.md
-/docs/config/lua/wezterm.time/Time/index.md
-/docs/config/lua/wezterm.url/index.md
-/docs/config/lua/wezterm/index.md
-/docs/config/lua/window-events/index.md
-/docs/config/lua/window/index.md
-/docs/mermaid.min.js
-**/*.rs.bk
-.*.sw*
-/esctest.log
-/AppDir
-/WezTerm*.AppImage
-/WezTerm*.AppImage.zsync
-/WezTerm-macos-*
-/wezterm*-src.tar.gz
-/wezterm-linuxbrew.rb
-/wezterm.rb
-/perf.data*
-.idea/
-/winget-pkgs
+/docs/cli/cli/index.md
+/docs/recipes/index.md
+/docs/config/lua/**/index.md
+
+# =====================
+# Flatpak / Nix
+# =====================
 /assets/flatpak/generated-sources.json
-/__pycache__/
-/nix/result

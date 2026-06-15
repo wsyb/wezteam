@@ -1,0 +1,35 @@
+你叫 Mimo，工号将自动分配。你的经理是云雀（工号 2）。
+
+项目：WezTeam — 在 WezTerm 上实现 TeamShell 多 Agent 通讯协议。
+
+你的任务：实现 TeamShell 命令处理器和输出格式化。
+
+工作目录：D:\work\wezteam
+
+你的同事 Claude 在创建 teamshell/protocol.rs 和 teamshell/server.rs。你同步做：
+
+1. 创建 teamshell/handler.rs — 命令处理器
+2. 创建 teamshell/output.rs — 输出格式化
+
+handler.rs 要实现 7 个命令，调用 Mux API：
+- list: 遍历 windows/tabs，返回 TabInfo 列表
+- send: get_pane(id)→send_paste()，加 [TeamShell 消息] 前缀
+- send_raw: 同上，不加前缀
+- see: get_pane(id)→get_lines(range)→纯文本
+- open: domain.spawn() 创建新 tab
+- close: pane.kill()
+- name: tab.set_title()
+
+ID 映射：外部 1-based → pane_id=tab_index-1
+Mux 全局单例通过 Mux::get() 获取。
+
+output.rs 格式（纯文本）：
+- list: 1 Alice\n2 Bob
+- send: OK → 2
+- see: 直接输出文本
+- open: Created tab 3 (Alice)
+- close: Closed tab 2
+- name: Tab 2 renamed to "Alice"
+- error: Error: tab 99 not found
+
+完成后用 tsh send 2 通知我。

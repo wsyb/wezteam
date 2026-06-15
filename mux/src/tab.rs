@@ -20,6 +20,12 @@ pub type Cursor = bintree::Cursor<Arc<dyn Pane>, SplitDirectionAndSize>;
 static TAB_ID: ::std::sync::atomic::AtomicUsize = ::std::sync::atomic::AtomicUsize::new(0);
 pub type TabId = usize;
 
+/// Returns the next tab ID that will be assigned (without incrementing the counter).
+/// Useful for predicting the tab_id of a tab that hasn't been created yet.
+pub fn next_tab_id() -> TabId {
+    TAB_ID.load(::std::sync::atomic::Ordering::Relaxed)
+}
+
 #[derive(Default)]
 struct Recency {
     count: usize,

@@ -238,4 +238,11 @@ pub fn bootstrap() {
     // it so that pty::CommandBuilder::get_shell will resolve the
     // shell from the password database instead.
     std::env::remove_var("SHELL");
+
+    // TEAMSH_TAB_ID and TEAMSH_NAME are injected by tsh open and
+    // must NOT be inherited by the wezterm-gui process from its parent;
+    // they are only meaningful when set by build_command() on a specific
+    // spawned tab's CommandBuilder.
+    std::env::remove_var("TEAMSH_TAB_ID");
+    std::env::remove_var("TEAMSH_NAME");
 }

@@ -7,7 +7,7 @@
 
 use crate::localpane::LocalPane;
 use crate::pane::{alloc_pane_id, Pane, PaneId};
-use crate::tab::{SplitRequest, Tab, TabId};
+use crate::tab::{next_tab_id, SplitRequest, Tab, TabId};
 use crate::window::WindowId;
 use crate::Mux;
 use anyhow::{bail, Context, Error};
@@ -480,6 +480,12 @@ impl LocalDomain {
             cmd.env("WEZTERM_UNIX_SOCKET", sock);
         }
         cmd.env("WEZTERM_PANE", pane_id.to_string());
+        if cmd.get_env("TEAMSH_TAB_ID").is_none() {
+            let predicted = next_tab_id() + 1;
+            cmd.env("TEAMSH_TAB_ID", predicted.to_string());
+            cmd.env("TEAMSH_NAME", format!("tab_{predicted}"));
+            cmd.env("TEAMSH_PLATFORM", std::env::consts::OS);
+        }
         if let Some(agent) = Mux::get().agent.as_ref() {
             cmd.env("SSH_AUTH_SOCK", agent.path());
         }

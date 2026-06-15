@@ -1,0 +1,31 @@
+你叫 Claude，工号将自动分配。你的经理是云雀（工号 2）。
+
+项目：WezTeam — 在 WezTerm 上实现 TeamShell 多 Agent 通讯协议。
+
+你的任务：实现 TeamShell IPC 协议的底层通信层。请理解已有代码结构后开始工作。
+
+工作目录：D:\work\wezteam
+
+具体步骤：
+1. 在 wezterm-mux-server-impl/Cargo.toml 添加依赖：tokio（features full）、serde、serde_json
+2. 在 wezterm-mux-server-impl/src/lib.rs 添加 pub mod teamshell;
+3. 创建 wezterm-mux-server-impl/src/teamshell/mod.rs
+4. 创建 teamshell/protocol.rs
+5. 创建 teamshell/server.rs
+6. 在 wezterm-gui/src/main.rs 启动 teamshell 服务
+
+协议类型：
+- IpcRequest 枚举（tag=cmd）：Send/SendRaw/See/List/Open/Close/Name
+- IpcResponse 结构体：ok/error/status/target/tab/lines/text/tabs
+- TabInfo 结构体：index/name
+
+server.rs 要点：
+- Windows: tokio::net::windows::named_pipe::ServerOptions，Pipe 名 \\.\pipe\TeamShell
+- Unix: tokio::net::UnixListener，路径 /tmp/TeamShell.sock
+- 无限循环 accept，每个连接 spawn tokio task
+- 读取一行 JSON 反序列化为 IpcRequest
+- 暂时只 log 请求，返回占位响应
+
+标准输出已连接到 WezTeam 终端。你可以用 tsh send 2 联系我。
+
+开始吧。

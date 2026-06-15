@@ -1,3 +1,4 @@
+#[cfg(not(windows))]
 use openssl::ssl::SslStream;
 use std::net::TcpStream;
 
@@ -6,15 +7,28 @@ pub trait AsRawDesc: std::os::unix::io::AsRawFd {}
 #[cfg(windows)]
 pub trait AsRawDesc: std::os::windows::io::AsRawSocket {}
 
+#[cfg(not(windows))]
 #[derive(Debug)]
 pub struct AsyncSslStream {
     s: SslStream<TcpStream>,
 }
 
+#[cfg(windows)]
+#[derive(Debug)]
+pub struct AsyncSslStream {
+    s: TcpStream,
+}
+
 unsafe impl async_io::IoSafe for AsyncSslStream {}
 
 impl AsyncSslStream {
+    #[cfg(not(windows))]
     pub fn new(s: SslStream<TcpStream>) -> Self {
+        Self { s }
+    }
+
+    #[cfg(windows)]
+    pub fn new(s: TcpStream) -> Self {
         Self { s }
     }
 }
@@ -36,14 +50,14 @@ impl std::os::unix::io::AsRawFd for AsyncSslStream {
 #[cfg(windows)]
 impl std::os::windows::io::AsRawSocket for AsyncSslStream {
     fn as_raw_socket(&self) -> std::os::windows::io::RawSocket {
-        self.s.get_ref().as_raw_socket()
+        self.s.as_raw_socket()
     }
 }
 
 #[cfg(windows)]
 impl std::os::windows::io::AsSocket for AsyncSslStream {
     fn as_socket(&self) -> std::os::windows::io::BorrowedSocket {
-        self.s.get_ref().as_socket()
+        self.s.as_socket()
     }
 }
 
