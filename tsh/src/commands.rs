@@ -69,16 +69,16 @@ fn sender_tab_id() -> Option<usize> {
 }
 
 // ============================================================
-// send — 发消息或按键
+// type — 在指定工位打字
 // ============================================================
 
-/// tsh send <id> "message"           → 发文本 + 自动回车
-/// tsh send <id> --no-enter "text"   → 发文本，不回车
-/// tsh send <id> --key "\x03"        → 发特殊按键
-pub fn cmd_send(id: usize, message: Option<&str>, auto_enter: bool, key: Option<&str>) {
+/// tsh type <id> "文本"         → 在指定工位敲入文本并回车
+/// tsh type <id> --no-enter "文本" → 敲入文本，不回车
+/// tsh type <id> --key "\x03"       → 发送按键
+pub fn cmd_type(id: usize, message: Option<&str>, auto_enter: bool, key: Option<&str>) {
     if let Some(key_str) = key {
         let expanded = expand_escapes(key_str);
-        let request = Request::SendRaw {
+        let request = Request::TypeRaw {
             tab_index: id,
             data: expanded,
         };
@@ -87,7 +87,7 @@ pub fn cmd_send(id: usize, message: Option<&str>, auto_enter: bool, key: Option<
             Err(e) => output(&crate::protocol::error_response(&e)),
         }
     } else if let Some(msg) = message {
-        let request = Request::Send {
+        let request = Request::Type {
             tab_index: id,
             message: msg.to_string(),
             from_tab_id: sender_tab_id(),
@@ -97,7 +97,7 @@ pub fn cmd_send(id: usize, message: Option<&str>, auto_enter: bool, key: Option<
                 output(&resp);
                 if auto_enter {
                     std::thread::sleep(std::time::Duration::from_millis(1000));
-                    let raw_request = Request::SendRaw {
+                    let raw_request = Request::TypeRaw {
                         tab_index: id,
                         data: "\r".to_string(),
                     };
@@ -107,18 +107,18 @@ pub fn cmd_send(id: usize, message: Option<&str>, auto_enter: bool, key: Option<
             Err(e) => output(&crate::protocol::error_response(&e)),
         }
     } else {
-        eprintln!("错误：请提供消息内容或使用 --key 发送按键");
+        eprintln!("错误：请提供文本内容或使用 --key 发送按键");
         std::process::exit(1);
     }
 }
 
 // ============================================================
-// see — 读取成员屏幕
+// view — 读取工位屏幕
 // ============================================================
 
-/// tsh see <id> [lines]  → 读取并清理输出
-pub fn cmd_see(id: usize, lines: usize) {
-    let request = Request::See {
+/// tsh view <id> [lines]  → 读取并清理输出
+pub fn cmd_view(id: usize, lines: usize) {
+    let request = Request::View {
         tab_index: id,
         line_count: lines,
     };
@@ -217,14 +217,14 @@ pub fn cmd_open(
                 if resp.ok {
                     if let Some(tab_id) = resp.tab {
                         std::thread::sleep(std::time::Duration::from_millis(3000));
-                        let send_req = Request::Send {
+                        let send_req = Request::Type {
                             tab_index: tab_id,
                             message: prompt.to_string(),
                             from_tab_id: Some(0),
                         };
                         let _ = ipc::send_request(&send_req);
                         std::thread::sleep(std::time::Duration::from_millis(500));
-                        let enter_req = Request::SendRaw {
+                        let enter_req = Request::TypeRaw {
                             tab_index: tab_id,
                             data: "\r".to_string(),
                         };

@@ -23,11 +23,11 @@ struct Cli {
 enum Commands {
     /// 列出团队成员（编号、名字、状态）
     List,
-    /// 给成员发消息或按键
-    Send {
-        /// 目标成员编号
+    /// 在指定工位的终端上打字
+    Type {
+        /// 目标工位编号
         id: usize,
-        /// 消息内容（使用 --key 时可省略）
+        /// 要敲的文本内容（使用 --key 时可省略）
         message: Option<String>,
         /// 不自动追加回车
         #[arg(long)]
@@ -36,9 +36,9 @@ enum Commands {
         #[arg(long)]
         key: Option<String>,
     },
-    /// 看成员的屏幕（读取输出）
-    See {
-        /// 目标成员编号
+    /// 查看指定工位的终端屏幕
+    View {
+        /// 目标工位编号
         id: usize,
         /// 读取行数（默认 50）
         #[arg(default_value_t = 50)]
@@ -100,10 +100,10 @@ fn main() {
 
     match cli.command {
         Commands::List => commands::cmd_list(),
-        Commands::Send { id, message, no_enter, key } => {
-            commands::cmd_send(id, message.as_deref(), !no_enter, key.as_deref())
+        Commands::Type { id, message, no_enter, key } => {
+            commands::cmd_type(id, message.as_deref(), !no_enter, key.as_deref())
         }
-        Commands::See { id, lines } => commands::cmd_see(id, lines),
+        Commands::View { id, lines } => commands::cmd_view(id, lines),
         Commands::Open { name, command, args, cwd, env, auto_shell, init_prompt } => {
             let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
             commands::cmd_open(&name, Some(&command), &args_refs, cwd.as_deref(), &env, auto_shell, init_prompt.as_deref())

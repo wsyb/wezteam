@@ -2,7 +2,7 @@ use wezterm_mux_server_impl::teamshell::protocol::{IpcRequest, IpcResponse, TabI
 
 #[test]
 fn ipc_request_uses_cmd_tag_and_snake_case_names() {
-    let request = IpcRequest::Send {
+    let request = IpcRequest::Type {
         tab_index: 2,
         message: "hello".to_string(),
         from_tab_id: Some(6),
@@ -10,7 +10,7 @@ fn ipc_request_uses_cmd_tag_and_snake_case_names() {
 
     let value = serde_json::to_value(&request).unwrap();
 
-    assert_eq!(value["cmd"], "send");
+    assert_eq!(value["cmd"], "type");
     assert_eq!(value["tab_index"], 2);
     assert_eq!(value["message"], "hello");
     assert_eq!(value["from_tab_id"], 6);
@@ -18,12 +18,12 @@ fn ipc_request_uses_cmd_tag_and_snake_case_names() {
 
 #[test]
 fn command_name_does_not_include_request_payload() {
-    let request = IpcRequest::SendRaw {
+    let request = IpcRequest::TypeRaw {
         tab_index: 2,
         data: "secret-token".to_string(),
     };
 
-    assert_eq!(request.command_name(), "send_raw");
+    assert_eq!(request.command_name(), "type_raw");
 }
 
 #[test]

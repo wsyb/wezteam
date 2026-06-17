@@ -11,13 +11,13 @@ pub struct Handler;
 impl Handler {
     pub fn handle(request: IpcRequest) -> IpcResponse {
         match request {
-            IpcRequest::Send {
+            IpcRequest::Type {
                 tab_index,
                 message,
                 from_tab_id,
             } => Self::send(tab_index, &format_message(&message, from_tab_id)),
-            IpcRequest::SendRaw { tab_index, data } => Self::send_raw(tab_index, &data),
-            IpcRequest::See {
+            IpcRequest::TypeRaw { tab_index, data } => Self::send_raw(tab_index, &data),
+            IpcRequest::View {
                 tab_index,
                 line_count,
             } => Self::see(tab_index, Some(line_count)),

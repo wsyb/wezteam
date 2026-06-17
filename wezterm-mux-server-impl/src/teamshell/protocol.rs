@@ -3,16 +3,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
 pub enum IpcRequest {
-    #[serde(rename = "send")]
-    Send {
+    #[serde(rename = "type")]
+    Type {
         tab_index: usize,
         message: String,
         from_tab_id: Option<usize>,
     },
-    #[serde(rename = "send_raw")]
-    SendRaw { tab_index: usize, data: String },
-    #[serde(rename = "see")]
-    See { tab_index: usize, line_count: usize },
+    #[serde(rename = "type_raw")]
+    TypeRaw { tab_index: usize, data: String },
+    #[serde(rename = "view")]
+    View { tab_index: usize, line_count: usize },
     #[serde(rename = "list")]
     List,
     #[serde(rename = "open")]
@@ -57,9 +57,9 @@ pub struct TabInfo {
 impl IpcRequest {
     pub fn command_name(&self) -> &'static str {
         match self {
-            Self::Send { .. } => "send",
-            Self::SendRaw { .. } => "send_raw",
-            Self::See { .. } => "see",
+            Self::Type { .. } => "type",
+            Self::TypeRaw { .. } => "type_raw",
+            Self::View { .. } => "view",
             Self::List => "list",
             Self::Open { .. } => "open",
             Self::Close { .. } => "close",
@@ -238,26 +238,26 @@ mod tests {
     fn command_name_returns_names_for_all_request_variants() {
         let cases = vec![
             (
-                IpcRequest::Send {
+                IpcRequest::Type {
                     tab_index: 1,
                     message: String::new(),
                     from_tab_id: None,
                 },
-                "send",
+                "type",
             ),
             (
-                IpcRequest::SendRaw {
+                IpcRequest::TypeRaw {
                     tab_index: 1,
                     data: String::new(),
                 },
-                "send_raw",
+                "type_raw",
             ),
             (
-                IpcRequest::See {
+                IpcRequest::View {
                     tab_index: 1,
                     line_count: 10,
                 },
-                "see",
+                "view",
             ),
             (IpcRequest::List, "list"),
             (
