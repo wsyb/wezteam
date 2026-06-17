@@ -93,8 +93,8 @@ impl Handler {
             Some(pane) => {
                 let dims = pane.get_dimensions();
                 let line_count = num_lines.unwrap_or(dims.viewport_rows) as isize;
-                let end = dims.physical_top + dims.scrollback_rows as isize;
-                let start = (end - line_count).max(0);
+                let end = dims.physical_top + dims.viewport_rows as isize;
+                let start = (end - line_count).max(dims.scrollback_top);
 
                 let (_first_row, lines) = pane.get_lines(start..end);
                 let rendered_lines = lines
