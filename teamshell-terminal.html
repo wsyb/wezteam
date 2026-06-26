@@ -432,12 +432,14 @@ help                 显示帮助</pre>
                     { type: 'cmd', text: 'tsh -h', delay: 2000 },
                     { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000 },
                     { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 8000 },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 10000 },
+                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000 },
                     { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 8000 },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 10000 },
                     { type: 'cmd', text: 'tsh list', delay: 2000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000 }
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000 },
+                    { type: 'cmd', text: 'tsh name 2 "首席代码审查专家"', delay: 2000 }
                 ]
             },
             'task-assign': {
@@ -445,7 +447,8 @@ help                 显示帮助</pre>
                 steps: 6,
                 actions: [
                     { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500 },
-                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh type 2 --no-enter "请评估支付功能技术方案"', delay: 1000 },
+                    { type: 'cmd', text: 'tsh type 2 "，重点关注微服务架构"', delay: 6000 },
                     { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 6000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
                     { type: 'cmd', text: 'tsh view 3', delay: 3000 }
@@ -456,13 +459,13 @@ help                 显示帮助</pre>
                 steps: 6,
                 actions: [
                     { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 2500 },
-                    { type: 'output', text: 'cat payment.log | tail -20', delay: 1500 },
-                    { type: 'output', text: '[INFO] Payment service started\n[INFO] Order 12345 created\n[WARNING] Update affected 0 rows\n[ERROR] Transaction failed: order_id type mismatch', delay: 1500 },
-                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑，读取 /data/prod/orders 目录"', delay: 8000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 2000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'output', text: 'python -c "from order_service import update_order; update_order(\'12345\', \'paid\')"', delay: 1500 },
-                    { type: 'output', text: 'Success: Order 12345 updated to paid', delay: 1500 }
+                    { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 2000 },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
+                    { type: 'cmd', text: 'tsh type 3 "请对修复方案进行安全审查"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000 }
                 ]
             },
             'project-close': {
@@ -486,6 +489,7 @@ help                 显示帮助</pre>
             'claude': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded) return;
+                    if (isClosingMessage(message)) return;
                     setTimeout(() => {
                         const responses = [
                             '收到！正在处理...',
@@ -500,20 +504,33 @@ help                 显示帮助</pre>
             'codex': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded) return;
+                    if (isClosingMessage(message)) return;
                     setTimeout(() => {
                         const reply = '收到任务！正在分析代码...';
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
                         
-                        setTimeout(() => {
-                            const analysis = '分析完成！发现以下问题：\n1. 类型不匹配\n2. 需要优化';
-                            agentExecuteCommand(tab.id, `tsh type ${senderId} "${analysis}"`);
-                        }, 3000);
+                        if (message.includes('/data/prod/')) {
+                            setTimeout(() => {
+                                addLine(tab.id, 'system', `⚠️ 需要授权才能执行以下操作：`);
+                                addLine(tab.id, 'system', ``);
+                                addLine(tab.id, 'system', `操作：读取目录 /data/prod/`);
+                                addLine(tab.id, 'system', `原因：这个目录不在默认允许范围内`);
+                                addLine(tab.id, 'system', `请人工审批：[Y] 允许 / [N] 拒绝`);
+                                tab.status = 'stuck';
+                            }, 2000);
+                        } else {
+                            setTimeout(() => {
+                                const analysis = '分析完成！发现以下问题：\n1. 类型不匹配\n2. 需要优化';
+                                agentExecuteCommand(tab.id, `tsh type ${senderId} "${analysis}"`);
+                            }, 3000);
+                        }
                     }, 2000);
                 }
             },
             'trae': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded) return;
+                    if (isClosingMessage(message)) return;
                     setTimeout(() => {
                         const reply = '收到！正在进行安全评估...';
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
@@ -527,12 +544,19 @@ help                 显示帮助</pre>
             },
             'shell': {
                 handleMessage: function(tab, message, senderId) {
+                    if (isClosingMessage(message)) return;
                     setTimeout(() => {
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "Command executed."`);
                     }, 1000);
                 }
             }
         };
+
+        function isClosingMessage(message) {
+            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK'];
+            const trimmed = message.trim();
+            return closingWords.some(word => trimmed === word || trimmed === `${word}！` || trimmed === `${word}.`);
+        }
 
         // ============ Tab管理 ============
         function createTab(name, type, isActive = true) {
@@ -700,10 +724,11 @@ help                 显示帮助</pre>
             const count = parseInt(lines) || 30;
             const recent = tab.lines.slice(-count);
             return recent.map(l => {
-                if (l.type === 'tsh-in') return `[MSG] ${l.sender}: ${l.content}`;
-                if (l.type === 'agent') return `[${l.agentType}] ${l.content}`;
-                if (l.type === 'system') return `[SYS] ${l.content}`;
+                if (l.type === 'tsh-in') return `[TeamShell 消息] 来自 ${l.sender}: ${l.content}`;
+                if (l.type === 'agent') return `[${l.agentType?.toUpperCase()}] ${l.content}`;
+                if (l.type === 'system') return `📋 ${l.content}`;
                 if (l.type === 'command') return `❯ ${l.content}`;
+                if (l.type === 'tsh-out') return `[发送至 ${l.sender}] ${l.content}`;
                 return l.content;
             }).join('\n');
         }
@@ -742,14 +767,20 @@ help                 显示帮助</pre>
 
             if (keyCode) {
                 addLine(targetTabId, 'system', `收到按键: ${keyCode}`);
-                if (keyCode === '\\x0d' || keyCode === '\\n') {
-                    if (!targetTab.onboarded && targetTab.status === 'stuck') {
+                if (targetTab.status === 'stuck') {
+                    if (keyCode.includes('Y') || keyCode === '\\x0d' || keyCode === '\\n') {
                         targetTab.status = 'idle';
                         addLine(targetTabId, 'system', '✅ 权限验证通过');
                         setTimeout(() => {
                             const reply = '权限已通过！继续执行任务...';
                             agentExecuteCommand(targetTabId, `tsh type ${state.currentTabId} "${reply}"`);
+                            setTimeout(() => {
+                                const result = '分析完成！订单ID类型不匹配，已修复：\n- 将order_id从字符串改为整数\n- 添加类型转换逻辑';
+                                agentExecuteCommand(targetTabId, `tsh type ${state.currentTabId} "${result}"`);
+                            }, 2000);
                         }, 1000);
+                    } else {
+                        addLine(targetTabId, 'system', '❌ 权限验证失败');
                     }
                 }
             } else {
@@ -819,25 +850,43 @@ help                 显示帮助</pre>
             const tab = state.tabs.find(t => t.id === tabId);
             if (!tab) return;
 
-            setTimeout(() => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`), 800);
-            setTimeout(() => addLine(tabId, 'system', `读取工号...`), 1600);
-            setTimeout(() => addLine(tabId, 'command', `echo $TEAMSH_TAB_ID`), 2000);
-            setTimeout(() => addLine(tabId, 'output', `${tab.id}`), 2400);
-            setTimeout(() => addLine(tabId, 'system', `验证工号有效性...`), 3200);
-            setTimeout(() => addLine(tabId, 'system', `✅ 工号验证通过`), 4000);
-            setTimeout(() => {
-                tab.onboarded = true;
-                tab.status = 'idle';
-                addLine(tabId, 'system', `已正式入职，等待任务分配...`);
-                addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
-                
-                if (tab.onboardSender) {
-                    setTimeout(() => {
-                        const replyText = `入职完成！我是${tab.name}，工号${tab.id}，随时待命！`;
-                        agentExecuteCommand(tabId, `tsh type ${tab.onboardSender} "${replyText}"`);
-                    }, 1500);
-                }
-            }, 4800);
+            const steps = [
+                { delay: 800, action: () => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`) },
+                { delay: 800, action: () => addLine(tabId, 'system', `🔐 入职自检开始...`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `1️⃣ 读取工号...`) },
+                { delay: 400, action: () => addLine(tabId, 'command', `echo $TEAMSH_TAB_ID`) },
+                { delay: 400, action: () => addLine(tabId, 'output', `${tab.id}`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `2️⃣ 验证工号有效性...`) },
+                { delay: 800, action: () => addLine(tabId, 'system', `✅ 工号验证通过`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `3️⃣ 读取身份信息...`) },
+                { delay: 400, action: () => addLine(tabId, 'command', `echo $TEAMSH_NAME`) },
+                { delay: 400, action: () => addLine(tabId, 'output', `${tab.name}`) },
+                { delay: 400, action: () => addLine(tabId, 'command', `echo $TEAMSH_PLATFORM`) },
+                { delay: 400, action: () => addLine(tabId, 'output', `windows`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `✅ 身份验证完成`) },
+                { delay: 600, action: () => {
+                    tab.onboarded = true;
+                    tab.status = 'idle';
+                    addLine(tabId, 'system', `🎉 已正式入职，等待任务分配...`);
+                    addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
+                    
+                    if (tab.onboardSender) {
+                        setTimeout(() => {
+                            const replyText = `入职完成！我是${tab.name}，工号${tab.id}，随时待命！`;
+                            agentExecuteCommand(tabId, `tsh type ${tab.onboardSender} "${replyText}"`);
+                        }, 1500);
+                    }
+                }}
+            ];
+
+            let currentStep = 0;
+            function executeNextStep() {
+                if (currentStep >= steps.length) return;
+                const step = steps[currentStep++];
+                step.action();
+                setTimeout(executeNextStep, step.delay);
+            }
+            executeNextStep();
         }
 
         // ============ 场景执行 ============
