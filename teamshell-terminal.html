@@ -553,28 +553,28 @@ help                 显示帮助</pre>
                 name: '团队组建',
                 steps: 6,
                 actions: [
-                    { type: 'user', text: '请帮我组建团队', delay: 1500 },
-                    { type: 'claude', text: '好的！让我先查看 CLI 版本和帮助...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh -V', delay: 800 },
-                    { type: 'cmd', text: 'tsh -h', delay: 800 },
+                    { type: 'user', text: '请帮我组建团队', delay: 2500 },
+                    { type: 'claude', text: '好的！让我先查看 CLI 版本和帮助...', delay: 2000 },
+                    { type: 'cmd', text: 'tsh -V', delay: 1500 },
+                    { type: 'cmd', text: 'tsh -h', delay: 1500 },
                     { type: 'help', delay: 300 },
-                    { type: 'claude', text: 'CLI 正常！现在初始化项目协议...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 1000 },
-                    { type: 'claude', text: '协议初始化完成！现在招募团队成员...', delay: 1500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 1000 },
-                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 800 },
-                    { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 1000 },
-                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 800 },
-                    { type: 'step', delay: 200 },
-                    { type: 'cmd', text: 'tsh list', delay: 800 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '新成员已加入！让我查看他们的状态...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 800 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 800 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '团队组建完成！3个成员已就绪，等待任务分配...', delay: 2000 },
-                    { type: 'step', delay: 200 }
+                    { type: 'claude', text: 'CLI 正常！现在初始化项目协议...', delay: 2000 },
+                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 1500 },
+                    { type: 'claude', text: '协议初始化完成！现在招募团队成员...', delay: 2000 },
+                    { type: 'step', delay: 500 },
+                    { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000 },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 3000 },
+                    { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000 },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 3000 },
+                    { type: 'step', delay: 500 },
+                    { type: 'cmd', text: 'tsh list', delay: 2000 },
+                    { type: 'step', delay: 500 },
+                    { type: 'claude', text: '新成员已加入！让我查看他们的状态...', delay: 2000 },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000 },
+                    { type: 'step', delay: 500 },
+                    { type: 'claude', text: '团队组建完成！3个成员已就绪，等待任务分配...', delay: 3000 },
+                    { type: 'step', delay: 500 }
                 ]
             },
             'task-assign': {
@@ -879,10 +879,11 @@ help                 显示帮助</pre>
 
             if (!tab.onboarded) {
                 if (text.includes('入职')) {
-                    setTimeout(() => performOnboarding(tabId), 1000);
+                    tab.onboardSender = state.currentTabId;
+                    setTimeout(() => performOnboarding(tabId), 1500);
                 }
             } else {
-                setTimeout(() => simulateAgentResponse(tabId), 1000);
+                setTimeout(() => simulateAgentResponse(tabId), 1500);
             }
             return null;
         }
@@ -922,16 +923,28 @@ help                 显示帮助</pre>
             const tab = state.tabs.find(t => t.id === tabId);
             if (!tab) return;
 
-            setTimeout(() => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`), 500);
-            setTimeout(() => addLine(tabId, 'system', `读取工号...`), 1000);
-            setTimeout(() => addLine(tabId, 'system', `工号: ${tab.id}`), 1500);
-            setTimeout(() => addLine(tabId, 'system', `验证工号有效性...`), 2000);
-            setTimeout(() => addLine(tabId, 'system', `✅ 工号验证通过`), 2500);
+            setTimeout(() => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`), 800);
+            setTimeout(() => addLine(tabId, 'system', `读取工号...`), 1600);
+            setTimeout(() => addLine(tabId, 'system', `工号: ${tab.id}`), 2400);
+            setTimeout(() => addLine(tabId, 'system', `验证工号有效性...`), 3200);
+            setTimeout(() => addLine(tabId, 'system', `✅ 工号验证通过`), 4000);
             setTimeout(() => {
                 tab.onboarded = true;
                 addLine(tabId, 'system', `已正式入职，等待任务分配...`);
                 addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
-            }, 3000);
+                
+                if (tab.onboardSender) {
+                    setTimeout(() => {
+                        const senderTab = state.tabs.find(t => t.id === tab.onboardSender);
+                        if (senderTab) {
+                            const replyText = `入职完成！我是${tab.name}，工号${tab.id}，随时待命！`;
+                            addLine(tab.onboardSender, 'tsh-in', replyText, { sender: tab.name });
+                            addLine(tabId, 'tsh-out', replyText, { sender: senderTab.name });
+                            addLine(tabId, 'agent', `已向 ${senderTab.name} 发送入职确认`, { agentType: tab.type });
+                        }
+                    }, 1500);
+                }
+            }, 4800);
         }
 
         function simulateAgentResponse(tabId) {
