@@ -483,7 +483,7 @@ help                 显示帮助</pre>
                     { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 15000 },
                     { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 15000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000 }
+                    { type: 'cmd', text: 'tsh view 3', delay: 15000 }
                 ]
             },
             'debug': {
@@ -496,8 +496,7 @@ help                 显示帮助</pre>
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
                     { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 3000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 5000 },
-                    { type: 'cmd', text: 'tsh type 3 "请对修复方案进行安全审查"', delay: 15000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000 }
+                    { type: 'cmd', text: 'tsh view 3', delay: 20000 }
                 ]
             },
             'project-close': {
@@ -505,8 +504,10 @@ help                 显示帮助</pre>
                 steps: 5,
                 actions: [
                     { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 2500 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 2000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 2000 },
+                    { type: 'cmd', text: 'tsh type 2 "请输出技术工作总结报告"', delay: 8000 },
+                    { type: 'cmd', text: 'tsh type 3 "请输出安全合规总结报告"', delay: 8000 },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000 },
                     { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500 },
                     { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500 },
                     { type: 'cmd', text: 'tsh close 3', delay: 1500 },
@@ -543,12 +544,11 @@ help                 显示帮助</pre>
                     
                     tab.status = 'working';
 
-                    const steps = [
-                        { delay: 1500, text: '收到任务！正在分析代码...' }
-                    ];
+                    const steps = [];
 
                     if (message.includes('/data/prod/')) {
                         steps.push(
+                            { delay: 1500, text: '收到任务！正在分析代码...' },
                             { delay: 2000, text: '📂 正在读取目录: /data/prod/orders' },
                             { delay: 1500, text: '📄 读取文件: order_service.py' },
                             { delay: 1200, text: '🔍 分析代码逻辑...' },
@@ -565,8 +565,29 @@ help                 显示帮助</pre>
                                 }
                             }, cumulativeDelay);
                         });
+                    } else if (message.includes('工作总结') || message.includes('总结报告')) {
+                        steps.push(
+                            { delay: 1500, text: '📊 正在整理技术工作总结...' },
+                            { delay: 2000, text: '📄 回顾项目代码变更...' },
+                            { delay: 1800, text: '✅ 技术工作总结报告:\n\n📈 完成的工作:\n1. 支付功能技术方案评估\n2. order_id类型不匹配问题修复\n3. 微服务架构优化建议\n\n🔧 技术债务:\n1. 建议引入DTO层统一数据类型转换\n2. 增加服务间契约测试\n3. 建立代码审查流程\n\n📝 后续建议:\n- 定期代码审查\n- 自动化测试覆盖率提升\n- 持续集成流程优化' }
+                        );
+                        
+                        let cumulativeDelay = 1000;
+                        steps.forEach((step, index) => {
+                            cumulativeDelay += step.delay;
+                            setTimeout(() => {
+                                addLine(tab.id, 'system', step.text);
+                                if (index === steps.length - 1) {
+                                    tab.status = 'idle';
+                                    setTimeout(() => {
+                                        agentExecuteCommand(tab.id, `tsh type ${senderId} "技术工作总结已完成，请查阅。"`);
+                                    }, 1500);
+                                }
+                            }, cumulativeDelay);
+                        });
                     } else {
                         steps.push(
+                            { delay: 1500, text: '收到任务！正在分析代码...' },
                             { delay: 2000, text: '📂 正在读取文件: payment_service.py' },
                             { delay: 1500, text: '📂 正在读取文件: order_service.py' },
                             { delay: 2000, text: '🔍 分析中... 检查微服务架构' },
@@ -599,22 +620,39 @@ help                 显示帮助</pre>
                     tab.status = 'working';
                     
                     const isFixReview = message.includes('修复') || message.includes('审查');
+                    const isSummary = message.includes('安全合规') || message.includes('总结报告');
                     
-                    const steps = isFixReview ? [
-                        { delay: 1500, text: '收到！正在审查修复方案...' },
-                        { delay: 2000, text: '🔒 审查中... 检查类型转换安全性' },
-                        { delay: 1800, text: '🔒 审查中... 检查边界条件处理' },
-                        { delay: 2000, text: '🔒 审查中... 验证数据完整性' },
-                        { delay: 1500, text: '📝 正在生成审查报告...' },
-                        { delay: 2000, text: '✅ 修复方案审查完成！\n\n🛡️ 审查结果:\n1. 类型转换: order_id字符串转整数逻辑安全，已添加校验\n2. 边界处理: 空值和异常情况已正确处理\n3. 数据完整性: 事务边界清晰，不会产生脏数据\n\n修复方案符合安全标准，可以实施。' }
-                    ] : [
-                        { delay: 1500, text: '收到！正在进行安全评估...' },
-                        { delay: 2000, text: '🔒 扫描中... 检查加密配置' },
-                        { delay: 1800, text: '🔒 扫描中... 检查HTTPS配置' },
-                        { delay: 2000, text: '🔒 扫描中... 检查数据传输加密' },
-                        { delay: 1500, text: '📝 正在生成安全报告...' },
-                        { delay: 2000, text: '✅ 安全评估完成！\n\n🛡️ 安全评估结果:\n1. 使用 HTTPS: 当前使用HTTP，存在中间人攻击风险\n2. 加密敏感数据: 用户密码未加密存储，建议使用bcrypt\n3. 其他建议:\n   - 启用CSP头部\n   - 添加X-Frame-Options\n   - 实施定期安全审计\n\n已生成安全加固方案，等待审核。' }
-                    ];
+                    let steps = [];
+                    let replyText = '';
+                    
+                    if (isSummary) {
+                        steps = [
+                            { delay: 1500, text: '🛡️ 正在整理安全合规总结...' },
+                            { delay: 2000, text: '📄 回顾安全评估记录...' },
+                            { delay: 1800, text: '✅ 安全合规总结报告:\n\n🛡️ 安全审查完成项:\n1. 支付功能安全性需求评估\n2. 修复方案安全审查通过\n3. 类型转换逻辑安全验证\n\n⚠️ 待处理安全事项:\n1. 当前使用HTTP，建议升级HTTPS\n2. 用户密码未加密存储，建议使用bcrypt\n3. 建议启用CSP头部和X-Frame-Options\n\n📝 安全建议:\n- 实施定期安全审计\n- 建立安全代码审查流程\n- 配置安全监控告警' }
+                        ];
+                        replyText = '安全合规总结已完成，请查阅。';
+                    } else if (isFixReview) {
+                        steps = [
+                            { delay: 1500, text: '收到！正在审查修复方案...' },
+                            { delay: 2000, text: '🔒 审查中... 检查类型转换安全性' },
+                            { delay: 1800, text: '🔒 审查中... 检查边界条件处理' },
+                            { delay: 2000, text: '🔒 审查中... 验证数据完整性' },
+                            { delay: 1500, text: '📝 正在生成审查报告...' },
+                            { delay: 2000, text: '✅ 修复方案审查完成！\n\n🛡️ 审查结果:\n1. 类型转换: order_id字符串转整数逻辑安全，已添加校验\n2. 边界处理: 空值和异常情况已正确处理\n3. 数据完整性: 事务边界清晰，不会产生脏数据\n\n修复方案符合安全标准，可以实施。' }
+                        ];
+                        replyText = '修复方案审查完成！符合安全标准，可以实施。';
+                    } else {
+                        steps = [
+                            { delay: 1500, text: '收到！正在进行安全评估...' },
+                            { delay: 2000, text: '🔒 扫描中... 检查加密配置' },
+                            { delay: 1800, text: '🔒 扫描中... 检查HTTPS配置' },
+                            { delay: 2000, text: '🔒 扫描中... 检查数据传输加密' },
+                            { delay: 1500, text: '📝 正在生成安全报告...' },
+                            { delay: 2000, text: '✅ 安全评估完成！\n\n🛡️ 安全评估结果:\n1. 使用 HTTPS: 当前使用HTTP，存在中间人攻击风险\n2. 加密敏感数据: 用户密码未加密存储，建议使用bcrypt\n3. 其他建议:\n   - 启用CSP头部\n   - 添加X-Frame-Options\n   - 实施定期安全审计\n\n已生成安全加固方案，等待审核。' }
+                        ];
+                        replyText = '安全评估完成！已提供详细安全建议。';
+                    }
                     
                     let cumulativeDelay = 1000;
                     steps.forEach((step, index) => {
@@ -624,9 +662,6 @@ help                 显示帮助</pre>
                             if (index === steps.length - 1) {
                                 tab.status = 'idle';
                                 setTimeout(() => {
-                                    const replyText = isFixReview 
-                                        ? '修复方案审查完成！符合安全标准，可以实施。'
-                                        : '安全评估完成！已提供详细安全建议。';
                                     agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
                                 }, 1500);
                             }
@@ -1010,6 +1045,9 @@ help                 显示帮助</pre>
                                             setTimeout(() => {
                                                 const result = '分析完成！订单ID类型不匹配，已修复：\n- 将order_id从字符串改为整数\n- 添加类型转换逻辑';
                                                 agentExecuteCommand(targetTabId, `tsh type ${senderId} "${result}"`);
+                                                setTimeout(() => {
+                                                    agentExecuteCommand(targetTabId, 'tsh type 3 "请对修复方案进行安全审查"');
+                                                }, 1500);
                                             }, 1500);
                                         }, 1000);
                                     }, 1500);
