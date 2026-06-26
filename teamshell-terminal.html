@@ -672,12 +672,9 @@ help                 显示帮助</pre>
                 name: name,
                 type: type,
                 lines: [],
-                inputBuffer: ''
+                inputBuffer: '',
+                onboarded: false
             };
-
-            addLine(tab.id, 'system', `TeamShell Protocol v1.0.0`);
-            addLine(tab.id, 'system', `工号: ${tab.id}`);
-            addLine(tab.id, 'system', `已就绪，等待任务分配...`);
 
             state.tabs.push(tab);
 
@@ -880,7 +877,13 @@ help                 显示帮助</pre>
             addLine(tabId, 'tsh-in', text, { sender: senderName });
             addLine(state.currentTabId, 'tsh-out', text, { sender: tab.name });
 
-            setTimeout(() => simulateAgentResponse(tabId), 1000);
+            if (!tab.onboarded) {
+                if (text.includes('入职')) {
+                    setTimeout(() => performOnboarding(tabId), 1000);
+                }
+            } else {
+                setTimeout(() => simulateAgentResponse(tabId), 1000);
+            }
             return null;
         }
 
@@ -913,6 +916,22 @@ help                 显示帮助</pre>
 
         function cmdInit(file) {
             return `OK: TeamShell Protocol initialized from ${file || 'file'}`;
+        }
+
+        function performOnboarding(tabId) {
+            const tab = state.tabs.find(t => t.id === tabId);
+            if (!tab) return;
+
+            setTimeout(() => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`), 500);
+            setTimeout(() => addLine(tabId, 'system', `读取工号...`), 1000);
+            setTimeout(() => addLine(tabId, 'system', `工号: ${tab.id}`), 1500);
+            setTimeout(() => addLine(tabId, 'system', `验证工号有效性...`), 2000);
+            setTimeout(() => addLine(tabId, 'system', `✅ 工号验证通过`), 2500);
+            setTimeout(() => {
+                tab.onboarded = true;
+                addLine(tabId, 'system', `已正式入职，等待任务分配...`);
+                addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
+            }, 3000);
         }
 
         function simulateAgentResponse(tabId) {
