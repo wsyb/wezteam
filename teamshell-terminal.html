@@ -1120,6 +1120,14 @@ help                 显示帮助</pre>
                                 targetTab.onboardSender = realSenderTabId;
                                 setTimeout(() => performOnboarding(targetTabId), 1500);
                             }
+                        } else {
+                            // 触发目标Agent的行为处理
+                            const behavior = agentBehavior[targetTab.type];
+                            if (behavior && realSenderTabId !== targetTabId && shouldReply(text, realSenderTabId)) {
+                                if (targetTab.status !== 'working') {
+                                    behavior.handleMessage(targetTab, text, realSenderTabId);
+                                }
+                            }
                         }
                     }
                 }
