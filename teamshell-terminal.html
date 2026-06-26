@@ -636,7 +636,7 @@ help                 显示帮助</pre>
             if (!tab) return;
             const line = { type, content, timestamp: Date.now(), ...extra };
             tab.lines.push(line);
-            tab.logs.push({ 
+            tab.logs.push({
                 timestamp: new Date().toISOString(),
                 tabId: tabId,
                 tabName: tab.name,
@@ -648,6 +648,31 @@ help                 显示帮助</pre>
             if (tab.lines.length > 500) tab.lines.shift();
             if (tab.logs.length > 1000) tab.logs.shift();
             if (tabId === state.currentTabId) renderTerminal();
+
+            // 发送日志到服务器
+            sendLogToServer({
+                timestamp: new Date().toISOString(),
+                tabId: tabId,
+                tabName: tab.name,
+                type: type,
+                content: content,
+                sender: extra.sender || null,
+                senderId: extra.senderId || null
+            });
+        }
+
+        function sendLogToServer(logData) {
+            try {
+                fetch('/api/logs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(logData)
+                }).catch(err => console.error('日志发送失败:', err));
+            } catch (e) {
+                console.error('日志发送异常:', e);
+            }
         }
 
         // ============ 渲染 ============

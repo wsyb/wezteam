@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamShell Demo - AI 多 Agent 协作终端</title>
+    <style>
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-dark: #12121a;
+            --bg-card: #1a1a24;
+            --bg-terminal: #0d1117;
+            --bg-input: #16161e;
+            --accent-cyan: #00f5ff;
+            --accent-magenta: #ff00aa;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffdd00;
+            --accent-orange: #ff8800;
+            --accent-purple: #aa00ff;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555566;
+            --border-subtle: rgba(255,255,255,0.08);
+            --claude-primary: #d97757;
+            --codex-primary: #5c3ee8;
+            --trae-primary: #00d4aa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Noto Sans SC', monospace;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(0,245,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,245,255,0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            padding: 12px 20px;
+            background: rgba(18,18,26,0.95);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .logo span { color: var(--accent-magenta); }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--accent-cyan); color: #000; font-weight: 600; }
+        .btn-primary:hover { background: #00d4e6; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+        .btn-danger { background: rgba(255,0,170,0.2); color: var(--accent-magenta); }
+        .btn-danger:hover { background: rgba(255,0,170,0.3); }
+
+        .scenario-selector {
+            display: flex;
+            gap: 6px;
+            padding: 8px 20px;
+            background: rgba(18,18,26,0.8);
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+            z-index: 10;
+            overflow-x: auto;
+        }
+
+        .scenario-btn {
+            padding: 6px 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .scenario-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text-primary); }
+        .scenario-btn.active { background: var(--accent-cyan); border-color: var(--accent-cyan); color: #000; }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .tabs {
+            width: 200px;
+            background: rgba(13,17,23,0.95);
+            border-right: 1px solid var(--border-subtle);
+            padding: 8px;
+            overflow-y: auto;
+        }
+
+        .tab {
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            color: var(--text-secondary);
+        }
+
+        .tab:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .tab.active { background: var(--bg-terminal); color: var(--text-primary); border-left: 2px solid var(--accent-cyan); }
+
+        .tab .agent-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .tab.claude .agent-icon { background: var(--claude-primary); }
+        .tab.codex .agent-icon { background: var(--codex-primary); }
+        .tab.trae .agent-icon { background: var(--trae-primary); }
+
+        .terminal-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-area {
+            flex: 1;
+            background: var(--bg-terminal);
+            padding: 12px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .terminal-area::-webkit-scrollbar { width: 6px; }
+        .terminal-area::-webkit-scrollbar-track { background: var(--bg-dark); }
+        .terminal-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .line { margin-bottom: 3px; white-space: pre-wrap; word-break: break-all; }
+
+        .line.user { color: var(--accent-cyan); }
+        .line.user::before { content: '> '; color: var(--text-muted); }
+
+        .line.claude { color: var(--text-primary); padding-left: 20px; position: relative; }
+        .line.claude::before { content: ''; position: absolute; left: 6px; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--claude-primary); }
+
+        .line.codex { color: var(--text-primary); padding-left: 20px; position: relative; }
+        .line.codex::before { content: ''; position: absolute; left: 6px; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--codex-primary); }
+
+        .line.trae { color: var(--text-primary); padding-left: 20px; position: relative; }
+        .line.trae::before { content: ''; position: absolute; left: 6px; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--trae-primary); }
+
+        .line.command { color: var(--accent-green); }
+        .line.command::before { content: '$ '; color: var(--text-muted); }
+
+        .line.output { color: var(--text-secondary); }
+
+        .line.message-in {
+            color: var(--accent-yellow);
+            padding: 6px 10px;
+            background: rgba(255,221,0,0.1);
+            border-radius: 4px;
+            border-left: 2px solid var(--accent-yellow);
+            margin: 4px 0;
+        }
+
+        .line.message-out {
+            color: var(--accent-purple);
+            padding: 6px 10px;
+            background: rgba(170,0,255,0.1);
+            border-radius: 4px;
+            border-right: 2px solid var(--accent-purple);
+            margin: 4px 0;
+            text-align: right;
+        }
+
+        .line.system { color: var(--accent-orange); font-style: italic; }
+
+        .input-area {
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .input-prompt { color: var(--accent-cyan); font-weight: 600; font-size: 12px; }
+
+        .input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .send-btn {
+            padding: 6px 16px;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .status-bar {
+            padding: 4px 16px;
+            background: rgba(18,18,26,0.95);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            position: relative;
+            z-index: 10;
+        }
+
+        .steps-indicator { display: flex; gap: 4px; }
+
+        .step-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .step-dot.active { background: var(--accent-cyan); }
+        .step-dot.completed { background: var(--accent-green); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">Team<span>Shell</span></div>
+            <span style="color: var(--text-muted); font-size: 12px;">AI 多 Agent 协作终端</span>
+        </div>
+        <div class="header-right">
+            <button class="control-btn btn-primary" id="start-btn">开始演示</button>
+            <button class="control-btn btn-secondary" id="pause-btn" disabled>暂停</button>
+            <button class="control-btn btn-danger" id="reset-btn">重置</button>
+        </div>
+    </div>
+
+    <div class="scenario-selector" id="scenario-selector">
+        <button class="scenario-btn active" data-scenario="team-setup">团队组建</button>
+        <button class="scenario-btn" data-scenario="task-assign">任务分配</button>
+        <button class="scenario-btn" data-scenario="debug">调试协作</button>
+        <button class="scenario-btn" data-scenario="project-close">项目收尾</button>
+    </div>
+
+    <div class="main-container">
+        <div class="tabs" id="tabs">
+            <div class="tab active claude" data-tab="0">
+                <span class="agent-icon"></span>
+                <span>Claude Code</span>
+            </div>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-area" id="terminal-area"></div>
+            <div class="input-area">
+                <span class="input-prompt">></span>
+                <input type="text" class="input-field" id="input-field" placeholder="输入命令或消息..." autocomplete="off">
+                <button class="send-btn" id="send-btn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-left">工位: <span id="tab-count">1</span></div>
+        <div class="steps-indicator" id="steps-indicator"></div>
+    </div>
+
+    <script>
+        const agents = [
+            { id: 0, name: 'Claude Code', type: 'claude', color: '#d97757' }
+        ];
+        const terminalContents = [[]];
+        let currentTab = 0;
+        let isPlaying = false;
+        let currentScenario = 'team-setup';
+        let currentStep = 0;
+
+        const inputField = document.getElementById('input-field');
+        const sendBtn = document.getElementById('send-btn');
+        const terminalArea = document.getElementById('terminal-area');
+        const tabsContainer = document.getElementById('tabs');
+        const stepsIndicator = document.getElementById('steps-indicator');
+        const tabCount = document.getElementById('tab-count');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const scenarioBtns = document.querySelectorAll('.scenario-btn');
+
+        function addLine(tabId, type, content, senderName) {
+            if (!terminalContents[tabId]) terminalContents[tabId] = [];
+            terminalContents[tabId].push({ type, content, senderName });
+
+            if (tabId === currentTab) renderLine(type, content, senderName);
+        }
+
+        function renderLine(type, content, senderName) {
+            const div = document.createElement('div');
+            div.className = `line ${type}`;
+            
+            if (type === 'message-in') {
+                div.textContent = `[来自 ${senderName}] ${content}`;
+            } else if (type === 'message-out') {
+                div.textContent = `[发送给 ${senderName}] ${content}`;
+            } else if (type === 'system') {
+                div.textContent = content;
+            } else if (type === 'agent-output' || type === 'output') {
+                div.innerHTML = content.replace(/\n/g, '<br>');
+            } else {
+                div.textContent = content;
+            }
+            
+            terminalArea.appendChild(div);
+            terminalArea.scrollTop = terminalArea.scrollHeight;
+        }
+
+        function addAgent(id, name, type) {
+            const colors = { claude: '#d97757', codex: '#5c3ee8', trae: '#00d4aa' };
+            agents.push({ id, name, type, color: colors[type] || '#8888aa' });
+            
+            const tab = document.createElement('div');
+            tab.className = `tab ${type}`;
+            tab.dataset.tab = id;
+            tab.innerHTML = `<span class="agent-icon"></span><span>${name}</span>`;
+            tab.addEventListener('click', () => switchTab(id));
+            tabsContainer.appendChild(tab);
+            
+            terminalContents[id] = [];
+            tabCount.textContent = agents.length;
+            
+            addLine(id, 'system', `[TeamShell Protocol v1.0.0]\n自检通过！工号: ${id}\n已就绪，等待任务分配...`);
+        }
+
+        function removeAgent(id) {
+            agents = agents.filter(a => a.id !== id);
+            const tabEl = tabsContainer.querySelector(`[data-tab="${id}"]`);
+            if (tabEl) tabEl.remove();
+            if (currentTab === id && agents.length > 0) switchTab(agents[0].id);
+            tabCount.textContent = agents.length;
+        }
+
+        function updateAgentName(id, name) {
+            const agent = agents.find(a => a.id === id);
+            if (agent) {
+                agent.name = name;
+                const tabEl = tabsContainer.querySelector(`[data-tab="${id}"]`);
+                if (tabEl) tabEl.querySelector('span:last-child').textContent = name;
+            }
+        }
+
+        function switchTab(tabId) {
+            const tabEl = document.querySelector(`[data-tab="${tabId}"]`);
+            if (!tabEl) return;
+            
+            currentTab = tabId;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tabEl.classList.add('active');
+            
+            terminalArea.innerHTML = '';
+            const lines = terminalContents[tabId] || [];
+            lines.forEach(line => renderLine(line.type, line.content, line.senderName));
+            terminalArea.scrollTop = terminalArea.scrollHeight;
+        }
+
+        function sendMessage(fromId, toId, message) {
+            const from = agents.find(a => a.id === fromId);
+            const to = agents.find(a => a.id === toId);
+            
+            addLine(fromId, 'message-out', message, to.name);
+            
+            if (to) {
+                addLine(toId, 'message-in', message, from.name);
+            }
+        }
+
+        function initSteps() {
+            const scenario = scenarios[currentScenario];
+            stepsIndicator.innerHTML = '';
+            for (let i = 0; i < scenario.steps; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'step-dot';
+                if (i < currentStep) dot.classList.add('completed');
+                if (i === currentStep) dot.classList.add('active');
+                stepsIndicator.appendChild(dot);
+            }
+        }
+
+        function updateSteps(step) {
+            currentStep = step;
+            const dots = stepsIndicator.querySelectorAll('.step-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.remove('completed', 'active');
+                if (i < step) dot.classList.add('completed');
+                if (i === step - 1) dot.classList.add('active');
+            });
+        }
+
+        const scenarios = {
+            'team-setup': {
+                steps: 6,
+                actions: [
+                    { type: 'user', text: '请查看 TeamShell CLI 并组建团队', delay: 1500 },
+                    { type: 'claude', text: '好的！让我先检查 TeamShell CLI...', delay: 1500 },
+                    { type: 'command', text: 'tsh --version', delay: 1000 },
+                    { type: 'command', text: 'tsh -h', delay: 1000 },
+                    { type: 'claude', text: 'CLI 已就绪！现在初始化项目协议...', delay: 1500 },
+                    { type: 'command', text: 'tsh init AGENTS.md', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 2 }, delay: 500 },
+                    { type: 'claude', text: '招募团队成员...', delay: 1000 },
+                    { type: 'command', text: 'tsh open "代码审查专家" -- codex', delay: 1500 },
+                    { type: 'command', text: 'tsh open "安全专家" -- traecli', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 3 }, delay: 500 },
+                    { type: 'claude', text: '查看团队列表...', delay: 1000 },
+                    { type: 'command', text: 'tsh list', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 4 }, delay: 500 },
+                    { type: 'claude', text: '给成员分配角色名称...', delay: 1500 },
+                    { type: 'command', text: 'tsh name 1 "Codex - 代码审查"', delay: 1000 },
+                    { type: 'command', text: 'tsh name 2 "TraeCLI - 安全"', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 5 }, delay: 500 },
+                    { type: 'claude', text: '查看新成员状态...', delay: 1000 },
+                    { type: 'command', text: 'tsh see 1', delay: 1000 },
+                    { type: 'command', text: 'tsh see 2', delay: 1000 },
+                    { type: 'claude', text: '团队组建完成！', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 6 }, delay: 500 }
+                ]
+            },
+            'task-assign': {
+                steps: 6,
+                actions: [
+                    { type: 'user', text: '我想为系统增加支付功能，请评估', delay: 2000 },
+                    { type: 'claude', text: '收到！分配任务给专家团队...', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 1 }, delay: 500 },
+                    { type: 'command', text: 'tsh send 1 "请评估支付功能技术方案"', delay: 1500 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 1 }, delay: 500 },
+                    { type: 'codex', text: '收到！正在分析支付功能需求...\n\n技术方案评估：\n- 推荐微服务架构\n- 支付服务独立部署\n- 使用消息队列解耦\n\n核心模块：1.支付接口层 2.订单处理层 3.支付渠道适配层 4.对账模块\n\n预计开发周期：3-4 周', delay: 2500 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 0 }, delay: 500 },
+                    { type: 'command', text: 'tsh send 2 "请评估支付功能安全性"', delay: 1500 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 2 }, delay: 500 },
+                    { type: 'trae', text: '收到！正在进行安全评估...\n\n安全评估报告：\n- 支付信息传输必须加密 (HTTPS/TLS 1.3)\n- 敏感数据必须加密存储\n- 需要防重复支付机制\n- 需要风控规则引擎\n\n建议：1.AES-256加密 2.幂等性检查 3.集成风控系统', delay: 2500 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 0 }, delay: 500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 2 }, delay: 500 },
+                    { type: 'claude', text: '专家们已完成评估！让我查看报告...', delay: 1000 },
+                    { type: 'command', text: 'tsh see 1', delay: 1000 },
+                    { type: 'command', text: 'tsh see 2', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 3 }, delay: 500 },
+                    { type: 'claude', text: '协调专家讨论方案整合...', delay: 1000 },
+                    { type: 'command', text: 'tsh send 1 "安全专家建议 AES-256 和幂等性检查，请整合到方案中"', delay: 2000 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 1 }, delay: 500 },
+                    { type: 'codex', text: '明白！已将安全要求整合到技术方案中...\n\n更新后的方案：\n1. 支付接口增加加密传输\n2. 数据库敏感字段加密存储\n3. 支付请求增加幂等性校验\n4. 增加支付回调签名验证\n\n方案更新完成！', delay: 2000 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 0 }, delay: 500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 4 }, delay: 500 },
+                    { type: 'claude', text: '专家主动回复了方案更新！任务分配协作完成！', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 5 }, delay: 500 },
+                    { type: 'claude', text: '任务分配协作完成！\n已执行命令: tsh send/tsh see', delay: 3000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 6 }, delay: 500 }
+                ]
+            },
+            'debug': {
+                steps: 6,
+                actions: [
+                    { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 1500 },
+                    { type: 'claude', text: '收到！让我先查看日志...', delay: 1500 },
+                    { type: 'command', text: 'cat payment.log | tail -20', delay: 1000 },
+                    { type: 'output', text: '[WARNING] Update affected 0 rows', delay: 500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 1 }, delay: 500 },
+                    { type: 'claude', text: '发现问题！让我分配专家排查...', delay: 1500 },
+                    { type: 'command', text: 'tsh send 1 "请检查 order_service.py 中的订单更新逻辑"', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 2 }, delay: 500 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 1 }, delay: 800 },
+                    { type: 'codex', text: '[TeamShell 消息] 来自 Claude Code: 请检查 order_service.py 中的订单更新逻辑', delay: 1000 },
+                    { type: 'codex', text: '收到！正在检查订单更新逻辑...', delay: 1500 },
+                    { type: 'codex', text: '发现问题！order_id 在数据库中是 VARCHAR 类型，但代码中直接用数字拼接 SQL，导致类型不匹配。', delay: 2000 },
+                    { type: 'command', text: 'tsh send 0 "已定位问题：order_id 类型不匹配，正在修复..."', delay: 1500 },
+                    { type: 'action', text: 'switchTab', data: { tabId: 0 }, delay: 800 },
+                    { type: 'claude', text: '[TeamShell 消息] 来自 Codex - 代码审查: 已定位问题：order_id 类型不匹配，正在修复...', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 3 }, delay: 500 },
+                    { type: 'claude', text: '专家主动回复了！让我查看修复进度...', delay: 1000 },
+                    { type: 'command', text: 'tsh see 1', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 4 }, delay: 500 },
+                    { type: 'claude', text: '修复进行中！持续监控...', delay: 1000 },
+                    { type: 'command', text: 'tsh see 1', delay: 2000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 5 }, delay: 500 },
+                    { type: 'claude', text: '修复完成！验证一下...', delay: 1000 },
+                    { type: 'command', text: 'python -c "from order_service import update_order; update_order(\'12345\', \'paid\')"', delay: 1500 },
+                    { type: 'output', text: 'Success: Order 12345 updated to paid', delay: 500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 6 }, delay: 500 },
+                    { type: 'claude', text: '调试成功！\n\n协作亮点：\n- 发送者发送任务后，专家主动回复\n- 使用 tsh see 持续监控同事状态\n- 多工位实时协作', delay: 3000 }
+                ]
+            },
+            'project-close': {
+                steps: 5,
+                actions: [
+                    { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 1500 },
+                    { type: 'claude', text: '收到！验收项目成果...', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 1 }, delay: 500 },
+                    { type: 'command', text: 'tsh see 1', delay: 1000 },
+                    { type: 'command', text: 'tsh see 2', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 2 }, delay: 500 },
+                    { type: 'claude', text: '成果验收通过！运行测试确认...', delay: 1000 },
+                    { type: 'command', text: 'python -m pytest tests/ -v', delay: 1500 },
+                    { type: 'action', text: 'updateSteps', data: { step: 3 }, delay: 500 },
+                    { type: 'claude', text: '全部测试通过！关闭项目工位...', delay: 1500 },
+                    { type: 'command', text: 'tsh close 2', delay: 1000 },
+                    { type: 'command', text: 'tsh close 1', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 4 }, delay: 500 },
+                    { type: 'claude', text: '确认团队状态...', delay: 1000 },
+                    { type: 'command', text: 'tsh list', delay: 1000 },
+                    { type: 'action', text: 'updateSteps', data: { step: 5 }, delay: 500 },
+                    { type: 'claude', text: '项目收尾完成！\n已执行命令: tsh see/tsh close/tsh list', delay: 3000 }
+                ]
+            }
+        };
+
+        function handleCommand(cmd) {
+            const parts = cmd.split(' ');
+            const command = parts[1]?.toLowerCase();
+
+            if (command === 'list') {
+                const listText = agents.map(a => `${a.id}     ${a.name.padEnd(16)}  在职`).join('\n');
+                addLine(0, 'output', `工号  名字              状态\n${listText}`);
+            } else if (command === 'see') {
+                const tabId = parseInt(parts[2]);
+                if (terminalContents[tabId]) {
+                    const agent = agents.find(a => a.id === tabId);
+                    const lines = terminalContents[tabId];
+                    const recentLines = lines.slice(-5).map(l => {
+                        if (l.type === 'message-in') return `← ${l.content}`;
+                        if (l.type === 'message-out') return `→ ${l.content}`;
+                        return l.content;
+                    }).join('\n');
+                    addLine(0, 'output', `=== 工位 ${tabId} (${agent?.name || '未知'}) ===\n${recentLines}`);
+                }
+            } else if (command === 'send') {
+                const toId = parseInt(parts[2]);
+                const message = cmd.substring(cmd.indexOf('"') + 1, cmd.lastIndexOf('"'));
+                const toAgent = agents.find(a => a.id === toId);
+                if (toAgent) {
+                    sendMessage(currentTab, toId, message);
+                    addLine(currentTab, 'output', `OK: 消息已发送到工位 ${toId}`);
+                } else {
+                    addLine(currentTab, 'output', `ERROR: 工位 ${toId} 不存在`);
+                }
+            } else if (command === 'open') {
+                const name = cmd.substring(cmd.indexOf('"') + 1, cmd.lastIndexOf('"'));
+                const type = parts[parts.length - 1];
+                const newId = agents.length;
+                const tabType = type === 'codex' ? 'codex' : (type === 'traecli' ? 'trae' : 'claude');
+                addLine(0, 'output', `OK: 工位 ${newId} 已创建`);
+                addAgent(newId, name, tabType);
+            } else if (command === 'close') {
+                const tabId = parseInt(parts[2]);
+                addLine(0, 'output', `OK: 工位 ${tabId} 已关闭`);
+                removeAgent(tabId);
+            } else if (command === 'name') {
+                const tabId = parseInt(parts[2]);
+                const newName = cmd.substring(cmd.indexOf('"') + 1, cmd.lastIndexOf('"'));
+                addLine(0, 'output', `OK: 工位 ${tabId} 已重命名`);
+                updateAgentName(tabId, newName);
+            } else if (command === 'init') {
+                addLine(0, 'output', 'OK: TeamShell 协议已初始化');
+            } else if (command === '--version') {
+                addLine(0, 'output', 'TeamShell CLI v1.0.0\nAgent communication via IPC');
+            } else if (command === '-h' || command === 'help') {
+                addLine(0, 'output', 'TeamShell CLI tool - Agent communication via IPC\n\nUsage: tsh.exe <COMMAND>\n\nCommands:\n  list   列出团队成员（编号、名字、状态）\n  send   给成员发消息或按键\n  see    看成员的屏幕（读取输出）\n  open   招一个新成员\n  close  让成员离开\n  name   给成员改名\n  init   初始化项目的 TeamShell 协议\n  help   Print this message\n\nOptions:\n  -h, --help     Print help\n  -V, --version  Print version');
+            } else {
+                addLine(0, 'output', `执行: ${cmd}`);
+            }
+        }
+
+        function playScenario() {
+            if (isPlaying) return;
+            isPlaying = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            scenarioBtns.forEach(b => b.disabled = true);
+
+            const scenario = scenarios[currentScenario];
+            let actionIndex = 0;
+
+            function executeNextAction() {
+                if (!isPlaying || actionIndex >= scenario.actions.length) {
+                    isPlaying = false;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    scenarioBtns.forEach(b => b.disabled = false);
+                    return;
+                }
+
+                const action = scenario.actions[actionIndex];
+                
+                setTimeout(() => {
+                    if (!isPlaying) return;
+
+                    if (action.type === 'user') addLine(0, 'user', action.text);
+                    else if (action.type === 'claude') addLine(0, 'claude', action.text);
+                    else if (action.type === 'codex') addLine(1, 'codex', action.text);
+                    else if (action.type === 'trae') addLine(2, 'trae', action.text);
+                    else if (action.type === 'output') addLine(0, 'output', action.text);
+                    else if (action.type === 'command') {
+                        addLine(0, 'command', action.text);
+                        handleCommand(action.text);
+                    } else if (action.type === 'action') {
+                        if (action.text === 'switchTab') switchTab(action.data.tabId);
+                        else if (action.text === 'updateSteps') updateSteps(action.data.step);
+                    }
+
+                    actionIndex++;
+                    executeNextAction();
+                }, action.delay || 500);
+            }
+
+            executeNextAction();
+        }
+
+        function pauseScenario() {
+            isPlaying = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            scenarioBtns.forEach(b => b.disabled = false);
+        }
+
+        function resetScenario() {
+            isPlaying = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            scenarioBtns.forEach(b => b.disabled = false);
+
+            agents.splice(1);
+            terminalContents.splice(1);
+            tabsContainer.innerHTML = '<div class="tab active claude" data-tab="0"><span class="agent-icon"></span><span>Claude Code</span></div>';
+            terminalArea.innerHTML = '';
+            currentTab = 0;
+            currentStep = 0;
+            tabCount.textContent = 1;
+            initSteps();
+        }
+
+        function handleUserInput() {
+            const input = inputField.value.trim();
+            if (!input) return;
+
+            addLine(currentTab, 'user', input);
+            inputField.value = '';
+
+            if (input.startsWith('tsh ')) {
+                setTimeout(() => {
+                    addLine(currentTab, 'command', input);
+                    handleCommand(input);
+                }, 300);
+            } else {
+                setTimeout(() => {
+                    const agent = agents.find(a => a.id === currentTab);
+                    if (agent.type === 'claude') {
+                        addLine(0, 'claude', '收到！你可以尝试：\n- tsh list: 查看团队\n- tsh open "名字" -- codex: 招募\n- tsh send 1 "消息": 发消息\n- tsh see 1: 查看工位');
+                    } else {
+                        addLine(currentTab, agent.type, `收到消息: ${input}`);
+                    }
+                }, 1000);
+            }
+        }
+
+        inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleUserInput(); });
+        sendBtn.addEventListener('click', handleUserInput);
+        startBtn.addEventListener('click', playScenario);
+        pauseBtn.addEventListener('click', pauseScenario);
+        resetBtn.addEventListener('click', resetScenario);
+
+        scenarioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                scenarioBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentScenario = btn.dataset.scenario;
+                resetScenario();
+            });
+        });
+
+        initSteps();
+    </script>
+</body>
+</html>
