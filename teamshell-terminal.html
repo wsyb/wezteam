@@ -874,10 +874,11 @@ help                 显示帮助</pre>
             if (!tab) return `ERROR: Tab ${tabId} not found.`;
 
             const currentTab = state.tabs.find(t => t.id === state.currentTabId);
+            const senderName = currentTab ? currentTab.name : 'Unknown';
             let text = args.slice(1).join(' ').match(/"([^"]*)"/)?.[1] || '';
 
-            addLine(tabId, 'tsh-in', text, currentTab.name);
-            addLine(state.currentTabId, 'tsh-out', text, tab.name);
+            addLine(tabId, 'tsh-in', text, { sender: senderName });
+            addLine(state.currentTabId, 'tsh-out', text, { sender: tab.name });
 
             setTimeout(() => simulateAgentResponse(tabId), 1000);
             return null;
@@ -926,7 +927,7 @@ help                 显示帮助</pre>
             };
 
             const r = responses[tab.type]?.[0] || 'Done.';
-            addLine(tabId, 'agent', r, tab.type);
+            addLine(tabId, 'agent', r, { agentType: tab.type });
         }
 
         // ============ 帮助 ============
@@ -981,16 +982,16 @@ help                 显示帮助</pre>
         function executeAction(action) {
             switch (action.type) {
                 case 'user':
-                    addLine(0, 'user', action.text);
+                    addLine(state.currentTabId, 'user', action.text);
                     break;
                 case 'claude':
-                    addLine(0, 'agent', action.text, 'claude');
+                    addLine(state.currentTabId, 'agent', action.text, { agentType: 'claude' });
                     break;
                 case 'codex':
-                    addLine(1, 'agent', action.text, 'codex');
+                    addLine(2, 'agent', action.text, { agentType: 'codex' });
                     break;
                 case 'trae':
-                    addLine(2, 'agent', action.text, 'trae');
+                    addLine(3, 'agent', action.text, { agentType: 'trae' });
                     break;
                 case 'cmd':
                     addLine(state.currentTabId, 'command', action.text);
@@ -1006,7 +1007,7 @@ help                 显示帮助</pre>
                     switchTab(action.tabId);
                     break;
                 case 'msg-in':
-                    addLine(state.currentTabId, 'tsh-in', '请完成分配的任务', action.sender);
+                    addLine(state.currentTabId, 'tsh-in', '请完成分配的任务', { sender: action.sender });
                     break;
                 case 'step':
                     updateSteps(state.currentStep + 1);
