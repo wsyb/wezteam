@@ -563,9 +563,9 @@ help                 显示帮助</pre>
                     { type: 'claude', text: '协议初始化完成！现在招募团队成员...', delay: 2000 },
                     { type: 'step', delay: 500 },
                     { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 3000 },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 7000 },
                     { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 3000 },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 7000 },
                     { type: 'step', delay: 500 },
                     { type: 'cmd', text: 'tsh list', delay: 2000 },
                     { type: 'step', delay: 500 },
@@ -882,7 +882,7 @@ help                 显示帮助</pre>
                     tab.onboardSender = state.currentTabId;
                     setTimeout(() => performOnboarding(tabId), 1500);
                 }
-            } else {
+            } else if (tabId !== 1) {
                 setTimeout(() => simulateAgentResponse(tabId), 1500);
             }
             return null;
@@ -919,6 +919,19 @@ help                 显示帮助</pre>
             return `OK: TeamShell Protocol initialized from ${file || 'file'}`;
         }
 
+        function agentExecuteCommand(agentTabId, command) {
+            const originalTabId = state.currentTabId;
+            state.currentTabId = agentTabId;
+            
+            addLine(agentTabId, 'command', command);
+            const output = handleTshCommand(command);
+            if (output !== null) {
+                setTimeout(() => addLine(agentTabId, 'output', output), 300);
+            }
+            
+            state.currentTabId = originalTabId;
+        }
+
         function performOnboarding(tabId) {
             const tab = state.tabs.find(t => t.id === tabId);
             if (!tab) return;
@@ -935,13 +948,8 @@ help                 显示帮助</pre>
                 
                 if (tab.onboardSender) {
                     setTimeout(() => {
-                        const senderTab = state.tabs.find(t => t.id === tab.onboardSender);
-                        if (senderTab) {
-                            const replyText = `入职完成！我是${tab.name}，工号${tab.id}，随时待命！`;
-                            addLine(tab.onboardSender, 'tsh-in', replyText, { sender: tab.name });
-                            addLine(tabId, 'tsh-out', replyText, { sender: senderTab.name });
-                            addLine(tabId, 'agent', `已向 ${senderTab.name} 发送入职确认`, { agentType: tab.type });
-                        }
+                        const replyText = `入职完成！我是${tab.name}，工号${tab.id}，随时待命！`;
+                        agentExecuteCommand(tabId, `tsh type ${tab.onboardSender} "${replyText}"`);
                     }, 1500);
                 }
             }, 4800);
