@@ -904,7 +904,7 @@ help                 显示帮助</pre>
             else if (argStr.includes('-- trae')) type = 'trae';
             else if (argStr.includes('-- traecli')) type = 'trae';
 
-            const tab = createTab(name, type);
+            const tab = createTab(name, type, false);
             return `OK: Tab ${tab.id} created`;
         }
 
