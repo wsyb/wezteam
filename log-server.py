@@ -14,8 +14,9 @@ from urllib.parse import urlparse, parse_qs
 class LogHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
+        path = parsed.path
 
-        if parsed.path == '/':
+        if path == '/':
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -23,12 +24,23 @@ class LogHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f.read())
             return
 
-        if parsed.path == '/api/logs':
+        if path == '/api/logs':
             self.send_response(200)
             self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'logs received'}).encode('utf-8'))
             return
+
+        if path.endswith('.html'):
+            try:
+                with open(path.lstrip('/'), 'rb') as f:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html; charset=utf-8')
+                    self.end_headers()
+                    self.wfile.write(f.read())
+                    return
+            except FileNotFoundError:
+                pass
 
         self.send_response(404)
         self.end_headers()

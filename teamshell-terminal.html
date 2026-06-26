@@ -536,40 +536,79 @@ help                 显示帮助</pre>
             'codex': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded || !shouldReply(message, senderId)) return;
-                    setTimeout(() => {
-                        const reply = '收到任务！正在分析代码...';
-                        agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
+
+                    const steps = [
+                        { delay: 1500, text: '收到任务！正在分析代码...' }
+                    ];
+
+                    if (message.includes('/data/prod/')) {
+                        steps.push(
+                            { delay: 2000, text: '📂 正在读取目录: /data/prod/orders' },
+                            { delay: 1500, text: '📄 读取文件: order_service.py' },
+                            { delay: 1200, text: '🔍 分析代码逻辑...' },
+                            { delay: 1800, text: '⚠️ 需要授权才能执行以下操作：\n\n操作：读取目录 /data/prod/\n原因：这个目录不在默认允许范围内\n请人工审批：[Y] 允许 / [N] 拒绝' }
+                        );
                         
-                        if (message.includes('/data/prod/')) {
+                        let cumulativeDelay = 1000;
+                        steps.forEach((step) => {
+                            cumulativeDelay += step.delay;
                             setTimeout(() => {
-                                addLine(tab.id, 'system', `⚠️ 需要授权才能执行以下操作：`);
-                                addLine(tab.id, 'system', ``);
-                                addLine(tab.id, 'system', `操作：读取目录 /data/prod/`);
-                                addLine(tab.id, 'system', `原因：这个目录不在默认允许范围内`);
-                                addLine(tab.id, 'system', `请人工审批：[Y] 允许 / [N] 拒绝`);
-                                tab.status = 'stuck';
-                            }, 2000);
-                        } else {
+                                addLine(tab.id, 'system', step.text);
+                                if (step.text.includes('需要授权')) {
+                                    tab.status = 'stuck';
+                                }
+                            }, cumulativeDelay);
+                        });
+                    } else {
+                        steps.push(
+                            { delay: 2000, text: '📂 正在读取文件: payment_service.py' },
+                            { delay: 1500, text: '📂 正在读取文件: order_service.py' },
+                            { delay: 2000, text: '🔍 分析中... 检查微服务架构' },
+                            { delay: 1500, text: '🔍 分析中... 发现数据类型不匹配问题' },
+                            { delay: 1800, text: '📝 正在生成评估报告...' },
+                            { delay: 2000, text: '✅ 分析完成！\n\n📊 技术评估结果:\n1. 类型不匹配: order_id字段定义为字符串，但数据库使用整数\n2. 需要优化: 建议引入DTO层统一数据类型转换\n3. 架构建议: 增加服务间契约测试\n\n已生成修复方案，等待审核。' }
+                        );
+                        
+                        let cumulativeDelay = 1000;
+                        steps.forEach((step, index) => {
+                            cumulativeDelay += step.delay;
                             setTimeout(() => {
-                                const analysis = '分析完成！发现以下问题：\n1. 类型不匹配\n2. 需要优化';
-                                agentExecuteCommand(tab.id, `tsh type ${senderId} "${analysis}"`);
-                            }, 3000);
-                        }
-                    }, 2000);
+                                addLine(tab.id, 'system', step.text);
+                                if (index === steps.length - 1) {
+                                    setTimeout(() => {
+                                        agentExecuteCommand(tab.id, `tsh type ${senderId} "分析完成！已提供详细评估报告和修复建议。"`);
+                                    }, 1500);
+                                }
+                            }, cumulativeDelay);
+                        });
+                    }
                 }
             },
             'trae': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded || !shouldReply(message, senderId)) return;
-                    setTimeout(() => {
-                        const reply = '收到！正在进行安全评估...';
-                        agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
-                        
+                    
+                    const steps = [
+                        { delay: 1500, text: '收到！正在进行安全评估...' },
+                        { delay: 2000, text: '🔒 扫描中... 检查加密配置' },
+                        { delay: 1800, text: '🔒 扫描中... 检查HTTPS配置' },
+                        { delay: 2000, text: '🔒 扫描中... 检查数据传输加密' },
+                        { delay: 1500, text: '📝 正在生成安全报告...' },
+                        { delay: 2000, text: '✅ 安全评估完成！\n\n🛡️ 安全评估结果:\n1. 使用 HTTPS: 当前使用HTTP，存在中间人攻击风险\n2. 加密敏感数据: 用户密码未加密存储，建议使用bcrypt\n3. 其他建议:\n   - 启用CSP头部\n   - 添加X-Frame-Options\n   - 实施定期安全审计\n\n已生成安全加固方案，等待审核。' }
+                    ];
+                    
+                    let cumulativeDelay = 1000;
+                    steps.forEach((step, index) => {
+                        cumulativeDelay += step.delay;
                         setTimeout(() => {
-                            const report = '安全评估完成！建议：\n1. 使用 HTTPS\n2. 加密敏感数据';
-                            agentExecuteCommand(tab.id, `tsh type ${senderId} "${report}"`);
-                        }, 3000);
-                    }, 2000);
+                            addLine(tab.id, 'system', step.text);
+                            if (index === steps.length - 1) {
+                                setTimeout(() => {
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "安全评估完成！已提供详细安全建议。"`);
+                                }, 1500);
+                            }
+                        }, cumulativeDelay);
+                    });
                 }
             },
             'shell': {
@@ -584,7 +623,7 @@ help                 显示帮助</pre>
 
         function shouldReply(message, senderId) {
             if (senderId === null) return false;
-            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK', '分析完成', '安全评估完成', '收到任务'];
+            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK', '分析完成', '安全评估完成', '收到任务', '已提供详细评估报告', '已提供详细安全建议', '已生成修复方案', '已生成安全加固方案'];
             const trimmed = message.trim();
             return !closingWords.some(word => trimmed.includes(word));
         }
