@@ -253,9 +253,42 @@
         .line-agent.shell { color: var(--shell-color); }
         .line-system { color: var(--accent-yellow); }
         .line-command { color: var(--accent-purple); }
-        .line-output { color: var(--text-primary); }
+        .line-output { color: var(--text-primary); white-space: pre-wrap; }
         .line-tsh-in { color: var(--accent-orange); }
         .line-tsh-out { color: var(--accent-cyan); }
+
+        .view-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .view-header {
+            color: var(--accent-cyan);
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .view-line-tsh-in { color: var(--accent-orange); }
+        .view-line-tsh-out { color: var(--accent-cyan); }
+        .view-line-agent { color: var(--claude-color); }
+        .view-line-system { color: var(--accent-yellow); }
+        .view-line-command { color: var(--accent-purple); }
+        .view-line-output { color: var(--text-primary); }
+
+        .cmd-color-list { color: var(--accent-green); }
+        .cmd-color-view { color: var(--accent-cyan); }
+        .cmd-color-type { color: var(--accent-orange); }
+        .cmd-color-open { color: var(--accent-blue); }
+        .cmd-color-close { color: #ff6b6b; }
+        .cmd-color-name { color: var(--accent-purple); }
+        .cmd-color-init { color: var(--accent-yellow); }
 
         .help-panel {
             position: fixed;
@@ -488,8 +521,7 @@ help                 显示帮助</pre>
         const agentBehavior = {
             'claude': {
                 handleMessage: function(tab, message, senderId) {
-                    if (!tab.onboarded) return;
-                    if (isClosingMessage(message)) return;
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
                     setTimeout(() => {
                         const responses = [
                             '收到！正在处理...',
@@ -503,8 +535,7 @@ help                 显示帮助</pre>
             },
             'codex': {
                 handleMessage: function(tab, message, senderId) {
-                    if (!tab.onboarded) return;
-                    if (isClosingMessage(message)) return;
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
                     setTimeout(() => {
                         const reply = '收到任务！正在分析代码...';
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
@@ -529,8 +560,7 @@ help                 显示帮助</pre>
             },
             'trae': {
                 handleMessage: function(tab, message, senderId) {
-                    if (!tab.onboarded) return;
-                    if (isClosingMessage(message)) return;
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
                     setTimeout(() => {
                         const reply = '收到！正在进行安全评估...';
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
@@ -544,7 +574,7 @@ help                 显示帮助</pre>
             },
             'shell': {
                 handleMessage: function(tab, message, senderId) {
-                    if (isClosingMessage(message)) return;
+                    if (!shouldReply(message, senderId)) return;
                     setTimeout(() => {
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "Command executed."`);
                     }, 1000);
@@ -552,10 +582,11 @@ help                 显示帮助</pre>
             }
         };
 
-        function isClosingMessage(message) {
-            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK'];
+        function shouldReply(message, senderId) {
+            if (senderId === null) return false;
+            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK', '分析完成', '安全评估完成', '收到任务'];
             const trimmed = message.trim();
-            return closingWords.some(word => trimmed === word || trimmed === `${word}！` || trimmed === `${word}.`);
+            return !closingWords.some(word => trimmed.includes(word));
         }
 
         // ============ Tab管理 ============
@@ -565,7 +596,7 @@ help                 显示帮助</pre>
                 name: name,
                 type: type,
                 lines: [],
-                onboarded: false,
+                onboarded: name === 'Main',
                 onboardSender: null,
                 status: 'idle'
             };
@@ -633,8 +664,8 @@ help                 显示帮助</pre>
             });
 
             document.getElementById('add-tab')?.addEventListener('click', () => {
-                const name = prompt('输入新工位名称:', `Agent ${state.nextTabId}`);
-                if (name) createTab(name, 'shell');
+                const name = `Agent ${state.nextTabId}`;
+                createTab(name, 'shell');
             });
         }
 
@@ -645,23 +676,71 @@ help                 显示帮助</pre>
             terminalContent.innerHTML = tab.lines.map(line => {
                 let prefix = '';
                 let cssClass = `line-${line.type}`;
+                let content = line.content;
+                let replaceNewlines = true;
+                const hasViewBlock = line.content.includes('[[VIEW_BLOCK_START]]');
                 
                 switch(line.type) {
                     case 'user': prefix = '👤 '; break;
                     case 'agent': prefix = `[${line.agentType?.toUpperCase()}] `; break;
                     case 'system': prefix = '📋 '; break;
-                    case 'command': prefix = '❯ '; break;
+                    case 'command': 
+                        prefix = '❯ ';
+                        content = highlightCommand(line.content);
+                        replaceNewlines = false;
+                        break;
                     case 'tsh-in': prefix = `[TeamShell 消息] 来自 ${line.sender}: `; break;
                     case 'tsh-out': prefix = `[发送至 ${line.sender}] `; break;
-                    case 'output': break;
+                    case 'output': 
+                        content = processViewOutput(line.content);
+                        replaceNewlines = !hasViewBlock;
+                        break;
                     default: break;
                 }
                 
-                const content = line.content.replace(/\n/g, '<br>');
+                if (replaceNewlines) {
+                    content = content.replace(/\n/g, '<br>');
+                }
+                
                 return `<div class="${cssClass}">${prefix}${content}</div>`;
             }).join('');
             
             terminalContent.scrollTop = terminalContent.scrollHeight;
+        }
+
+        function highlightCommand(cmd) {
+            const parts = cmd.trim().split(/\s+/);
+            if (parts[0] !== 'tsh') return cmd;
+            
+            const colors = {
+                'list': 'cmd-color-list',
+                'view': 'cmd-color-view',
+                'type': 'cmd-color-type',
+                'open': 'cmd-color-open',
+                'close': 'cmd-color-close',
+                'name': 'cmd-color-name',
+                'init': 'cmd-color-init',
+                'help': 'cmd-color-name',
+                '-h': 'cmd-color-name',
+                '--help': 'cmd-color-name',
+                '-V': 'cmd-color-name',
+                '--version': 'cmd-color-name'
+            };
+            
+            return parts.map((part, index) => {
+                if (index === 0) return `<span class="cmd-color-name">${part}</span>`;
+                if (colors[part]) return `<span class="${colors[part]}">${part}</span>`;
+                return part;
+            }).join(' ');
+        }
+
+        function processViewOutput(content) {
+            if (content.includes('[[VIEW_BLOCK_START]]') && content.includes('[[VIEW_BLOCK_END]]')) {
+                return content
+                    .replace('[[VIEW_BLOCK_START]]', '<div class="view-block">')
+                    .replace('[[VIEW_BLOCK_END]]', '</div>');
+            }
+            return content;
         }
 
         function updateStatus() {
@@ -723,14 +802,40 @@ help                 显示帮助</pre>
             if (!tab) return `ERROR: Tab ${tabId} not found.`;
             const count = parseInt(lines) || 30;
             const recent = tab.lines.slice(-count);
-            return recent.map(l => {
-                if (l.type === 'tsh-in') return `[TeamShell 消息] 来自 ${l.sender}: ${l.content}`;
-                if (l.type === 'agent') return `[${l.agentType?.toUpperCase()}] ${l.content}`;
-                if (l.type === 'system') return `📋 ${l.content}`;
-                if (l.type === 'command') return `❯ ${l.content}`;
-                if (l.type === 'tsh-out') return `[发送至 ${l.sender}] ${l.content}`;
-                return l.content;
+            
+            const linesHtml = recent.map(l => {
+                let prefix = '';
+                let cssClass = 'view-line-output';
+                
+                switch(l.type) {
+                    case 'tsh-in': 
+                        prefix = `[TeamShell 消息] 来自 ${l.sender}: `;
+                        cssClass = 'view-line-tsh-in';
+                        break;
+                    case 'tsh-out':
+                        prefix = `[发送至 ${l.sender}] `;
+                        cssClass = 'view-line-tsh-out';
+                        break;
+                    case 'agent':
+                        prefix = `[${l.agentType?.toUpperCase()}] `;
+                        cssClass = 'view-line-agent';
+                        break;
+                    case 'system':
+                        prefix = `📋 `;
+                        cssClass = 'view-line-system';
+                        break;
+                    case 'command':
+                        prefix = `❯ `;
+                        cssClass = 'view-line-command';
+                        break;
+                    default:
+                        cssClass = 'view-line-output';
+                }
+                
+                return `<span class="${cssClass}">${prefix}${l.content}</span>`;
             }).join('\n');
+            
+            return `[[VIEW_BLOCK_START]]<div class="view-header">📺 工位 ${tabId} - ${tab.name} 的屏幕内容：</div>${linesHtml}[[VIEW_BLOCK_END]]`;
         }
 
         function cmdType(args) {
@@ -739,7 +844,9 @@ help                 显示帮助</pre>
             if (!targetTab) return `ERROR: Tab ${targetTabId} not found.`;
 
             const currentTab = state.tabs.find(t => t.id === state.currentTabId);
-            const senderName = currentTab ? currentTab.name : 'Unknown';
+            if (!currentTab) return `ERROR: Current tab not found.`;
+            const senderName = currentTab.name;
+            const senderId = state.currentTabId;
 
             let text = '';
             let noEnter = false;
@@ -773,10 +880,10 @@ help                 显示帮助</pre>
                         addLine(targetTabId, 'system', '✅ 权限验证通过');
                         setTimeout(() => {
                             const reply = '权限已通过！继续执行任务...';
-                            agentExecuteCommand(targetTabId, `tsh type ${state.currentTabId} "${reply}"`);
+                            agentExecuteCommand(targetTabId, `tsh type ${senderId} "${reply}"`);
                             setTimeout(() => {
                                 const result = '分析完成！订单ID类型不匹配，已修复：\n- 将order_id从字符串改为整数\n- 添加类型转换逻辑';
-                                agentExecuteCommand(targetTabId, `tsh type ${state.currentTabId} "${result}"`);
+                                agentExecuteCommand(targetTabId, `tsh type ${senderId} "${result}"`);
                             }, 2000);
                         }, 1000);
                     } else {
@@ -784,18 +891,18 @@ help                 显示帮助</pre>
                     }
                 }
             } else {
-                addLine(targetTabId, 'tsh-in', text, { sender: senderName });
+                addLine(targetTabId, 'tsh-in', text, { sender: senderName, senderId: senderId });
                 addLine(state.currentTabId, 'tsh-out', text, { sender: targetTab.name });
 
                 if (!targetTab.onboarded) {
                     if (text.includes('入职')) {
-                        targetTab.onboardSender = state.currentTabId;
+                        targetTab.onboardSender = senderId;
                         setTimeout(() => performOnboarding(targetTabId), 1500);
                     }
                 } else {
                     const behavior = agentBehavior[targetTab.type];
-                    if (behavior) {
-                        behavior.handleMessage(targetTab, text, state.currentTabId);
+                    if (behavior && senderId !== targetTabId && shouldReply(text, senderId)) {
+                        behavior.handleMessage(targetTab, text, senderId);
                     }
                 }
             }
@@ -804,12 +911,59 @@ help                 显示帮助</pre>
 
         function agentExecuteCommand(agentTabId, command) {
             const originalTabId = state.currentTabId;
+            const realSenderTabId = agentTabId;
             state.currentTabId = agentTabId;
             
             addLine(agentTabId, 'command', command);
-            const output = handleTshCommand(command);
-            if (output !== null) {
-                setTimeout(() => addLine(agentTabId, 'output', output), 300);
+            
+            const parts = command.trim().split(/\s+/);
+            if (parts[0] === 'tsh') {
+                if (parts[1] === 'type') {
+                    const args = parts.slice(2);
+                    const targetTabId = parseInt(args[0]);
+                    const targetTab = state.tabs.find(t => t.id === targetTabId);
+                    const senderTab = state.tabs.find(t => t.id === realSenderTabId);
+                    
+                    if (targetTab && senderTab) {
+                        let text = '';
+                        for (let i = 1; i < args.length; i++) {
+                            if (args[i].startsWith('"')) {
+                                if (args[i].endsWith('"')) {
+                                    text = args[i].slice(1, -1);
+                                } else {
+                                    text = args[i].slice(1);
+                                    while (++i < args.length) {
+                                        text += ' ' + args[i];
+                                        if (args[i].endsWith('"')) {
+                                            text = text.slice(0, -1);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        addLine(targetTabId, 'tsh-in', text, { sender: senderTab.name, senderId: realSenderTabId });
+                        addLine(agentTabId, 'tsh-out', text, { sender: targetTab.name });
+
+                        if (!targetTab.onboarded) {
+                            if (text.includes('入职')) {
+                                targetTab.onboardSender = realSenderTabId;
+                                setTimeout(() => performOnboarding(targetTabId), 1500);
+                            }
+                        } else {
+                            const behavior = agentBehavior[targetTab.type];
+                            if (behavior && realSenderTabId !== targetTabId && shouldReply(text, realSenderTabId)) {
+                                behavior.handleMessage(targetTab, text, realSenderTabId);
+                            }
+                        }
+                    }
+                }
+            } else {
+                const output = handleTshCommand(command);
+                if (output !== null) {
+                    setTimeout(() => addLine(agentTabId, 'output', output), 300);
+                }
             }
             
             state.currentTabId = originalTabId;
@@ -848,7 +1002,9 @@ help                 显示帮助</pre>
 
         function performOnboarding(tabId) {
             const tab = state.tabs.find(t => t.id === tabId);
-            if (!tab) return;
+            if (!tab || tab.onboarded || tab.onboardingInProgress) return;
+            
+            tab.onboardingInProgress = true;
 
             const steps = [
                 { delay: 800, action: () => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`) },
@@ -866,6 +1022,7 @@ help                 显示帮助</pre>
                 { delay: 600, action: () => addLine(tabId, 'system', `✅ 身份验证完成`) },
                 { delay: 600, action: () => {
                     tab.onboarded = true;
+                    tab.onboardingInProgress = false;
                     tab.status = 'idle';
                     addLine(tabId, 'system', `🎉 已正式入职，等待任务分配...`);
                     addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
