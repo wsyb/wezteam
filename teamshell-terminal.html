@@ -1257,12 +1257,12 @@ help                 显示帮助</pre>
 
         function executeNextAction() {
             if (!state.isPlaying || state.paused) return;
-            if (state.actionQueue.length === 0) {
+
+            const action = state.actionQueue.shift();
+            if (!action) {
                 finishScenario();
                 return;
             }
-
-            const action = state.actionQueue.shift();
             
             switch (action.type) {
                 case 'user':
@@ -1294,6 +1294,8 @@ help                 显示帮助</pre>
             const nextAction = state.actionQueue[0];
             if (nextAction) {
                 setTimeout(() => executeNextAction(), nextAction.delay || 1000);
+            } else {
+                setTimeout(() => finishScenario(), action.delay || 1000);
             }
         }
 
