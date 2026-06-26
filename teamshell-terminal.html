@@ -851,8 +851,23 @@ help                 显示帮助</pre>
         }
 
         // ============ 命令处理 ============
+        function parseCommand(cmd) {
+            const result = [];
+            const regex = /("[^"]*"|[^\s]+)/g;
+            let match;
+            while ((match = regex.exec(cmd)) !== null) {
+                const token = match[1];
+                if (token.startsWith('"') && token.endsWith('"')) {
+                    result.push(token.slice(1, -1));
+                } else {
+                    result.push(token);
+                }
+            }
+            return result;
+        }
+
         function handleTshCommand(cmd) {
-            const parts = cmd.trim().split(/\s+/);
+            const parts = parseCommand(cmd.trim());
             if (parts[0] !== 'tsh') return null;
             const subCmd = parts[1] || '';
 
@@ -998,6 +1013,7 @@ help                 显示帮助</pre>
                 } else {
                     const behavior = agentBehavior[targetTab.type];
                     if (behavior && senderId !== targetTabId && shouldReply(text, senderId)) {
+                        if (targetTab.status === 'working') return;
                         behavior.handleMessage(targetTab, text, senderId);
                     }
                 }
