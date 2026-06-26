@@ -38,7 +38,6 @@
             overflow: hidden;
         }
 
-        /* 顶部控制栏 */
         .control-bar {
             display: flex;
             align-items: center;
@@ -48,72 +47,71 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .control-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+        .control-left { display: flex; align-items: center; gap: 16px; }
+        .control-right { display: flex; align-items: center; gap: 8px; }
 
-        .logo {
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--accent-cyan);
-        }
+        .logo { font-size: 18px; font-weight: bold; }
+        .logo span { color: var(--accent-cyan); }
 
-        .logo span { color: var(--accent-purple); }
-
-        .scenario-selector {
-            display: flex;
-            gap: 6px;
-        }
-
+        .scenario-selector { display: flex; gap: 4px; }
         .scenario-btn {
-            padding: 6px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
+            padding: 4px 12px;
             background: transparent;
+            border: 1px solid var(--border-color);
             color: var(--text-muted);
+            border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
         }
-
-        .scenario-btn:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
-        .scenario-btn.active { background: var(--accent-cyan); border-color: var(--accent-cyan); color: #000; }
-
-        .control-right {
-            display: flex;
-            gap: 8px;
+        .scenario-btn.active {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: #000;
         }
+        .scenario-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
 
         .btn {
             padding: 6px 16px;
             border: none;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
         }
-
         .btn-play { background: var(--accent-green); color: #000; }
-        .btn-play:hover { background: #3ddc84; }
-        .btn-play:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-play:hover { background: #00e07a; }
         .btn-pause { background: var(--accent-yellow); color: #000; }
-        .btn-pause:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-pause:hover { background: #e6b800; }
         .btn-reset { background: var(--accent-red); color: #fff; }
+        .btn-reset:hover { background: #e04444; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* 标题栏 */
-        .titlebar {
-            height: 32px;
-            background: var(--bg-titlebar);
+        .steps-bar {
             display: flex;
             align-items: center;
-            padding: 0 10px;
             gap: 8px;
+            padding: 4px 16px;
+            background: var(--bg-dark);
             border-bottom: 1px solid var(--border-color);
-            user-select: none;
         }
+        .step-label { color: var(--text-muted); font-size: 12px; }
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+            transition: all 0.3s;
+        }
+        .step-dot.active { background: var(--accent-cyan); }
 
+        .titlebar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            background: var(--bg-titlebar);
+        }
         .titlebar-btn {
             width: 12px;
             height: 12px;
@@ -121,98 +119,80 @@
             border: none;
             cursor: pointer;
         }
-        .titlebar-btn.close { background: #ff5f56; }
-        .titlebar-btn.minimize { background: #ffbd2e; }
-        .titlebar-btn.maximize { background: #27ca3f; }
-
+        .titlebar-btn.close { background: #ff5555; }
+        .titlebar-btn.minimize { background: #ffcc00; }
+        .titlebar-btn.maximize { background: #00ff88; }
         .titlebar-title {
             flex: 1;
             text-align: center;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
         }
 
-        /* 标签栏 */
         .tabbar {
             display: flex;
-            background: var(--bg-terminal);
+            align-items: center;
+            gap: 2px;
+            padding: 4px 8px;
+            background: var(--bg-tab);
             border-bottom: 1px solid var(--border-color);
-            min-height: 34px;
             overflow-x: auto;
         }
-
         .tab {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--bg-tab);
-            border-right: 1px solid var(--border-color);
+            gap: 6px;
+            padding: 4px 12px;
+            background: transparent;
+            border-radius: 4px 4px 0 0;
             cursor: pointer;
-            min-width: 140px;
-            max-width: 200px;
-            transition: all 0.15s;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            border-bottom: none;
+            white-space: nowrap;
         }
-
-        .tab:hover { background: #3d3d3d; }
-
+        .tab:hover { background: rgba(255,255,255,0.05); }
         .tab.active {
             background: var(--bg-terminal);
-            border-bottom: 2px solid var(--accent-cyan);
+            border-color: var(--border-color);
         }
-
         .tab-icon {
-            width: 14px;
-            height: 14px;
-            border-radius: 2px;
+            font-size: 12px;
+            font-weight: bold;
+            width: 16px;
+            height: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .tab-icon.claude { background: var(--claude-color); color: #fff; }
-        .tab-icon.codex { background: var(--codex-color); color: #fff; }
-        .tab-icon.trae { background: var(--trae-color); color: #fff; }
-        .tab-icon.shell { background: var(--shell-color); color: #000; }
-
-        .tab-name {
-            flex: 1;
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .tab-close {
-            width: 16px;
-            height: 16px;
             border-radius: 3px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 14px;
-            line-height: 1;
-            opacity: 0;
-            transition: all 0.15s;
         }
-
-        .tab:hover .tab-close { opacity: 1; }
-        .tab-close:hover { background: var(--accent-red); color: #fff; }
-
-        .tabbar-add {
-            padding: 8px 12px;
+        .tab-icon.claude { background: rgba(255,107,74,0.2); color: var(--claude-color); }
+        .tab-icon.codex { background: rgba(108,92,231,0.2); color: var(--codex-color); }
+        .tab-icon.trae { background: rgba(0,206,201,0.2); color: var(--trae-color); }
+        .tab-icon.shell { background: rgba(80,250,123,0.2); color: var(--shell-color); }
+        .tab-name { font-size: 12px; }
+        .tab-close {
             background: transparent;
             border: none;
             color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0 2px;
+        }
+        .tab-close:hover { color: var(--text-primary); }
+        .tabbar-add {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            margin-left: auto;
         }
-        .tabbar-add:hover { background: #3d3d3d; color: var(--text-primary); }
+        .tabbar-add:hover { border-color: var(--text-primary); color: var(--text-primary); }
 
-        /* 终端区域 */
         .terminal-window {
             flex: 1;
             display: flex;
@@ -220,95 +200,28 @@
             background: var(--bg-terminal);
             overflow: hidden;
         }
-
         .terminal-content {
             flex: 1;
             padding: 12px;
             overflow-y: auto;
             font-size: 13px;
             line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-
         .terminal-content::-webkit-scrollbar { width: 8px; }
-        .terminal-content::-webkit-scrollbar-track { background: var(--bg-terminal); }
-        .terminal-content::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        .terminal-content::-webkit-scrollbar-track { background: var(--bg-dark); }
+        .terminal-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
-        .line { white-space: pre-wrap; word-break: break-all; margin-bottom: 4px; }
-
-        .line-command {
-            color: var(--accent-green);
-        }
-
-        .line-command::before {
-            content: '❯ ';
-            color: var(--accent-cyan);
-        }
-
-        .line-output {
-            color: var(--text-primary);
-            padding-left: 16px;
-        }
-
-        .line-error {
-            color: var(--accent-red);
-            padding-left: 16px;
-        }
-
-        .line-tsh-in {
-            color: var(--accent-purple);
-            background: rgba(189, 147, 249, 0.15);
-            padding: 8px 12px;
-            border-left: 3px solid var(--accent-purple);
-            margin: 8px 0;
-        }
-
-        .line-tsh-out {
-            color: var(--accent-cyan);
-            background: rgba(0, 212, 255, 0.1);
-            padding: 8px 12px;
-            border-right: 3px solid var(--accent-cyan);
-            margin: 8px 0;
-        }
-
-        .line-agent {
-            padding-left: 16px;
-            border-left: 3px solid;
-        }
-
-        .line-agent.claude { border-color: var(--claude-color); }
-        .line-agent.codex { border-color: var(--codex-color); }
-        .line-agent.trae { border-color: var(--trae-color); }
-
-        .line-system {
-            color: var(--accent-orange);
-            font-style: italic;
-        }
-
-        .line-user {
-            color: var(--accent-yellow);
-            padding-left: 16px;
-        }
-
-        .line-user::before {
-            content: '> ';
-            color: var(--accent-cyan);
-        }
-
-        /* 输入区 */
         .terminal-input {
             display: flex;
             align-items: center;
+            gap: 8px;
             padding: 8px 12px;
-            background: rgba(0,0,0,0.3);
             border-top: 1px solid var(--border-color);
+            background: var(--bg-dark);
         }
-
-        .input-prompt {
-            color: var(--accent-green);
-            margin-right: 8px;
-            font-size: 14px;
-        }
-
+        .input-prompt { color: var(--accent-cyan); font-weight: bold; }
         .input-field {
             flex: 1;
             background: transparent;
@@ -319,50 +232,31 @@
             outline: none;
         }
 
-        /* 状态栏 */
         .statusbar {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            padding: 4px 12px;
-            background: #007acc;
-            font-size: 11px;
-        }
-
-        .statusbar-left, .statusbar-right {
-            display: flex;
-            gap: 16px;
-        }
-
-        /* 步骤指示器 */
-        .steps-bar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 6px;
-            background: rgba(0,0,0,0.3);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .step-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--text-muted);
-            transition: all 0.3s;
-        }
-
-        .step-dot.active { background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
-        .step-dot.done { background: var(--accent-green); }
-
-        .step-label {
-            font-size: 11px;
+            padding: 2px 16px;
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
             color: var(--text-muted);
-            margin-left: 8px;
         }
+        .statusbar-left { display: flex; gap: 16px; }
+        .statusbar-right { display: flex; gap: 16px; }
 
-        /* 帮助面板 */
+        .line { margin: 2px 0; }
+        .line-user { color: var(--accent-green); }
+        .line-agent.claude { color: var(--claude-color); }
+        .line-agent.codex { color: var(--codex-color); }
+        .line-agent.trae { color: var(--trae-color); }
+        .line-agent.shell { color: var(--shell-color); }
+        .line-system { color: var(--accent-yellow); }
+        .line-command { color: var(--accent-purple); }
+        .line-output { color: var(--text-primary); }
+        .line-tsh-in { color: var(--accent-orange); }
+        .line-tsh-out { color: var(--accent-cyan); }
+
         .help-panel {
             position: fixed;
             top: 50%;
@@ -371,37 +265,22 @@
             background: var(--bg-terminal);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 20px;
-            max-width: 700px;
-            width: 90%;
+            padding: 24px;
+            width: 600px;
             max-height: 80vh;
             overflow-y: auto;
             z-index: 1000;
             display: none;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
-
         .help-panel.show { display: block; }
-
-        .help-panel h2 {
-            color: var(--accent-cyan);
-            margin-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-        }
-
-        .help-panel h3 {
-            color: var(--accent-yellow);
-            margin: 16px 0 8px;
-        }
-
+        .help-panel h2 { color: var(--accent-cyan); margin-bottom: 16px; }
+        .help-panel h3 { color: var(--text-primary); margin: 12px 0 8px; }
         .help-panel code {
-            background: rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
             padding: 2px 6px;
             border-radius: 3px;
             color: var(--accent-green);
         }
-
         .help-panel pre {
             background: rgba(0,0,0,0.3);
             padding: 12px;
@@ -409,7 +288,6 @@
             margin: 8px 0;
             overflow-x: auto;
         }
-
         .help-panel-close {
             position: absolute;
             top: 12px;
@@ -420,7 +298,6 @@
             font-size: 20px;
             cursor: pointer;
         }
-
         .help-panel-close:hover { color: var(--text-primary); }
 
         .overlay {
@@ -433,12 +310,10 @@
             z-index: 999;
             display: none;
         }
-
         .overlay.show { display: block; }
     </style>
 </head>
 <body>
-    <!-- 顶部控制栏 -->
     <div class="control-bar">
         <div class="control-left">
             <div class="logo">Team<span>Shell</span></div>
@@ -456,7 +331,6 @@
         </div>
     </div>
 
-    <!-- 步骤指示器 -->
     <div class="steps-bar" id="steps-bar">
         <span class="step-label">进度:</span>
         <div class="step-dot active"></div>
@@ -496,7 +370,6 @@
         </div>
     </div>
 
-    <!-- 帮助面板 -->
     <div class="overlay" id="overlay"></div>
     <div class="help-panel" id="help-panel">
         <button class="help-panel-close" id="help-close">&times;</button>
@@ -528,8 +401,9 @@ help                 显示帮助</pre>
             isPlaying: false,
             currentScenario: 'team-setup',
             currentStep: 0,
-            actionIndex: 0,
-            paused: false
+            actionQueue: [],
+            paused: false,
+            waitingForAgent: false
         };
 
         // ============ DOM ============
@@ -554,134 +428,125 @@ help                 显示帮助</pre>
                 steps: 6,
                 actions: [
                     { type: 'user', text: '请帮我组建团队', delay: 2500 },
-                    { type: 'claude', text: '好的！让我先查看 CLI 版本和帮助...', delay: 2000 },
-                    { type: 'cmd', text: 'tsh -V', delay: 1500 },
-                    { type: 'cmd', text: 'tsh -h', delay: 1500 },
-                    { type: 'help', delay: 300 },
-                    { type: 'claude', text: 'CLI 正常！现在初始化项目协议...', delay: 2000 },
-                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 1500 },
-                    { type: 'claude', text: '协议初始化完成！现在招募团队成员...', delay: 2000 },
-                    { type: 'step', delay: 500 },
+                    { type: 'cmd', text: 'tsh -V', delay: 2000 },
+                    { type: 'cmd', text: 'tsh -h', delay: 2000 },
+                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000 },
                     { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 7000 },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 8000 },
                     { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 7000 },
-                    { type: 'step', delay: 500 },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 8000 },
                     { type: 'cmd', text: 'tsh list', delay: 2000 },
-                    { type: 'step', delay: 500 },
-                    { type: 'claude', text: '新成员已加入！让我查看他们的状态...', delay: 2000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000 },
-                    { type: 'step', delay: 500 },
-                    { type: 'claude', text: '团队组建完成！3个成员已就绪，等待任务分配...', delay: 3000 },
-                    { type: 'step', delay: 500 }
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000 }
                 ]
             },
             'task-assign': {
                 name: '任务分配',
                 steps: 6,
                 actions: [
-                    { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 1500 },
-                    { type: 'claude', text: '收到！这是复杂任务，需要团队协作。让我分配任务...', delay: 1500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '派给代码审查专家评估技术架构...', delay: 1000 },
-                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 1000 },
-                    { type: 'switch', tabId: 2, delay: 500 },
-                    { type: 'msg-in', sender: 'Claude Code', delay: 800 },
-                    { type: 'codex', text: '收到任务！正在分析支付功能需求...', delay: 1500 },
-                    { type: 'codex', text: '技术方案评估：\n1. 推荐微服务架构\n2. 支付服务独立部署\n3. 使用消息队列解耦\n预计开发周期：3-4周', delay: 2000 },
-                    { type: 'switch', tabId: 1, delay: 500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: 'Codex专家已完成评估！现在派任务给安全专家...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 1000 },
-                    { type: 'switch', tabId: 3, delay: 500 },
-                    { type: 'msg-in', sender: 'Claude Code', delay: 800 },
-                    { type: 'trae', text: '收到！正在进行安全评估...', delay: 1500 },
-                    { type: 'trae', text: '安全评估报告：\n1. 必须使用 HTTPS/TLS 1.3\n2. 敏感数据 AES-256 加密存储\n3. 防重复支付机制\n4. 风控规则引擎', delay: 2000 },
-                    { type: 'switch', tabId: 1, delay: 500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '两位专家都完成了！让我查看他们的报告...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 800 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 800 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '汇总评估结果给老板：\n\n✅ 技术方案：微服务架构，3-4周\n✅ 安全要求：TLS加密、AES-256、风控\n\n可以开始开发了！', delay: 2500 },
-                    { type: 'step', delay: 200 }
+                    { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500 },
+                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000 }
                 ]
             },
             'debug': {
                 name: '调试协作',
                 steps: 6,
                 actions: [
-                    { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 1500 },
-                    { type: 'claude', text: '收到！让我先查看日志...', delay: 1500 },
-                    { type: 'output', text: 'cat payment.log | tail -20', delay: 800 },
-                    { type: 'output', text: '[INFO] Payment service started\n[INFO] Order 12345 created\n[WARNING] Update affected 0 rows\n[ERROR] Transaction failed: order_id type mismatch', delay: 500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '发现问题！Update affected 0 rows 说明更新失败。派给专家排查...', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑"', delay: 1000 },
-                    { type: 'switch', tabId: 2, delay: 500 },
-                    { type: 'msg-in', sender: 'Claude Code', delay: 800 },
-                    { type: 'codex', text: '收到！正在检查代码...', delay: 1500 },
-                    { type: 'codex', text: '发现问题！order_id 在数据库是 VARCHAR 类型，但代码用数字拼接 SQL 导致类型不匹配。', delay: 2000 },
-                    { type: 'codex', text: '正在修复...', delay: 1000 },
-                    { type: 'codex', text: '修复完成！', delay: 1000 },
-                    { type: 'switch', tabId: 1, delay: 500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '专家定位到问题了！让我持续监控修复进度...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 800 },
-                    { type: 'claude', text: '看到专家正在修复...继续监控...', delay: 1000 },
+                    { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 2500 },
+                    { type: 'output', text: 'cat payment.log | tail -20', delay: 1500 },
+                    { type: 'output', text: '[INFO] Payment service started\n[INFO] Order 12345 created\n[WARNING] Update affected 0 rows\n[ERROR] Transaction failed: order_id type mismatch', delay: 1500 },
+                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑"', delay: 6000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 2000 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '修复完成！验证一下...', delay: 1000 },
-                    { type: 'output', text: 'python -c "from order_service import update_order; update_order(\'12345\', \'paid\')"', delay: 1000 },
-                    { type: 'output', text: 'Success: Order 12345 updated to paid', delay: 500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '调试成功！问题原因：SQL类型不匹配，已修复。', delay: 2000 },
-                    { type: 'step', delay: 200 }
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
+                    { type: 'output', text: 'python -c "from order_service import update_order; update_order(\'12345\', \'paid\')"', delay: 1500 },
+                    { type: 'output', text: 'Success: Order 12345 updated to paid', delay: 1500 }
                 ]
             },
             'project-close': {
                 name: '项目收尾',
                 steps: 5,
                 actions: [
-                    { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 1500 },
-                    { type: 'claude', text: '收到！让我先验收各位专家的成果...', delay: 1500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 800 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 800 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '两位专家都完成了任务！运行测试验证...', delay: 1500 },
-                    { type: 'output', text: 'python -m pytest tests/ -v', delay: 1000 },
-                    { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 500 },
-                    { type: 'step', delay: 200 },
-                    { type: 'claude', text: '测试全部通过！现在关闭项目工位...', delay: 1500 },
-                    { type: 'cmd', text: 'tsh close 3', delay: 800 },
-                    { type: 'cmd', text: 'tsh close 2', delay: 800 },
-                    { type: 'step', delay: 200 },
-                    { type: 'cmd', text: 'tsh list', delay: 500 },
-                    { type: 'claude', text: '项目收尾完成！\n- 任务验收通过\n- 测试全部通过\n- 工位已关闭\n\n已执行命令: tsh view / tsh close / tsh list', delay: 2000 },
-                    { type: 'step', delay: 200 }
+                    { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 2500 },
+                    { type: 'cmd', text: 'tsh view 2', delay: 2000 },
+                    { type: 'cmd', text: 'tsh view 3', delay: 2000 },
+                    { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500 },
+                    { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500 },
+                    { type: 'cmd', text: 'tsh close 3', delay: 1500 },
+                    { type: 'cmd', text: 'tsh close 2', delay: 1500 },
+                    { type: 'cmd', text: 'tsh list', delay: 2000 }
                 ]
             }
         };
 
-        // ============ Tab 管理 ============
+        // ============ Agent行为系统 ============
+        const agentBehavior = {
+            'claude': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded) return;
+                    setTimeout(() => {
+                        const responses = [
+                            '收到！正在处理...',
+                            '好的，让我分析一下...',
+                            '明白！马上开始...'
+                        ];
+                        const reply = responses[Math.floor(Math.random() * responses.length)];
+                        agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
+                    }, 2000);
+                }
+            },
+            'codex': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded) return;
+                    setTimeout(() => {
+                        const reply = '收到任务！正在分析代码...';
+                        agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
+                        
+                        setTimeout(() => {
+                            const analysis = '分析完成！发现以下问题：\n1. 类型不匹配\n2. 需要优化';
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "${analysis}"`);
+                        }, 3000);
+                    }, 2000);
+                }
+            },
+            'trae': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded) return;
+                    setTimeout(() => {
+                        const reply = '收到！正在进行安全评估...';
+                        agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
+                        
+                        setTimeout(() => {
+                            const report = '安全评估完成！建议：\n1. 使用 HTTPS\n2. 加密敏感数据';
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "${report}"`);
+                        }, 3000);
+                    }, 2000);
+                }
+            },
+            'shell': {
+                handleMessage: function(tab, message, senderId) {
+                    setTimeout(() => {
+                        agentExecuteCommand(tab.id, `tsh type ${senderId} "Command executed."`);
+                    }, 1000);
+                }
+            }
+        };
+
+        // ============ Tab管理 ============
         function createTab(name, type, isActive = true) {
             const tab = {
                 id: state.nextTabId++,
                 name: name,
                 type: type,
                 lines: [],
-                inputBuffer: '',
-                onboarded: false
+                onboarded: false,
+                onboardSender: null,
+                status: 'idle'
             };
-
             state.tabs.push(tab);
-
-            if (isActive) {
-                switchTab(tab.id);
-            }
-
+            if (isActive) switchTab(tab.id);
             renderTabbar();
             return tab;
         }
@@ -689,7 +554,6 @@ help                 显示帮助</pre>
         function switchTab(tabId) {
             const tab = state.tabs.find(t => t.id === tabId);
             if (!tab) return;
-
             state.currentTabId = tabId;
             renderTerminal();
             updateStatus();
@@ -699,9 +563,7 @@ help                 显示帮助</pre>
         function closeTab(tabId) {
             const index = state.tabs.findIndex(t => t.id === tabId);
             if (index === -1) return;
-
             state.tabs.splice(index, 1);
-
             if (state.tabs.length === 0) {
                 createTab('Main', 'claude');
             } else if (state.currentTabId === tabId) {
@@ -716,17 +578,10 @@ help                 显示帮助</pre>
         function addLine(tabId, type, content, extra = {}) {
             const tab = state.tabs.find(t => t.id === tabId);
             if (!tab) return;
-
             const line = { type, content, timestamp: Date.now(), ...extra };
             tab.lines.push(line);
-
-            if (tab.lines.length > 500) {
-                tab.lines.shift();
-            }
-
-            if (tabId === state.currentTabId) {
-                renderTerminal();
-            }
+            if (tab.lines.length > 500) tab.lines.shift();
+            if (tabId === state.currentTabId) renderTerminal();
         }
 
         // ============ 渲染 ============
@@ -747,41 +602,41 @@ help                 显示帮助</pre>
                 });
             });
 
-            tabbar.querySelectorAll('.tab-close').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    closeTab(parseInt(el.dataset.id));
+            tabbar.querySelectorAll('.tab-close').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    closeTab(parseInt(btn.dataset.id));
                 });
             });
 
             document.getElementById('add-tab')?.addEventListener('click', () => {
-                createTab(`Tab ${state.nextTabId}`, 'shell');
+                const name = prompt('输入新工位名称:', `Agent ${state.nextTabId}`);
+                if (name) createTab(name, 'shell');
             });
         }
 
         function renderTerminal() {
             const tab = state.tabs.find(t => t.id === state.currentTabId);
             if (!tab) return;
-
+            
             terminalContent.innerHTML = tab.lines.map(line => {
-                const cls = `line line-${line.type}`;
-                let text = escapeHtml(line.content);
-
-                if (line.type === 'tsh-in') {
-                    return `<div class="${cls}">[TeamShell 消息] 来自 ${line.sender}: ${text}</div>`;
-                } else if (line.type === 'tsh-out') {
-                    return `<div class="${cls}">[发送至 ${line.sender}] ${text}</div>`;
-                } else if (line.type === 'agent') {
-                    return `<div class="${cls} ${line.agentType}">${text}</div>`;
-                } else if (line.type === 'output' || line.type === 'error' || line.type === 'system') {
-                    return `<div class="${cls}">${text}</div>`;
-                } else if (line.type === 'help') {
-                    return `<div class="${cls}">显示帮助面板...</div>`;
-                } else {
-                    return `<div class="${cls}">${text}</div>`;
+                let prefix = '';
+                let cssClass = `line-${line.type}`;
+                
+                switch(line.type) {
+                    case 'user': prefix = '👤 '; break;
+                    case 'agent': prefix = `[${line.agentType?.toUpperCase()}] `; break;
+                    case 'system': prefix = '📋 '; break;
+                    case 'command': prefix = '❯ '; break;
+                    case 'tsh-in': prefix = `[TeamShell 消息] 来自 ${line.sender}: `; break;
+                    case 'tsh-out': prefix = `[发送至 ${line.sender}] `; break;
+                    case 'output': break;
+                    default: break;
                 }
+                
+                const content = line.content.replace(/\n/g, '<br>');
+                return `<div class="${cssClass}">${prefix}${content}</div>`;
             }).join('');
-
+            
             terminalContent.scrollTop = terminalContent.scrollHeight;
         }
 
@@ -792,33 +647,17 @@ help                 显示帮助</pre>
             statusId.textContent = `Tab: ${tab.id}`;
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function updateSteps(step) {
-            state.currentStep = step;
-            const scenario = scenarios[state.currentScenario];
-            stepDots.forEach((dot, i) => {
-                dot.classList.remove('active', 'done');
-                if (i < step - 1) dot.classList.add('done');
-                if (i === step - 1) dot.classList.add('active');
-            });
-            stepLabel.textContent = `步骤 ${step}/${scenario.steps}`;
-        }
-
-        // ============ TSH 命令 ============
+        // ============ 命令处理 ============
         function handleTshCommand(cmd) {
             const parts = cmd.trim().split(/\s+/);
-            const subCmd = parts[1]?.toLowerCase();
+            if (parts[0] !== 'tsh') return null;
+            const subCmd = parts[1] || '';
 
-            switch (subCmd) {
+            switch(subCmd) {
                 case 'list':
                     return cmdList();
                 case 'view':
-                    return cmdView(parts[2]);
+                    return cmdView(parts[2], parts[3]);
                 case 'type':
                     return cmdType(parts.slice(2));
                 case 'name':
@@ -849,43 +688,100 @@ help                 显示帮助</pre>
             output += '─'.repeat(45) + '\n';
             const typeMap = { 'claude': 'Claude', 'codex': 'Codex', 'trae': 'TraeCLI', 'shell': 'Shell' };
             state.tabs.forEach(tab => {
-                output += `${String(tab.id).padEnd(4)} ${tab.name.padEnd(16)} ${typeMap[tab.type].padEnd(8)} 在职\n`;
+                const status = tab.onboarded ? '在职' : '待入职';
+                output += `${String(tab.id).padEnd(4)} ${tab.name.padEnd(16)} ${typeMap[tab.type].padEnd(8)} ${status}\n`;
             });
             return output;
         }
 
-        function cmdView(tabId) {
+        function cmdView(tabId, lines = 30) {
             const tab = state.tabs.find(t => t.id === parseInt(tabId));
             if (!tab) return `ERROR: Tab ${tabId} not found.`;
-            const recent = tab.lines.slice(-30);
+            const count = parseInt(lines) || 30;
+            const recent = tab.lines.slice(-count);
             return recent.map(l => {
                 if (l.type === 'tsh-in') return `[MSG] ${l.sender}: ${l.content}`;
                 if (l.type === 'agent') return `[${l.agentType}] ${l.content}`;
+                if (l.type === 'system') return `[SYS] ${l.content}`;
+                if (l.type === 'command') return `❯ ${l.content}`;
                 return l.content;
             }).join('\n');
         }
 
         function cmdType(args) {
-            const tabId = parseInt(args[0]);
-            const tab = state.tabs.find(t => t.id === tabId);
-            if (!tab) return `ERROR: Tab ${tabId} not found.`;
+            const targetTabId = parseInt(args[0]);
+            const targetTab = state.tabs.find(t => t.id === targetTabId);
+            if (!targetTab) return `ERROR: Tab ${targetTabId} not found.`;
 
             const currentTab = state.tabs.find(t => t.id === state.currentTabId);
             const senderName = currentTab ? currentTab.name : 'Unknown';
-            let text = args.slice(1).join(' ').match(/"([^"]*)"/)?.[1] || '';
 
-            addLine(tabId, 'tsh-in', text, { sender: senderName });
-            addLine(state.currentTabId, 'tsh-out', text, { sender: tab.name });
+            let text = '';
+            let noEnter = false;
+            let keyCode = null;
 
-            if (!tab.onboarded) {
-                if (text.includes('入职')) {
-                    tab.onboardSender = state.currentTabId;
-                    setTimeout(() => performOnboarding(tabId), 1500);
+            for (let i = 1; i < args.length; i++) {
+                if (args[i] === '--no-enter') {
+                    noEnter = true;
+                } else if (args[i] === '--key') {
+                    keyCode = args[i + 1];
+                    i++;
+                } else if (args[i].startsWith('"') && args[i].endsWith('"')) {
+                    text = args[i].slice(1, -1);
+                } else if (args[i].startsWith('"')) {
+                    text = args[i].slice(1);
+                    while (++i < args.length) {
+                        text += ' ' + args[i];
+                        if (args[i].endsWith('"')) {
+                            text = text.slice(0, -1);
+                            break;
+                        }
+                    }
                 }
-            } else if (tabId !== 1) {
-                setTimeout(() => simulateAgentResponse(tabId), 1500);
+            }
+
+            if (keyCode) {
+                addLine(targetTabId, 'system', `收到按键: ${keyCode}`);
+                if (keyCode === '\\x0d' || keyCode === '\\n') {
+                    if (!targetTab.onboarded && targetTab.status === 'stuck') {
+                        targetTab.status = 'idle';
+                        addLine(targetTabId, 'system', '✅ 权限验证通过');
+                        setTimeout(() => {
+                            const reply = '权限已通过！继续执行任务...';
+                            agentExecuteCommand(targetTabId, `tsh type ${state.currentTabId} "${reply}"`);
+                        }, 1000);
+                    }
+                }
+            } else {
+                addLine(targetTabId, 'tsh-in', text, { sender: senderName });
+                addLine(state.currentTabId, 'tsh-out', text, { sender: targetTab.name });
+
+                if (!targetTab.onboarded) {
+                    if (text.includes('入职')) {
+                        targetTab.onboardSender = state.currentTabId;
+                        setTimeout(() => performOnboarding(targetTabId), 1500);
+                    }
+                } else {
+                    const behavior = agentBehavior[targetTab.type];
+                    if (behavior) {
+                        behavior.handleMessage(targetTab, text, state.currentTabId);
+                    }
+                }
             }
             return null;
+        }
+
+        function agentExecuteCommand(agentTabId, command) {
+            const originalTabId = state.currentTabId;
+            state.currentTabId = agentTabId;
+            
+            addLine(agentTabId, 'command', command);
+            const output = handleTshCommand(command);
+            if (output !== null) {
+                setTimeout(() => addLine(agentTabId, 'output', output), 300);
+            }
+            
+            state.currentTabId = originalTabId;
         }
 
         function cmdName(tabId, newName) {
@@ -919,30 +815,19 @@ help                 显示帮助</pre>
             return `OK: TeamShell Protocol initialized from ${file || 'file'}`;
         }
 
-        function agentExecuteCommand(agentTabId, command) {
-            const originalTabId = state.currentTabId;
-            state.currentTabId = agentTabId;
-            
-            addLine(agentTabId, 'command', command);
-            const output = handleTshCommand(command);
-            if (output !== null) {
-                setTimeout(() => addLine(agentTabId, 'output', output), 300);
-            }
-            
-            state.currentTabId = originalTabId;
-        }
-
         function performOnboarding(tabId) {
             const tab = state.tabs.find(t => t.id === tabId);
             if (!tab) return;
 
             setTimeout(() => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`), 800);
             setTimeout(() => addLine(tabId, 'system', `读取工号...`), 1600);
-            setTimeout(() => addLine(tabId, 'system', `工号: ${tab.id}`), 2400);
+            setTimeout(() => addLine(tabId, 'command', `echo $TEAMSH_TAB_ID`), 2000);
+            setTimeout(() => addLine(tabId, 'output', `${tab.id}`), 2400);
             setTimeout(() => addLine(tabId, 'system', `验证工号有效性...`), 3200);
             setTimeout(() => addLine(tabId, 'system', `✅ 工号验证通过`), 4000);
             setTimeout(() => {
                 tab.onboarded = true;
+                tab.status = 'idle';
                 addLine(tabId, 'system', `已正式入职，等待任务分配...`);
                 addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
                 
@@ -955,83 +840,67 @@ help                 显示帮助</pre>
             }, 4800);
         }
 
-        function simulateAgentResponse(tabId) {
-            const tab = state.tabs.find(t => t.id === tabId);
-            if (!tab) return;
-
-            const responses = {
-                'claude': ['收到！正在处理...', '好的，让我分析一下...'],
-                'codex': ['Acknowledged. Processing...', 'Got it. Analyzing...'],
-                'trae': ['收到！开始执行...', '好的，正在处理...'],
-                'shell': ['Done.', 'Completed.']
-            };
-
-            const r = responses[tab.type]?.[0] || 'Done.';
-            addLine(tabId, 'agent', r, { agentType: tab.type });
-        }
-
-        // ============ 帮助 ============
-        function showHelp() {
-            helpPanel.classList.add('show');
-            overlay.classList.add('show');
-        }
-
-        function hideHelp() {
-            helpPanel.classList.remove('show');
-            overlay.classList.remove('show');
-        }
-
-        document.getElementById('help-close').addEventListener('click', hideHelp);
-        document.getElementById('overlay').addEventListener('click', hideHelp);
-
-        // ============ 演示控制 ============
-        function playScenario() {
+        // ============ 场景执行 ============
+        function startScenario() {
             if (state.isPlaying) return;
+            resetScenario();
+            state.isPlaying = true;
+            btnPlay.disabled = true;
+            btnPause.disabled = false;
+
+            const scenario = scenarios[state.currentScenario];
+            if (!scenario) return;
+
+            state.actionQueue = [...scenario.actions];
+            executeNextAction();
+        }
+
+        function pauseScenario() {
+            state.isPlaying = false;
+            state.paused = true;
+            btnPlay.disabled = false;
+            btnPause.disabled = true;
+        }
+
+        function resumeScenario() {
             state.isPlaying = true;
             state.paused = false;
             btnPlay.disabled = true;
             btnPause.disabled = false;
-            scenarioBtns.forEach(b => b.disabled = true);
-
-            const scenario = scenarios[state.currentScenario];
-            state.actionIndex = 0;
-            state.currentStep = 0;
-
             executeNextAction();
+        }
+
+        function resetScenario() {
+            state.isPlaying = false;
+            state.paused = false;
+            state.actionQueue = [];
+            state.currentStep = 0;
+            btnPlay.disabled = false;
+            btnPause.disabled = true;
+
+            state.tabs = [];
+            state.nextTabId = 1;
+            const mainTab = createTab('Main', 'claude');
+            state.currentTabId = mainTab.id;
+
+            updateSteps(0);
         }
 
         function executeNextAction() {
             if (!state.isPlaying || state.paused) return;
-
-            const scenario = scenarios[state.currentScenario];
-            if (state.actionIndex >= scenario.actions.length) {
+            if (state.actionQueue.length === 0) {
                 finishScenario();
                 return;
             }
 
-            const action = scenario.actions[state.actionIndex];
-            state.actionIndex++;
-
-            setTimeout(() => {
-                if (!state.isPlaying) return;
-                executeAction(action);
-                executeNextAction();
-            }, action.delay || 500);
+            const action = state.actionQueue.shift();
+            executeAction(action);
         }
 
         function executeAction(action) {
             switch (action.type) {
                 case 'user':
                     addLine(state.currentTabId, 'user', action.text);
-                    break;
-                case 'claude':
-                    addLine(state.currentTabId, 'agent', action.text, { agentType: 'claude' });
-                    break;
-                case 'codex':
-                    addLine(2, 'agent', action.text, { agentType: 'codex' });
-                    break;
-                case 'trae':
-                    addLine(3, 'agent', action.text, { agentType: 'trae' });
                     break;
                 case 'cmd':
                     addLine(state.currentTabId, 'command', action.text);
@@ -1043,76 +912,53 @@ help                 显示帮助</pre>
                 case 'output':
                     addLine(state.currentTabId, 'output', action.text);
                     break;
-                case 'switch':
-                    switchTab(action.tabId);
-                    break;
-                case 'msg-in':
-                    addLine(state.currentTabId, 'tsh-in', '请完成分配的任务', { sender: action.sender });
-                    break;
-                case 'step':
-                    updateSteps(state.currentStep + 1);
-                    break;
                 case 'help':
                     showHelp();
-                    setTimeout(hideHelp, 2000);
+                    setTimeout(() => {
+                        helpPanel.classList.remove('show');
+                        overlay.classList.remove('show');
+                    }, 2000);
                     break;
+                case 'step':
+                    state.currentStep++;
+                    updateSteps(state.currentStep);
+                    return;
             }
-        }
 
-        function pauseScenario() {
-            state.paused = true;
-            btnPlay.disabled = false;
-            btnPause.disabled = true;
-        }
-
-        function resetScenario() {
-            state.isPlaying = false;
-            state.paused = false;
-            state.actionIndex = 0;
-            state.currentStep = 0;
-
-            state.tabs = [];
-            state.nextTabId = 1;
-
-            const mainTab = createTab('Main', 'claude');
-            state.currentTabId = mainTab.id;
-
-            updateSteps(0);
-
-            btnPlay.disabled = false;
-            btnPause.disabled = true;
-            scenarioBtns.forEach(b => b.disabled = false);
+            setTimeout(() => executeNextAction(), action.delay || 1000);
         }
 
         function finishScenario() {
             state.isPlaying = false;
             btnPlay.disabled = false;
             btnPause.disabled = true;
-            scenarioBtns.forEach(b => b.disabled = false);
+            addLine(state.currentTabId, 'agent', '演示完成！', { agentType: 'claude' });
         }
 
-        // ============ 输入处理 ============
-        inputField.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !state.isPlaying) {
-                const cmd = inputField.value.trim();
-                if (!cmd) return;
-                inputField.value = '';
+        function updateSteps(step) {
+            const scenario = scenarios[state.currentScenario];
+            if (!scenario) return;
+            
+            stepDots.forEach((dot, i) => {
+                dot.classList.toggle('active', i <= step && step < scenario.steps);
+            });
+            stepLabel.textContent = `步骤 ${Math.min(step + 1, scenario.steps)}/${scenario.steps}`;
+        }
 
-                addLine(state.currentTabId, 'command', cmd);
+        function showHelp() {
+            helpPanel.classList.add('show');
+            overlay.classList.add('show');
+        }
 
-                if (cmd.startsWith('tsh ')) {
-                    const output = handleTshCommand(cmd);
-                    if (output !== null) {
-                        setTimeout(() => addLine(state.currentTabId, 'output', output), 200);
-                    }
-                } else {
-                    setTimeout(() => addLine(state.currentTabId, 'output', `${cmd}: command not found`), 200);
-                }
+        // ============ 事件监听 ============
+        btnPlay.addEventListener('click', () => {
+            if (state.paused) {
+                resumeScenario();
+            } else {
+                startScenario();
             }
         });
 
-        // ============ 按钮绑定 ============
-        btnPlay.addEventListener('click', playScenario);
         btnPause.addEventListener('click', pauseScenario);
         btnReset.addEventListener('click', resetScenario);
 
@@ -1125,20 +971,33 @@ help                 显示帮助</pre>
             });
         });
 
-        // ============ 快捷键 ============
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'l') {
-                const tab = state.tabs.find(t => t.id === state.currentTabId);
-                if (tab) { tab.lines = []; renderTerminal(); }
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = inputField.value.trim();
+                if (!cmd) return;
+                
+                addLine(state.currentTabId, 'command', cmd);
+                const output = handleTshCommand(cmd);
+                if (output !== null) {
+                    setTimeout(() => addLine(state.currentTabId, 'output', output), 300);
+                }
+                
+                inputField.value = '';
             }
-            if (e.key === 'F1') { e.preventDefault(); showHelp(); }
-            if (e.key === 'Escape') hideHelp();
+        });
+
+        document.getElementById('help-close').addEventListener('click', () => {
+            helpPanel.classList.remove('show');
+            overlay.classList.remove('show');
+        });
+
+        overlay.addEventListener('click', () => {
+            helpPanel.classList.remove('show');
+            overlay.classList.remove('show');
         });
 
         // ============ 初始化 ============
-        const mainTab = createTab('Main', 'claude');
-        state.currentTabId = mainTab.id;
-        inputField.focus();
+        resetScenario();
     </script>
 </body>
 </html>
