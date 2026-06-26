@@ -480,9 +480,8 @@ help                 显示帮助</pre>
                 steps: 6,
                 actions: [
                     { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500 },
-                    { type: 'cmd', text: 'tsh type 2 --no-enter "请评估支付功能技术方案"', delay: 1000 },
-                    { type: 'cmd', text: 'tsh type 2 "，重点关注微服务架构"', delay: 6000 },
-                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 1000 },
+                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 15000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
                     { type: 'cmd', text: 'tsh view 3', delay: 3000 }
                 ]
@@ -522,6 +521,9 @@ help                 显示帮助</pre>
             'claude': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
                     setTimeout(() => {
                         const responses = [
                             '收到！正在处理...',
@@ -530,12 +532,16 @@ help                 显示帮助</pre>
                         ];
                         const reply = responses[Math.floor(Math.random() * responses.length)];
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
+                        tab.status = 'idle';
                     }, 2000);
                 }
             },
             'codex': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
 
                     const steps = [
                         { delay: 1500, text: '收到任务！正在分析代码...' }
@@ -575,6 +581,7 @@ help                 显示帮助</pre>
                             setTimeout(() => {
                                 addLine(tab.id, 'system', step.text);
                                 if (index === steps.length - 1) {
+                                    tab.status = 'idle';
                                     setTimeout(() => {
                                         agentExecuteCommand(tab.id, `tsh type ${senderId} "分析完成！已提供详细评估报告和修复建议。"`);
                                     }, 1500);
@@ -587,6 +594,9 @@ help                 显示帮助</pre>
             'trae': {
                 handleMessage: function(tab, message, senderId) {
                     if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
                     
                     const steps = [
                         { delay: 1500, text: '收到！正在进行安全评估...' },
@@ -603,6 +613,7 @@ help                 显示帮助</pre>
                         setTimeout(() => {
                             addLine(tab.id, 'system', step.text);
                             if (index === steps.length - 1) {
+                                tab.status = 'idle';
                                 setTimeout(() => {
                                     agentExecuteCommand(tab.id, `tsh type ${senderId} "安全评估完成！已提供详细安全建议。"`);
                                 }, 1500);
