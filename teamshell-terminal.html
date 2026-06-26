@@ -596,6 +596,7 @@ help                 显示帮助</pre>
                 name: name,
                 type: type,
                 lines: [],
+                logs: [],
                 onboarded: name === 'Main',
                 onboardSender: null,
                 status: 'idle'
@@ -635,7 +636,17 @@ help                 显示帮助</pre>
             if (!tab) return;
             const line = { type, content, timestamp: Date.now(), ...extra };
             tab.lines.push(line);
+            tab.logs.push({ 
+                timestamp: new Date().toISOString(),
+                tabId: tabId,
+                tabName: tab.name,
+                type: type,
+                content: content,
+                sender: extra.sender || null,
+                senderId: extra.senderId || null
+            });
             if (tab.lines.length > 500) tab.lines.shift();
+            if (tab.logs.length > 1000) tab.logs.shift();
             if (tabId === state.currentTabId) renderTerminal();
         }
 
@@ -771,6 +782,8 @@ help                 显示帮助</pre>
                     return cmdClose(parts[2]);
                 case 'init':
                     return cmdInit(parts[2]);
+                case 'logs':
+                    return cmdLogs(parts[2]);
                 case '-h':
                 case '--help':
                 case 'help':
@@ -951,11 +964,6 @@ help                 显示帮助</pre>
                                 targetTab.onboardSender = realSenderTabId;
                                 setTimeout(() => performOnboarding(targetTabId), 1500);
                             }
-                        } else {
-                            const behavior = agentBehavior[targetTab.type];
-                            if (behavior && realSenderTabId !== targetTabId && shouldReply(text, realSenderTabId)) {
-                                behavior.handleMessage(targetTab, text, realSenderTabId);
-                            }
                         }
                     }
                 }
@@ -994,6 +1002,44 @@ help                 显示帮助</pre>
             if (state.tabs.length <= 1) return 'ERROR: Cannot close last tab.';
             closeTab(parseInt(tabId));
             return `OK: Tab ${tabId} closed.`;
+        }
+
+        function cmdLogs(tabId) {
+            let allLogs = [];
+            if (tabId) {
+                const tab = state.tabs.find(t => t.id === parseInt(tabId));
+                if (!tab) return `ERROR: Tab ${tabId} not found.`;
+                allLogs = tab.logs;
+            } else {
+                state.tabs.forEach(tab => {
+                    allLogs = allLogs.concat(tab.logs);
+                });
+                allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            }
+            
+            if (allLogs.length === 0) return 'No logs.';
+            
+            let output = `=== 日志输出 (共 ${allLogs.length} 条) ===\n`;
+            output += `时间\t\t\t工位\t类型\t发送者\t内容\n`;
+            output += `-`.repeat(100) + '\n';
+            
+            allLogs.forEach(log => {
+                const time = log.timestamp.slice(11, 23);
+                const tabName = log.tabName.padEnd(10);
+                const type = log.type.padEnd(8);
+                const sender = (log.sender || '').padEnd(10);
+                output += `${time}\t${tabName}\t${type}\t${sender}\t${log.content}\n`;
+            });
+            
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `teamshell-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            return output;
         }
 
         function cmdInit(file) {
