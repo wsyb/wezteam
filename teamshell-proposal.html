@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamShell - AI 多智能体协作终端工作台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-dark: #12121a;
+            --bg-card: #1a1a24;
+            --bg-terminal: #0d1117;
+            --accent-cyan: #00f5ff;
+            --accent-magenta: #ff00aa;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffdd00;
+            --accent-orange: #ff8800;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555566;
+            --border-subtle: rgba(255,255,255,0.08);
+            --glow-cyan: 0 0 30px rgba(0,245,255,0.3);
+            --glow-magenta: 0 0 30px rgba(255,0,170,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* 背景网格效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 80px 24px;
+            position: relative;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0,245,255,0.1);
+            border: 1px solid rgba(0,245,255,0.3);
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            margin-bottom: 32px;
+            letter-spacing: 1px;
+        }
+
+        .badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 10vw, 96px);
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .hero h1::after {
+            content: '_';
+            -webkit-text-fill-color: var(--accent-cyan);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .hero .subtitle {
+            font-size: clamp(18px, 3vw, 24px);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 48px;
+            font-weight: 300;
+        }
+
+        .terminal-mock {
+            width: 100%;
+            max-width: 800px;
+            background: var(--bg-terminal);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--glow-cyan);
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27ca40; }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .terminal-body {
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            min-height: 200px;
+        }
+
+        .terminal-line {
+            margin-bottom: 8px;
+            opacity: 0;
+            animation: typeIn 0.3s forwards;
+        }
+
+        .terminal-line:nth-child(1) { animation-delay: 0.2s; }
+        .terminal-line:nth-child(2) { animation-delay: 0.4s; }
+        .terminal-line:nth-child(3) { animation-delay: 0.6s; }
+        .terminal-line:nth-child(4) { animation-delay: 0.8s; }
+        .terminal-line:nth-child(5) { animation-delay: 1s; }
+
+        @keyframes typeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .prompt { color: var(--accent-green); }
+        .cmd { color: var(--text-primary); }
+        .output { color: var(--text-secondary); }
+        .highlight { color: var(--accent-cyan); }
+        .agent-name { color: var(--accent-magenta); }
+
+        /* Section 通用样式 */
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+
+        .section-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 64px;
+        }
+
+        /* What is Section */
+        .what-is {
+            background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-dark) 100%);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0,245,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Architecture Section */
+        .architecture {
+            background: var(--bg-dark);
+            position: relative;
+        }
+
+        .arch-diagram {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 48px;
+            margin-top: 48px;
+            overflow-x: auto;
+        }
+
+        .arch-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            min-width: 600px;
+        }
+
+        .arch-layer {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .arch-layer-label {
+            width: 140px;
+            flex-shrink: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+            padding-right: 16px;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .arch-nodes {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .arch-node {
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .arch-node.highlight-cyan {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .arch-node.highlight-magenta {
+            border-color: var(--accent-magenta);
+            color: var(--accent-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+
+        .arch-node.highlight-green {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .arch-node.highlight-yellow {
+            border-color: var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .arch-arrow {
+            display: flex;
+            justify-content: center;
+            padding: 8px 0;
+            color: var(--text-muted);
+            font-size: 20px;
+        }
+
+        /* Commands Section */
+        .commands {
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-deep) 100%);
+        }
+
+        .command-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 800px;
+        }
+
+        .command-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            transition: all 0.2s;
+        }
+
+        .command-item:hover {
+            border-color: rgba(0,245,255,0.3);
+            transform: translateX(8px);
+        }
+
+        .command-cmd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            color: var(--accent-green);
+            background: rgba(0,255,136,0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .command-info h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .command-info p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Use Cases Section */
+        .use-cases {
+            background: var(--bg-deep);
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .use-case-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(26,26,36,0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .use-case-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0,245,255,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .use-case-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--bg-card);
+            -webkit-text-stroke: 1px var(--accent-cyan);
+            position: absolute;
+            top: 16px;
+            right: 24px;
+            opacity: 0.5;
+        }
+
+        .use-case-card h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .use-case-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .use-case-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .use-case-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 4px 10px;
+            background: rgba(0,245,255,0.1);
+            border: 1px solid rgba(0,245,255,0.2);
+            border-radius: 4px;
+            color: var(--accent-cyan);
+        }
+
+        /* Value Section */
+        .value {
+            background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-dark) 100%);
+            text-align: center;
+        }
+
+        .value .section-desc {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .value-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            text-align: left;
+        }
+
+        .value-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .value-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            border-radius: 0 0 2px 2px;
+        }
+
+        .value-card.efficiency::before {
+            background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+        }
+
+        .value-card.social::before {
+            background: linear-gradient(90deg, transparent, var(--accent-magenta), transparent);
+        }
+
+        .value-card h3 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .value-card.efficiency h3 { color: var(--accent-green); }
+        .value-card.social h3 { color: var(--accent-magenta); }
+
+        .value-card p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .value-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-subtle);
+            padding: 64px 24px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .arch-layer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .arch-layer-label {
+                border-right: none;
+                border-bottom: 1px solid var(--border-subtle);
+                padding-right: 0;
+                padding-bottom: 8px;
+                width: auto;
+                text-align: left;
+            }
+
+            .command-item {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .command-cmd {
+                width: fit-content;
+            }
+        }
+
+        /* 滚动动画 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 装饰线 */
+        .deco-line {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-subtle), transparent);
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="badge">TRAE AI 创造力大赛 · 参赛作品</div>
+        <h1>TeamShell</h1>
+        <p class="subtitle">让 AI Agent 在终端里像人类一样协作——基于 Wezterm 的多智能体自组织与协作系统</p>
+
+        <div class="terminal-mock">
+            <div class="terminal-header">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+                <div class="terminal-title">TeamShell Terminal</div>
+            </div>
+            <div class="terminal-body">
+                <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">tsh list</span></div>
+                <div class="terminal-line"><span class="output">工号  名字              状态</span></div>
+                <div class="terminal-line"><span class="output">1     小明              在职</span></div>
+                <div class="terminal-line"><span class="output">2     <span class="agent-name">小红</span>              在职</span></div>
+                <div class="terminal-line"><span class="output">3     <span class="agent-name">小李</span>              在职</span></div>
+            </div>
+        </div>
+    </section>
+
+    <div class="deco-line"></div>
+
+    <!-- What is TeamShell -->
+    <section class="what-is">
+        <div class="container">
+            <div class="section-label">01 / 项目概述</div>
+            <h2 class="section-title">什么是 TeamShell？</h2>
+            <p class="section-desc">一个基于 Wezterm 终端的多 Agent 协作系统，每个 AI Agent 占用一个终端标签页作为「工位」，通过 TeamShell 协议实现自主协作。</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🖥️</div>
+                    <h3>终端即工作台</h3>
+                    <p>Agent 像人类一样在终端里工作——每个 Agent 占用一个 Wezterm 标签页作为工位，可以查看屏幕、输入命令、操作终端。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>类 MCP 能力</h3>
+                    <p>类似 Chrome DevTools MCP，但面向终端——AI 可以操控终端标签页，执行命令、读取输出、模拟人类操作。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3>多 Agent 自组织</h3>
+                    <p>Agent 可以招募新 Agent、委托任务、监管进度、互相帮助。团队可以自组织、自协调、自决策。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📜</div>
+                    <h3>TeamShell 协议</h3>
+                    <p>一套让 AI Agent 理解自己是团队成员的协议——有工号、有名字、有自主行动能力、有协作规范。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👀</div>
+                    <h3>屏幕共享</h3>
+                    <p>Agent 可以随时查看队友的终端屏幕，了解队友的工作状态，就像坐在旁边一起工作。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⌨️</div>
+                    <h3>远程打字</h3>
+                    <p>Agent 可以在队友的终端里输入文字、发送命令，实现真正的协作操作。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>任意 Agent</h3>
+                    <p>不绑定特定模型——支持 Claude、Codex 等任意 Agent，灵活选择最适合的工具。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🐚</div>
+                    <h3>多 Shell 兼容</h3>
+                    <p>支持 pwsh、cmd、zsh、bash、fish 等任意 shell，跨平台无死角，哪里都能用。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>会话自动恢复</h3>
+                    <p>团队会话自动存储，下次打开时自动恢复所有工位状态，协作不中断。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>智能成本优化</h3>
+                    <p>主 Agent 只负责思考和监管，具体执行由低成本 Agent 完成，节省 token 的同时不失智能。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚖️</div>
+                    <h3>能力成本平衡</h3>
+                    <p>根据任务难度自动调配不同能力/成本的 Agent——简单任务用低成本模型，复杂任务用高性能模型。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="deco-line"></div>
+
+    <!-- Architecture -->
+    <section class="architecture">
+        <div class="container">
+            <div class="section-label">02 / 技术架构</div>
+            <h2 class="section-title">系统架构</h2>
+            <p class="section-desc">基于 Wezterm 的终端多路复用能力，构建在 Claude/AI Agent 之上的协作协议层。</p>
+
+            <div class="arch-diagram">
+                <div class="arch-grid">
+                    <div class="arch-layer">
+                        <div class="arch-layer-label">User Layer</div>
+                        <div class="arch-nodes">
+                            <div class="arch-node highlight-cyan">人类用户 / 老板</div>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-layer">
+                        <div class="arch-layer-label">Agent Layer</div>
+                        <div class="arch-nodes">
+                            <div class="arch-node highlight-magenta">Claude Agent</div>
+                            <div class="arch-node highlight-magenta">Codex Agent</div>
+                            <div class="arch-node highlight-magenta">其他 AI Agent</div>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-layer">
+                        <div class="arch-layer-label">Protocol Layer</div>
+                        <div class="arch-nodes">
+                            <div class="arch-node highlight-yellow">TeamShell Protocol</div>
+                            <div class="arch-node">IPC 通信</div>
+                            <div class="arch-node">协议解析</div>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-layer">
+                        <div class="arch-layer-label">CLI Layer</div>
+                        <div class="arch-nodes">
+                            <div class="arch-node highlight-green">tsh list</div>
+                            <div class="arch-node highlight-green">tsh view</div>
+                            <div class="arch-node highlight-green">tsh type</div>
+                            <div class="arch-node highlight-green">tsh open</div>
+                            <div class="arch-node highlight-green">tsh close</div>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-layer">
+                        <div class="arch-layer-label">Terminal Layer</div>
+                        <div class="arch-nodes">
+                            <div class="arch-node">Wezterm Tabs (工位)</div>
+                            <div class="arch-node">Pane</div>
+                            <div class="arch-node">Mux Server</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="deco-line"></div>
+
+    <!-- Commands -->
+    <section class="commands">
+        <div class="container">
+            <div class="section-label">03 / 核心功能</div>
+            <h2 class="section-title">命令行接口</h2>
+            <p class="section-desc">简洁而强大的 tsh 命令，让 Agent 协作变得直观可控。</p>
+
+            <div class="command-list">
+                <div class="command-item">
+                    <div class="command-cmd">tsh list</div>
+                    <div class="command-info">
+                        <h4>列出团队成员</h4>
+                        <p>显示所有在职工位，包括工号、名字、当前状态。团队成员可以看到谁在、谁忙、谁空闲。</p>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-cmd">tsh view &lt;id&gt;</div>
+                    <div class="command-info">
+                        <h4>查看队友屏幕</h4>
+                        <p>获取指定工位终端的最后 N 行输出，纯只读操作，队友完全感知不到你在观察他。</p>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-cmd">tsh type &lt;id&gt; "消息"</div>
+                    <div class="command-info">
+                        <h4>在队友终端打字</h4>
+                        <p>向指定工位的终端输入文字并回车。可以发送文字消息给 Agent 队友，或向程序工位输入命令。</p>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-cmd">tsh open "名字" -- 命令</div>
+                    <div class="command-info">
+                        <h4>招募新 Agent</h4>
+                        <p>启动一个新的工位，运行指定的 Agent（Claude、Codex 等）。新 Agent 会自动加载 TeamShell 协议，加入团队。</p>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-cmd">tsh close &lt;id&gt;</div>
+                    <div class="command-info">
+                        <h4>让成员离开</h4>
+                        <p>关闭指定工位，终止上面运行的所有程序。未完成的工作会丢失，关闭前会检查是否有重要状态需要交接。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="deco-line"></div>
+
+    <!-- Use Cases -->
+    <section class="use-cases">
+        <div class="container">
+            <div class="section-label">04 / 使用场景</div>
+            <h2 class="section-title">想象一下</h2>
+            <p class="section-desc">当多个 AI Agent 组成团队一起工作时，会发生什么？</p>
+
+            <div class="use-case-grid">
+                <div class="use-case-card">
+                    <div class="use-case-number">01</div>
+                    <h3>复杂任务分解</h3>
+                    <p>老板把一个大任务交给主 Agent，主 Agent 分析后招募多个专家 Agent 并行处理，各自完成子任务后汇报结果。</p>
+                    <div class="use-case-tags">
+                        <span class="use-case-tag">并行处理</span>
+                        <span class="use-case-tag">任务分解</span>
+                        <span class="use-case-tag">结果汇总</span>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">02</div>
+                    <h3>代码 Review</h3>
+                    <p>开发 Agent 写完代码后，Review Agent 来审查代码，发现问题直接在开发 Agent 的终端里标注、讨论、优化。</p>
+                    <div class="use-case-tags">
+                        <span class="use-case-tag">质量把控</span>
+                        <span class="use-case-tag">协作审核</span>
+                        <span class="use-case-tag">实时讨论</span>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">03</div>
+                    <h3>协作 Debug</h3>
+                    <p>一个 Agent 在调试问题时卡住了，其他 Agent 通过 view 看到他的屏幕，主动 type 帮忙分析、提供思路。</p>
+                    <div class="use-case-tags">
+                        <span class="use-case-tag">问题求助</span>
+                        <span class="use-case-tag">主动协助</span>
+                        <span class="use-case-tag">知识共享</span>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">04</div>
+                    <h3>模拟团队工作流</h3>
+                    <p>不同角色的 Agent——产品 / 开发 / 测试——各自在工位上工作，通过 tsh 命令协调、交接、审批，像真实团队一样运作。</p>
+                    <div class="use-case-tags">
+                        <span class="use-case-tag">角色扮演</span>
+                        <span class="use-case-tag">工作流模拟</span>
+                        <span class="use-case-tag">端到端</span>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">05</div>
+                    <h3>人类监管</h3>
+                    <p>人类老板坐在「主控室」，可以随时 tsh view 查看任何 Agent 的工作状态，在必要时 tsh type 介入指导。</p>
+                    <div class="use-case-tags">
+                        <span class="use-case-tag">人工监管</span>
+                        <span class="use-case-tag">随时介入</span>
+                        <span class="use-case-tag">安全可控</span>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">06</div>
+                    <h3>运维自动化</h3>
+                    <p>多个运维 Agent 分工监控不同服务器，一个 Agent 发现异常自动招募专家 Agent 来处理，自动化工运维。</p>
+                    <div class="use-case-tags">
+                        <span class="use-case-tag">多机协作</span>
+                        <span class="use-case-tag">自动响应</span>
+                        <span class="use-case-tag">故障恢复</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="deco-line"></div>
+
+    <!-- Value -->
+    <section class="value">
+        <div class="container">
+            <div class="section-label">05 / 价值与意义</div>
+            <h2 class="section-title">为什么重要？</h2>
+            <p class="section-desc">TeamShell 首次实现了 AI Agent 的「团队工作模式」</p>
+
+            <div class="value-cards">
+                <div class="value-card efficiency">
+                    <div class="value-number">3-5x</div>
+                    <h3>效率提升</h3>
+                    <p>把串行的单 Agent 任务变成并行的多 Agent 协作，复杂任务完成时间大幅缩短。更重要的是，主 Agent 只负责思考和监管，具体执行由低成本 Agent 完成，节省 token 的同时不失智能。综合效率可提升 3-5 倍。</p>
+                </div>
+                <div class="value-card social">
+                    <div class="value-number">∞</div>
+                    <h3>社会价值</h3>
+                    <p>为未来 AI 团队协作提供基础设施，可应用于软件开发自动化、运维自动化、研究助理等领域，开启 AI 协作新时代。系统不绑定任何特定模型或平台，支持任意 Agent 和任意 shell，具有良好的通用性和可扩展性。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">TeamShell</div>
+        <p class="footer-text">基于 Wezterm · TeamShell Protocol · 多 Agent 协作系统</p>
+    </footer>
+
+    <script>
+        // 简单的滚动动画
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.section-label, .section-title, .section-desc, .feature-card, .command-item, .use-case-card, .value-card').forEach(el => {
+            el.classList.add('fade-in');
+            observer.observe(el);
+        });
+
+        // 终端打字动画重播
+        document.querySelector('.terminal-mock').addEventListener('mouseenter', () => {
+            const lines = document.querySelectorAll('.terminal-line');
+            lines.forEach((line, i) => {
+                line.style.animation = 'none';
+                line.offsetHeight; // trigger reflow
+                line.style.animation = `typeIn 0.3s forwards ${0.2 + i * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>
