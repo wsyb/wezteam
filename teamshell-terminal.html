@@ -856,12 +856,7 @@ help                 显示帮助</pre>
             const regex = /("[^"]*"|[^\s]+)/g;
             let match;
             while ((match = regex.exec(cmd)) !== null) {
-                const token = match[1];
-                if (token.startsWith('"') && token.endsWith('"')) {
-                    result.push(token.slice(1, -1));
-                } else {
-                    result.push(token);
-                }
+                result.push(match[1]);
             }
             return result;
         }
