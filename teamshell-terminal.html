@@ -821,10 +821,24 @@ help                 显示帮助</pre>
         }
 
         function processViewOutput(content) {
-            if (content.includes('[[VIEW_BLOCK_START]]') && content.includes('[[VIEW_BLOCK_END]]')) {
-                return content
-                    .replace('[[VIEW_BLOCK_START]]', '<div class="view-block">')
-                    .replace('[[VIEW_BLOCK_END]]', '</div>');
+            if (content.startsWith('📺 工位')) {
+                const lines = content.split('\n');
+                const header = lines[0];
+                const body = lines.slice(1).map(line => {
+                    if (line.startsWith('[TeamShell 消息] 来自')) {
+                        return `<span class="view-line-tsh-in">${line}</span>`;
+                    } else if (line.startsWith('[发送至')) {
+                        return `<span class="view-line-tsh-out">${line}</span>`;
+                    } else if (line.startsWith('[') && line.includes(']')) {
+                        return `<span class="view-line-agent">${line}</span>`;
+                    } else if (line.startsWith('📋')) {
+                        return `<span class="view-line-system">${line}</span>`;
+                    } else if (line.startsWith('❯')) {
+                        return `<span class="view-line-command">${line}</span>`;
+                    }
+                    return `<span class="view-line-output">${line}</span>`;
+                }).join('<br>');
+                return `<div class="view-block"><div class="view-header">${header}</div>${body}</div>`;
             }
             return content;
         }
@@ -891,39 +905,33 @@ help                 显示帮助</pre>
             const count = parseInt(lines) || 30;
             const recent = tab.lines.slice(-count);
             
-            const linesHtml = recent.map(l => {
+            const linesText = recent.map(l => {
                 let prefix = '';
-                let cssClass = 'view-line-output';
                 
                 switch(l.type) {
                     case 'tsh-in': 
                         prefix = `[TeamShell 消息] 来自 ${l.sender}: `;
-                        cssClass = 'view-line-tsh-in';
                         break;
                     case 'tsh-out':
                         prefix = `[发送至 ${l.sender}] `;
-                        cssClass = 'view-line-tsh-out';
                         break;
                     case 'agent':
                         prefix = `[${l.agentType?.toUpperCase()}] `;
-                        cssClass = 'view-line-agent';
                         break;
                     case 'system':
                         prefix = `📋 `;
-                        cssClass = 'view-line-system';
                         break;
                     case 'command':
                         prefix = `❯ `;
-                        cssClass = 'view-line-command';
                         break;
                     default:
-                        cssClass = 'view-line-output';
+                        prefix = '';
                 }
                 
-                return `<span class="${cssClass}">${prefix}${l.content}</span>`;
+                return `${prefix}${l.content}`;
             }).join('\n');
             
-            return `[[VIEW_BLOCK_START]]<div class="view-header">📺 工位 ${tabId} - ${tab.name} 的屏幕内容：</div>${linesHtml}[[VIEW_BLOCK_END]]`;
+            return `📺 工位 ${tabId} - ${tab.name} 的屏幕内容：\n${linesText}`;
         }
 
         function cmdType(args) {
