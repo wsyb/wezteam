@@ -1049,7 +1049,6 @@ help                 显示帮助</pre>
         // ============ 场景执行 ============
         function startScenario() {
             if (state.isPlaying) return;
-            resetScenario();
             state.isPlaying = true;
             btnPlay.disabled = true;
             btnPause.disabled = false;
@@ -1139,6 +1138,21 @@ help                 显示帮助</pre>
             btnPlay.disabled = false;
             btnPause.disabled = true;
             addLine(state.currentTabId, 'agent', '演示完成！', { agentType: 'claude' });
+
+            const scenarioKeys = Object.keys(scenarios);
+            const currentIndex = scenarioKeys.indexOf(state.currentScenario);
+            if (currentIndex < scenarioKeys.length - 1) {
+                setTimeout(() => {
+                    state.currentScenario = scenarioKeys[currentIndex + 1];
+                    
+                    scenarioBtns.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.scenario === state.currentScenario);
+                    });
+
+                    addLine(state.currentTabId, 'system', `\n=== 开始演示场景: ${scenarios[state.currentScenario].name} ===`);
+                    startScenario();
+                }, 3000);
+            }
         }
 
         function updateSteps(step) {
@@ -1173,7 +1187,9 @@ help                 显示帮助</pre>
                 scenarioBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 state.currentScenario = btn.dataset.scenario;
-                resetScenario();
+                state.actionQueue = [];
+                state.currentStep = 0;
+                updateSteps(0);
             });
         });
 
