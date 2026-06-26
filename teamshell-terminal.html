@@ -480,7 +480,7 @@ help                 显示帮助</pre>
                 steps: 6,
                 actions: [
                     { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500 },
-                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 1000 },
+                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 15000 },
                     { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 15000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
                     { type: 'cmd', text: 'tsh view 3', delay: 3000 }
@@ -492,11 +492,11 @@ help                 显示帮助</pre>
                 actions: [
                     { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 2500 },
                     { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑，读取 /data/prod/orders 目录"', delay: 8000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 2000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 2000 },
                     { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh type 3 "请对修复方案进行安全审查"', delay: 6000 },
+                    { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 3000 },
+                    { type: 'cmd', text: 'tsh view 2', delay: 5000 },
+                    { type: 'cmd', text: 'tsh type 3 "请对修复方案进行安全审查"', delay: 15000 },
                     { type: 'cmd', text: 'tsh view 3', delay: 3000 }
                 ]
             },
@@ -598,7 +598,16 @@ help                 显示帮助</pre>
                     
                     tab.status = 'working';
                     
-                    const steps = [
+                    const isFixReview = message.includes('修复') || message.includes('审查');
+                    
+                    const steps = isFixReview ? [
+                        { delay: 1500, text: '收到！正在审查修复方案...' },
+                        { delay: 2000, text: '🔒 审查中... 检查类型转换安全性' },
+                        { delay: 1800, text: '🔒 审查中... 检查边界条件处理' },
+                        { delay: 2000, text: '🔒 审查中... 验证数据完整性' },
+                        { delay: 1500, text: '📝 正在生成审查报告...' },
+                        { delay: 2000, text: '✅ 修复方案审查完成！\n\n🛡️ 审查结果:\n1. 类型转换: order_id字符串转整数逻辑安全，已添加校验\n2. 边界处理: 空值和异常情况已正确处理\n3. 数据完整性: 事务边界清晰，不会产生脏数据\n\n修复方案符合安全标准，可以实施。' }
+                    ] : [
                         { delay: 1500, text: '收到！正在进行安全评估...' },
                         { delay: 2000, text: '🔒 扫描中... 检查加密配置' },
                         { delay: 1800, text: '🔒 扫描中... 检查HTTPS配置' },
@@ -615,7 +624,10 @@ help                 显示帮助</pre>
                             if (index === steps.length - 1) {
                                 tab.status = 'idle';
                                 setTimeout(() => {
-                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "安全评估完成！已提供详细安全建议。"`);
+                                    const replyText = isFixReview 
+                                        ? '修复方案审查完成！符合安全标准，可以实施。'
+                                        : '安全评估完成！已提供详细安全建议。';
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
                                 }, 1500);
                             }
                         }, cumulativeDelay);
@@ -909,10 +921,10 @@ help                 显示帮助</pre>
             return output;
         }
 
-        function cmdView(tabId, lines = 30) {
+        function cmdView(tabId, lines = 20) {
             const tab = state.tabs.find(t => t.id === parseInt(tabId));
             if (!tab) return `ERROR: Tab ${tabId} not found.`;
-            const count = parseInt(lines) || 30;
+            const count = parseInt(lines) || 20;
             const recent = tab.lines.slice(-count);
             
             const linesText = recent.map(l => {
@@ -985,12 +997,24 @@ help                 显示帮助</pre>
                         targetTab.status = 'idle';
                         addLine(targetTabId, 'system', '✅ 权限验证通过');
                         setTimeout(() => {
-                            const reply = '权限已通过！继续执行任务...';
-                            agentExecuteCommand(targetTabId, `tsh type ${senderId} "${reply}"`);
+                            addLine(targetTabId, 'system', '🔍 继续分析代码逻辑...');
                             setTimeout(() => {
-                                const result = '分析完成！订单ID类型不匹配，已修复：\n- 将order_id从字符串改为整数\n- 添加类型转换逻辑';
-                                agentExecuteCommand(targetTabId, `tsh type ${senderId} "${result}"`);
-                            }, 2000);
+                                addLine(targetTabId, 'system', '🔍 定位问题: order_id类型不匹配');
+                                setTimeout(() => {
+                                    addLine(targetTabId, 'system', '🔧 应用修复方案...');
+                                    setTimeout(() => {
+                                        addLine(targetTabId, 'system', '✅ 修复完成！');
+                                        setTimeout(() => {
+                                            const reply = '权限已通过！继续执行任务...';
+                                            agentExecuteCommand(targetTabId, `tsh type ${senderId} "${reply}"`);
+                                            setTimeout(() => {
+                                                const result = '分析完成！订单ID类型不匹配，已修复：\n- 将order_id从字符串改为整数\n- 添加类型转换逻辑';
+                                                agentExecuteCommand(targetTabId, `tsh type ${senderId} "${result}"`);
+                                            }, 1500);
+                                        }, 1000);
+                                    }, 1500);
+                                }, 1500);
+                            }, 1500);
                         }, 1000);
                     } else {
                         addLine(targetTabId, 'system', '❌ 权限验证失败');
@@ -1239,10 +1263,7 @@ help                 显示帮助</pre>
             }
 
             const action = state.actionQueue.shift();
-            executeAction(action);
-        }
-
-        function executeAction(action) {
+            
             switch (action.type) {
                 case 'user':
                     addLine(state.currentTabId, 'user', action.text);
@@ -1267,10 +1288,13 @@ help                 显示帮助</pre>
                 case 'step':
                     state.currentStep++;
                     updateSteps(state.currentStep);
-                    return;
+                    break;
             }
-
-            setTimeout(() => executeNextAction(), action.delay || 1000);
+            
+            const nextAction = state.actionQueue[0];
+            if (nextAction) {
+                setTimeout(() => executeNextAction(), nextAction.delay || 1000);
+            }
         }
 
         function finishScenario() {
