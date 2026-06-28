@@ -393,9 +393,8 @@
     <div class="help-panel" id="help-panel">
         <button class="help-panel-close" id="help-close">&times;</button>
         <h2>TeamShell CLI 帮助</h2>
-        <h3>Usage</h3>
-        <pre>tsh.exe &lt;COMMAND&gt;</pre>
-        <h3>Commands</h3>
+        
+        <h3>📋 命令列表</h3>
         <pre>
 list                 列出所有工位
 view &lt;工号&gt; [行数]    查看工位屏幕
@@ -403,12 +402,42 @@ type &lt;工号&gt; "文本"   发送消息（自动回车）
   --no-enter          不自动回车
   --key "\x03"        发送Ctrl+C等
 name &lt;工号&gt; "新名"   重命名工位
-open "名字" -- &lt;类型&gt; 招聘成员(claude/codex/traecli)
+open "名字" -- &lt;类型&gt; 招聘成员(claude/codex/traecli/opencode)
 close &lt;工号&gt;         关闭工位
 init &lt;协议文件&gt;       初始化协议
-help                 显示帮助</pre>
-        <h3>Options</h3>
-        <pre>-h, --help     显示帮助  -V, --version  版本</pre>
+help                 显示帮助
+-V, --version        版本信息</pre>
+        
+        <h3>📜 协议核心要点</h3>
+        <pre style="background: rgba(147, 51, 234, 0.1); border: 1px solid var(--accent-purple);">
+🔐 入职流程：tsh init → tsh open → tsh type 入职指令
+👥 团队协作：Agent 间通过 tsh type 通信，tsh view 查看状态
+🎯 核心认知：tsh type = 远程打字机，敲什么取决于对方运行什么
+✅ 回复规则：收到 [TeamShell 消息] 前缀 → 用 tsh type 回复
+🚫 决策边界：需要花钱/破坏生产环境 → 必须请示老板
+📋 监管责任：派出去的任务 → 监管人负责盯到底
+</pre>
+        
+        <h3>💡 多Agent协作价值</h3>
+        <div style="padding: 8px 0; color: var(--text-primary); font-size: 13px; line-height: 1.6;">
+            <p><strong>Claude-项目经理</strong>：分配任务、协调团队、验收项目</p>
+            <p><strong>Codex-前端开发</strong>：开发前端页面、响应审查反馈</p>
+            <p><strong>OpenCode-后端开发</strong>：开发后端接口、响应审查反馈</p>
+            <p><strong>Trae-代码审查</strong>：审查代码、发现问题、验证修改</p>
+        </div>
+        
+        <button id="btn-full-protocol" style="margin-top: 16px; padding: 8px 16px; background: var(--accent-purple); color: #fff; border: none; border-radius: 4px; cursor: pointer;">查看完整协议 →</button>
+        <div id="full-protocol" style="display: none; margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 4px; max-height: 300px; overflow-y: auto; font-size: 12px;">
+            <p style="color: var(--accent-cyan); margin-bottom: 8px;">完整协议请查看 TeamShellProtocol.md 文件</p>
+            <p style="color: var(--text-muted);">核心价值：</p>
+            <ul style="color: var(--text-primary); margin-left: 16px;">
+                <li>多Agent协作：不同工具负责不同角色</li>
+                <li>权限管控：生产目录读取需人工授权</li>
+                <li>开发-审查循环：发现问题→修改→再审查→通过</li>
+                <li>临时团队：按需组建，完成后解散</li>
+                <li>知识沉淀：工作总结报告作为项目资产</li>
+            </ul>
+        </div>
     </div>
 
     <script>
@@ -1474,6 +1503,18 @@ help                 显示帮助</pre>
         overlay.addEventListener('click', () => {
             helpPanel.classList.remove('show');
             overlay.classList.remove('show');
+        });
+
+        document.getElementById('btn-full-protocol').addEventListener('click', () => {
+            const fullProtocol = document.getElementById('full-protocol');
+            const btn = document.getElementById('btn-full-protocol');
+            if (fullProtocol.style.display === 'none') {
+                fullProtocol.style.display = 'block';
+                btn.textContent = '收起协议 ↑';
+            } else {
+                fullProtocol.style.display = 'none';
+                btn.textContent = '查看完整协议 →';
+            }
         });
 
         // ============ 初始化 ============
