@@ -219,25 +219,6 @@
         .terminal-content::-webkit-scrollbar-track { background: var(--bg-dark); }
         .terminal-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
-        .terminal-input {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-top: 1px solid var(--border-color);
-            background: var(--bg-dark);
-        }
-        .input-prompt { color: var(--accent-cyan); font-weight: bold; }
-        .input-field {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 13px;
-            outline: none;
-        }
-
         .statusbar {
             display: flex;
             align-items: center;
@@ -250,6 +231,15 @@
         }
         .statusbar-left { display: flex; gap: 16px; }
         .statusbar-right { display: flex; gap: 16px; }
+        .tsh-version-clickable {
+            cursor: pointer;
+            color: var(--accent-cyan);
+            transition: all 0.2s;
+        }
+        .tsh-version-clickable:hover {
+            color: var(--accent-purple);
+            text-decoration: underline;
+        }
 
         .line { margin: 2px 0; }
         .line-user { color: var(--accent-green); }
@@ -386,10 +376,6 @@
 
     <div class="terminal-window" id="terminal-window">
         <div class="terminal-content" id="terminal-content"></div>
-        <div class="terminal-input">
-            <span class="input-prompt">❯</span>
-            <input type="text" class="input-field" id="input-field" placeholder="输入命令..." autocomplete="off">
-        </div>
     </div>
 
     <div class="statusbar">
@@ -399,7 +385,7 @@
         </div>
         <div class="statusbar-right">
             <span>UTF-8</span>
-            <span>tsh v1.0.0</span>
+            <span id="tsh-version" class="tsh-version-clickable">tsh v1.0.0</span>
         </div>
     </div>
 
@@ -442,7 +428,6 @@ help                 显示帮助</pre>
         // ============ DOM ============
         const tabbar = document.getElementById('tabbar');
         const terminalContent = document.getElementById('terminal-content');
-        const inputField = document.getElementById('input-field');
         const statusAgent = document.getElementById('status-agent');
         const statusId = document.getElementById('status-id');
         const helpPanel = document.getElementById('help-panel');
@@ -1476,24 +1461,14 @@ help                 显示帮助</pre>
             });
         });
 
-        inputField.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const cmd = inputField.value.trim();
-                if (!cmd) return;
-                
-                addLine(state.currentTabId, 'command', cmd);
-                const output = handleTshCommand(cmd);
-                if (output !== null) {
-                    setTimeout(() => addLine(state.currentTabId, 'output', output), 300);
-                }
-                
-                inputField.value = '';
-            }
-        });
-
         document.getElementById('help-close').addEventListener('click', () => {
             helpPanel.classList.remove('show');
             overlay.classList.remove('show');
+        });
+
+        document.getElementById('tsh-version').addEventListener('click', () => {
+            helpPanel.classList.add('show');
+            overlay.classList.add('show');
         });
 
         overlay.addEventListener('click', () => {
