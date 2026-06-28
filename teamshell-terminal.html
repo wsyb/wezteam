@@ -36,6 +36,28 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* 科技感背景网格 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
         }
 
         .control-bar {
@@ -50,8 +72,26 @@
         .control-left { display: flex; align-items: center; gap: 16px; }
         .control-right { display: flex; align-items: center; gap: 8px; }
 
-        .logo { font-size: 18px; font-weight: bold; }
-        .logo span { color: var(--accent-cyan); }
+        .logo {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .logo::before {
+            content: '⚡';
+            color: var(--accent-cyan);
+            animation: glow 2s infinite;
+        }
+        .logo span {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        @keyframes glow {
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+            50% { opacity: 0.8; text-shadow: 0 0 15px rgba(0, 212, 255, 0.8); }
+        }
 
         .scenario-selector { display: flex; gap: 4px; }
         .scenario-btn {
@@ -61,15 +101,15 @@
             color: var(--text-muted);
             border-radius: 4px;
             font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            cursor: default;
+            pointer-events: none;
         }
         .scenario-btn.active {
             background: var(--accent-cyan);
             border-color: var(--accent-cyan);
             color: #000;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
         }
-        .scenario-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
 
         .btn {
             padding: 6px 16px;
@@ -77,15 +117,18 @@
             border-radius: 4px;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn:active {
+            transform: scale(0.95);
         }
         .btn-play { background: var(--accent-green); color: #000; }
-        .btn-play:hover { background: #00e07a; }
+        .btn-play:hover { background: #00e07a; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
         .btn-pause { background: var(--accent-yellow); color: #000; }
-        .btn-pause:hover { background: #e6b800; }
+        .btn-pause:hover { background: #e6b800; box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
         .btn-reset { background: var(--accent-red); color: #fff; }
-        .btn-reset:hover { background: #e04444; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-reset:hover { background: #e04444; box-shadow: 0 0 10px rgba(255, 85, 85, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .narration-bar {
             display: flex;
@@ -109,6 +152,21 @@
             font-size: 14px;
             font-weight: 500;
             font-style: italic;
+            flex: 1;
+        }
+        .confirm-btn {
+            padding: 4px 12px;
+            background: var(--accent-red);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .confirm-btn:hover {
+            background: #e04444;
+            box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
         }
 
         .titlebar {
@@ -393,7 +451,6 @@
         </div>
         <div class="control-right">
             <button class="btn btn-play" id="btn-play">▶ 开始演示</button>
-            <button class="btn btn-pause" id="btn-pause" disabled>⏸ 暂停</button>
             <button class="btn btn-reset" id="btn-reset">↺ 重置</button>
         </div>
     </div>
@@ -401,6 +458,7 @@
     <div class="narration-bar" id="narration-bar">
         <span class="narration-icon">💬</span>
         <span class="narration-text" id="narration-text">点击「开始演示」观看 TeamShell 多 Agent 协作流程</span>
+        <button class="confirm-btn" id="confirm-btn" style="display: none;">确认解散团队</button>
     </div>
 
     <div class="titlebar">
@@ -669,8 +727,8 @@
         const helpPanel = document.getElementById('help-panel');
         const overlay = document.getElementById('overlay');
         const btnPlay = document.getElementById('btn-play');
-        const btnPause = document.getElementById('btn-pause');
         const btnReset = document.getElementById('btn-reset');
+        const confirmBtn = document.getElementById('confirm-btn');
         const scenarioBtns = document.querySelectorAll('.scenario-btn');
         const narrationText = document.getElementById('narration-text');
 
@@ -678,11 +736,14 @@
         const scenarios = {
             'team-setup': {
                 name: '团队组建',
-                steps: 6,
-                intro: 'Claude作为项目经理，组建前端(Codex)、后端(OpenCode)、代码审查(Trae)团队',
+                steps: 8,
+                intro: 'Claude作为项目经理，通过检查系统隐藏配置目录发现可用agent，再组建团队',
                 actions: [
-                    { type: 'user', text: '请帮我组建支付功能开发团队', delay: 2500, narration: 'Claude-项目经理收到需求' },
+                    { type: 'user', text: '请帮我查看当前系统中已经安装的agent，然后帮我组建支付功能开发团队', delay: 2500, narration: 'Claude-项目经理收到需求' },
                     { type: 'cmd', text: 'tsh -V', delay: 2000, narration: '查看 TeamShell CLI 版本' },
+                    { type: 'cmd', text: 'ls -d ~/.claude ~/.codex ~/.opencode ~/.traecli 2>/dev/null', delay: 2500, narration: '检查系统隐藏配置目录，发现可用Agent' },
+                    { type: 'output', text: '/Users/wez/.claude\n/Users/wez/.codex\n/Users/wez/.opencode\n/Users/wez/.traecli', delay: 1500, narration: '发现4个Agent配置目录' },
+                    { type: 'output', text: '🤔 Claude-项目经理思考：\n\n通过检查系统配置目录发现以下可用Agent：\n- ~/.codex 存在 → Codex已安装，擅长前端开发，分配为「前端开发」角色\n- ~/.opencode 存在 → OpenCode已安装，擅长后端开发，分配为「后端开发」角色\n- ~/.traecli 存在 → TraeCLI已安装，擅长代码审查和安全审计，分配为「代码审查」角色\n- ~/.claude 存在 → 自己就是Claude，担任项目经理\n\n组建方案：前端+后端+审查的开发-审核闭环团队', delay: 3000, narration: 'Claude分析角色分配方案' },
                     { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000, narration: '初始化 TeamShell 协作协议' },
                     { type: 'cmd', text: 'tsh open "Codex-前端开发" -- codex', delay: 2000, narration: '创建 Codex-前端开发工位' },
                     { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'Codex执行入职自检' },
@@ -724,9 +785,9 @@
             'project-close': {
                 name: '项目验收与解散',
                 steps: 5,
-                intro: '所有代码审查通过后，运行验收测试，解散临时开发团队',
+                intro: '所有代码审查通过后，运行验收测试，用户确认后解散临时开发团队',
                 actions: [
-                    { type: 'user', text: '代码审查全部通过，请验收并解散团队', delay: 2500, narration: 'Claude发起项目验收' },
+                    { type: 'confirm', text: '验收通过，确认解散团队', message: '代码审查全部通过，请验收并解散团队', delay: 0, narration: '项目验收完成，等待用户确认解散' },
                     { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500, narration: '运行自动化验收测试' },
                     { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500, narration: '测试全部通过！验收合格' },
                     { type: 'cmd', text: 'tsh close 4', delay: 1500, narration: '解散 Trae-代码审查临时工位' },
@@ -1149,7 +1210,9 @@
 
         function handleTshCommand(cmd) {
             const parts = parseCommand(cmd.trim());
-            if (parts[0] !== 'tsh') return null;
+            if (parts[0] !== 'tsh') {
+                return handleShellCommand(cmd, parts);
+            }
             const subCmd = parts[1] || '';
 
             switch(subCmd) {
@@ -1178,6 +1241,20 @@
                     return 'TeamShell CLI v1.0.0';
                 default:
                     return `Unknown command: ${subCmd}`;
+            }
+        }
+
+        function handleShellCommand(cmd, parts) {
+            switch(parts[0]) {
+                case 'ls':
+                    if (cmd.includes('~/.claude') && cmd.includes('~/.codex')) {
+                        return '/Users/wez/.claude\n/Users/wez/.codex\n/Users/wez/.opencode\n/Users/wez/.traecli';
+                    }
+                    return 'README.md  src/  package.json';
+                case 'cat':
+                    return 'TeamShell Protocol v1.0.0\n\n协作协议内容...';
+                default:
+                    return `$ ${cmd}\n(命令执行中...)`;
             }
         }
 
@@ -1456,11 +1533,26 @@
         }
 
         // ============ 场景执行 ============
+        function updatePlayButton() {
+            if (!state.isPlaying && !state.paused) {
+                btnPlay.textContent = '▶ 开始演示';
+                btnPlay.className = 'btn btn-play';
+                btnPlay.disabled = false;
+            } else if (state.isPlaying) {
+                btnPlay.textContent = '⏸ 暂停';
+                btnPlay.className = 'btn btn-pause';
+                btnPlay.disabled = false;
+            } else if (state.paused) {
+                btnPlay.textContent = '▶ 继续';
+                btnPlay.className = 'btn btn-play';
+                btnPlay.disabled = false;
+            }
+        }
+
         function startScenario() {
             if (state.isPlaying) return;
             state.isPlaying = true;
-            btnPlay.disabled = true;
-            btnPause.disabled = false;
+            updatePlayButton();
 
             const scenario = scenarios[state.currentScenario];
             if (!scenario) return;
@@ -1476,15 +1568,13 @@
         function pauseScenario() {
             state.isPlaying = false;
             state.paused = true;
-            btnPlay.disabled = false;
-            btnPause.disabled = true;
+            updatePlayButton();
         }
 
         function resumeScenario() {
             state.isPlaying = true;
             state.paused = false;
-            btnPlay.disabled = true;
-            btnPause.disabled = false;
+            updatePlayButton();
             executeNextAction();
         }
 
@@ -1493,8 +1583,8 @@
             state.paused = false;
             state.actionQueue = [];
             state.currentStep = 0;
-            btnPlay.disabled = false;
-            btnPause.disabled = true;
+            updatePlayButton();
+            confirmBtn.style.display = 'none';
 
             state.tabs = [];
             state.nextTabId = 1;
@@ -1521,6 +1611,15 @@
                 case 'user':
                     addLine(state.currentTabId, 'user', action.text);
                     break;
+                case 'confirm':
+                    confirmBtn.textContent = action.text;
+                    confirmBtn.style.display = 'block';
+                    confirmBtn.onclick = () => {
+                        confirmBtn.style.display = 'none';
+                        addLine(state.currentTabId, 'user', action.message);
+                        executeNextAction();
+                    };
+                    return;
                 case 'cmd':
                     addLine(state.currentTabId, 'command', action.text);
                     const output = handleTshCommand(action.text);
@@ -1553,8 +1652,7 @@
 
         function finishScenario() {
             state.isPlaying = false;
-            btnPlay.disabled = false;
-            btnPause.disabled = true;
+            updatePlayButton();
             addLine(state.currentTabId, 'agent', '演示完成！', { agentType: 'claude' });
 
             const scenarioKeys = Object.keys(scenarios);
@@ -1583,25 +1681,16 @@
 
         // ============ 事件监听 ============
         btnPlay.addEventListener('click', () => {
-            if (state.paused) {
+            if (state.isPlaying) {
+                pauseScenario();
+            } else if (state.paused) {
                 resumeScenario();
             } else {
                 startScenario();
             }
         });
 
-        btnPause.addEventListener('click', pauseScenario);
         btnReset.addEventListener('click', resetScenario);
-
-        scenarioBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                scenarioBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                state.currentScenario = btn.dataset.scenario;
-                state.actionQueue = [];
-                state.currentStep = 0;
-            });
-        });
 
         document.getElementById('help-close').addEventListener('click', () => {
             helpPanel.classList.remove('show');
