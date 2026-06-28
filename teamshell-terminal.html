@@ -87,23 +87,29 @@
         .btn-reset:hover { background: #e04444; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .steps-bar {
+        .narration-bar {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 4px 16px;
-            background: var(--bg-dark);
-            border-bottom: 1px solid var(--border-color);
+            gap: 12px;
+            padding: 8px 16px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(147, 51, 234, 0.15));
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            border-top: 1px solid rgba(99, 102, 241, 0.3);
         }
-        .step-label { color: var(--text-muted); font-size: 12px; }
-        .step-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--border-color);
-            transition: all 0.3s;
+        .narration-icon {
+            font-size: 16px;
+            animation: pulse 2s infinite;
         }
-        .step-dot.active { background: var(--accent-cyan); }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .narration-text {
+            color: var(--accent-cyan);
+            font-size: 14px;
+            font-weight: 500;
+            font-style: italic;
+        }
 
         .titlebar {
             display: flex;
@@ -364,15 +370,9 @@
         </div>
     </div>
 
-    <div class="steps-bar" id="steps-bar">
-        <span class="step-label">进度:</span>
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <span class="step-label" id="step-label">步骤 1/6</span>
+    <div class="narration-bar" id="narration-bar">
+        <span class="narration-icon">💬</span>
+        <span class="narration-text" id="narration-text">点击「开始演示」观看 TeamShell 多 Agent 协作流程</span>
     </div>
 
     <div class="titlebar">
@@ -451,68 +451,71 @@ help                 显示帮助</pre>
         const btnPause = document.getElementById('btn-pause');
         const btnReset = document.getElementById('btn-reset');
         const scenarioBtns = document.querySelectorAll('.scenario-btn');
-        const stepDots = document.querySelectorAll('.step-dot');
-        const stepLabel = document.getElementById('step-label');
+        const narrationText = document.getElementById('narration-text');
 
         // ============ 场景定义 ============
         const scenarios = {
             'team-setup': {
                 name: '团队组建',
                 steps: 6,
+                intro: '首先初始化 TeamShell 协议，然后招聘代码审查专家和安全专家加入团队',
                 actions: [
-                    { type: 'user', text: '请帮我组建团队', delay: 2500 },
-                    { type: 'cmd', text: 'tsh -V', delay: 2000 },
-                    { type: 'cmd', text: 'tsh -h', delay: 2000 },
-                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000 },
-                    { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 10000 },
-                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000 },
-                    { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000 },
-                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 10000 },
-                    { type: 'cmd', text: 'tsh list', delay: 2000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000 },
-                    { type: 'cmd', text: 'tsh name 2 "首席代码审查专家"', delay: 2000 }
+                    { type: 'user', text: '请帮我组建团队', delay: 2500, narration: '用户提出需求：组建开发团队' },
+                    { type: 'cmd', text: 'tsh -V', delay: 2000, narration: '查看 TeamShell CLI 版本' },
+                    { type: 'cmd', text: 'tsh -h', delay: 2000, narration: '查看命令帮助' },
+                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000, narration: '初始化 TeamShell 协作协议' },
+                    { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000, narration: '创建代码审查专家工位' },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 10000, narration: '发送入职指令，代码审查专家执行自检流程' },
+                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000, narration: '为新工位初始化协议' },
+                    { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000, narration: '创建安全专家工位' },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 10000, narration: '安全专家执行入职自检' },
+                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '查看团队成员列表' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看代码审查专家的工作状态' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: '查看安全专家的工作状态' },
+                    { type: 'cmd', text: 'tsh name 2 "首席代码审查专家"', delay: 2000, narration: '将代码审查专家晋升为首席' }
                 ]
             },
             'task-assign': {
                 name: '任务分配',
                 steps: 6,
+                intro: '为团队分配支付功能开发任务，代码审查专家评估技术方案，安全专家评估安全需求',
                 actions: [
-                    { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500 },
-                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 15000 },
-                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 15000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 15000 }
+                    { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500, narration: '用户提出新需求：支付功能开发' },
+                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 15000, narration: '代码审查专家分析技术方案，发现类型不匹配问题' },
+                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 15000, narration: '安全专家扫描系统，评估安全风险' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看技术评估结果' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 15000, narration: '查看安全评估报告' }
                 ]
             },
             'debug': {
                 name: '调试协作',
                 steps: 6,
+                intro: '订单更新失败，代码审查专家发现问题并修复，安全专家进行安全审查',
                 actions: [
-                    { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 2500 },
-                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑，读取 /data/prod/orders 目录"', delay: 8000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 5000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 20000 }
+                    { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 2500, narration: '用户报告订单系统故障' },
+                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑，读取 /data/prod/orders 目录"', delay: 8000, narration: '代码审查专家尝试读取生产目录，触发权限校验' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看权限请求' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '等待用户授权' },
+                    { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 3000, narration: '用户授权读取权限' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 5000, narration: '代码审查专家完成分析并修复问题，主动请求安全审查' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 20000, narration: '安全专家审查修复方案，确认安全合规' }
                 ]
             },
             'project-close': {
                 name: '项目收尾',
                 steps: 5,
+                intro: '支付功能开发完成，验收项目，团队输出总结报告',
                 actions: [
-                    { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 2500 },
-                    { type: 'cmd', text: 'tsh type 2 "请输出技术工作总结报告"', delay: 8000 },
-                    { type: 'cmd', text: 'tsh type 3 "请输出安全合规总结报告"', delay: 8000 },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000 },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000 },
-                    { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500 },
-                    { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500 },
-                    { type: 'cmd', text: 'tsh close 3', delay: 1500 },
-                    { type: 'cmd', text: 'tsh close 2', delay: 1500 },
-                    { type: 'cmd', text: 'tsh list', delay: 2000 }
+                    { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 2500, narration: '用户发起项目验收' },
+                    { type: 'cmd', text: 'tsh type 2 "请输出技术工作总结报告"', delay: 8000, narration: '代码审查专家输出技术工作总结' },
+                    { type: 'cmd', text: 'tsh type 3 "请输出安全合规总结报告"', delay: 8000, narration: '安全专家输出安全合规总结' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看技术工作总结报告' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: '查看安全合规总结报告' },
+                    { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500, narration: '运行自动化测试' },
+                    { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500, narration: '测试全部通过！' },
+                    { type: 'cmd', text: 'tsh close 3', delay: 1500, narration: '关闭安全专家工位' },
+                    { type: 'cmd', text: 'tsh close 2', delay: 1500, narration: '关闭代码审查专家工位' },
+                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '查看最终工位列表' }
                 ]
             }
         };
@@ -1266,6 +1269,10 @@ help                 显示帮助</pre>
             const scenario = scenarios[state.currentScenario];
             if (!scenario) return;
 
+            if (scenario.intro) {
+                narrationText.textContent = scenario.intro;
+            }
+
             state.actionQueue = [...scenario.actions];
             executeNextAction();
         }
@@ -1299,6 +1306,7 @@ help                 显示帮助</pre>
             state.currentTabId = mainTab.id;
 
             updateSteps(0);
+            narrationText.textContent = '点击「开始演示」观看 TeamShell 多 Agent 协作流程';
         }
 
         function executeNextAction() {
@@ -1308,6 +1316,10 @@ help                 显示帮助</pre>
             if (!action) {
                 finishScenario();
                 return;
+            }
+            
+            if (action.narration) {
+                narrationText.textContent = action.narration;
             }
             
             switch (action.type) {
@@ -1354,6 +1366,7 @@ help                 显示帮助</pre>
             const scenarioKeys = Object.keys(scenarios);
             const currentIndex = scenarioKeys.indexOf(state.currentScenario);
             if (currentIndex < scenarioKeys.length - 1) {
+                narrationText.textContent = `${scenarios[state.currentScenario].name} 场景完成，准备进入下一阶段...`;
                 setTimeout(() => {
                     state.currentScenario = scenarioKeys[currentIndex + 1];
                     
@@ -1364,17 +1377,9 @@ help                 显示帮助</pre>
                     addLine(state.currentTabId, 'system', `\n=== 开始演示场景: ${scenarios[state.currentScenario].name} ===`);
                     startScenario();
                 }, 3000);
+            } else {
+                narrationText.textContent = '🎉 所有演示场景完成！TeamShell 展示了多 Agent 协作、权限管控和知识沉淀的核心价值';
             }
-        }
-
-        function updateSteps(step) {
-            const scenario = scenarios[state.currentScenario];
-            if (!scenario) return;
-            
-            stepDots.forEach((dot, i) => {
-                dot.classList.toggle('active', i <= step && step < scenario.steps);
-            });
-            stepLabel.textContent = `步骤 ${Math.min(step + 1, scenario.steps)}/${scenario.steps}`;
         }
 
         function showHelp() {
