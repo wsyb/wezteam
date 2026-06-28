@@ -736,8 +736,17 @@ help                 显示帮助</pre>
             if (!tab) return;
             const line = { type, content, timestamp: Date.now(), ...extra };
             tab.lines.push(line);
+            const now = new Date();
             tab.logs.push({
-                timestamp: new Date().toISOString(),
+                timestamp: now.toLocaleString('zh-CN', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }),
                 tabId: tabId,
                 tabName: tab.name,
                 type: type,
@@ -751,7 +760,15 @@ help                 显示帮助</pre>
 
             // 发送日志到服务器
             sendLogToServer({
-                timestamp: new Date().toISOString(),
+                timestamp: now.toLocaleString('zh-CN', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }),
                 tabId: tabId,
                 tabName: tab.name,
                 type: type,
@@ -1181,7 +1198,7 @@ help                 显示帮助</pre>
                 state.tabs.forEach(tab => {
                     allLogs = allLogs.concat(tab.logs);
                 });
-                allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                allLogs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
             }
             
             if (allLogs.length === 0) return 'No logs.';
@@ -1191,7 +1208,7 @@ help                 显示帮助</pre>
             output += `-`.repeat(100) + '\n';
             
             allLogs.forEach(log => {
-                const time = log.timestamp.slice(11, 23);
+                const time = log.timestamp.padEnd(19);
                 const tabName = log.tabName.padEnd(10);
                 const type = log.type.padEnd(8);
                 const sender = (log.sender || '').padEnd(10);
@@ -1202,7 +1219,8 @@ help                 显示帮助</pre>
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `teamshell-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            a.download = `logs_${dateStr}.txt`;
             a.click();
             URL.revokeObjectURL(url);
             
