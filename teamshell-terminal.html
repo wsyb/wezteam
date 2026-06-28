@@ -359,8 +359,8 @@
             <div class="scenario-selector" id="scenario-selector">
                 <button class="scenario-btn active" data-scenario="team-setup">场景1: 团队组建</button>
                 <button class="scenario-btn" data-scenario="task-assign">场景2: 任务分配</button>
-                <button class="scenario-btn" data-scenario="debug">场景3: 调试协作</button>
-                <button class="scenario-btn" data-scenario="project-close">场景4: 项目收尾</button>
+                <button class="scenario-btn" data-scenario="dev-review-cycle">场景3: 开发审核循环</button>
+                <button class="scenario-btn" data-scenario="project-close">场景4: 项目验收解散</button>
             </div>
         </div>
         <div class="control-right">
@@ -458,64 +458,60 @@ help                 显示帮助</pre>
             'team-setup': {
                 name: '团队组建',
                 steps: 6,
-                intro: '首先初始化 TeamShell 协议，然后招聘代码审查专家和安全专家加入团队',
+                intro: 'Claude作为项目经理，组建前端(Codex)、后端(OpenCode)、代码审查(Trae)团队',
                 actions: [
-                    { type: 'user', text: '请帮我组建团队', delay: 2500, narration: '用户提出需求：组建开发团队' },
+                    { type: 'user', text: '请帮我组建支付功能开发团队', delay: 2500, narration: 'Claude-项目经理收到需求' },
                     { type: 'cmd', text: 'tsh -V', delay: 2000, narration: '查看 TeamShell CLI 版本' },
-                    { type: 'cmd', text: 'tsh -h', delay: 2000, narration: '查看命令帮助' },
                     { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000, narration: '初始化 TeamShell 协作协议' },
-                    { type: 'cmd', text: 'tsh open "代码审查专家" -- codex', delay: 2000, narration: '创建代码审查专家工位' },
-                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 10000, narration: '发送入职指令，代码审查专家执行自检流程' },
-                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000, narration: '为新工位初始化协议' },
-                    { type: 'cmd', text: 'tsh open "安全专家" -- traecli', delay: 2000, narration: '创建安全专家工位' },
-                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 10000, narration: '安全专家执行入职自检' },
-                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '查看团队成员列表' },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看代码审查专家的工作状态' },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: '查看安全专家的工作状态' },
-                    { type: 'cmd', text: 'tsh name 2 "首席代码审查专家"', delay: 2000, narration: '将代码审查专家晋升为首席' }
+                    { type: 'cmd', text: 'tsh open "Codex-前端开发" -- codex', delay: 2000, narration: '创建 Codex-前端开发工位' },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'Codex执行入职自检' },
+                    { type: 'cmd', text: 'tsh open "OpenCode-后端开发" -- opencode', delay: 2000, narration: '创建 OpenCode-后端开发工位' },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'OpenCode执行入职自检' },
+                    { type: 'cmd', text: 'tsh open "Trae-代码审查" -- traecli', delay: 2000, narration: '创建 Trae-代码审查工位' },
+                    { type: 'cmd', text: 'tsh type 4 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'Trae执行入职自检' },
+                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '查看团队成员列表' }
                 ]
             },
             'task-assign': {
                 name: '任务分配',
                 steps: 6,
-                intro: '为团队分配支付功能开发任务，代码审查专家评估技术方案，安全专家评估安全需求',
+                intro: '项目经理分配前端支付页面和后端支付接口开发任务',
                 actions: [
-                    { type: 'user', text: '我需要为系统增加支付功能，请评估技术方案', delay: 2500, narration: '用户提出新需求：支付功能开发' },
-                    { type: 'cmd', text: 'tsh type 2 "请评估支付功能技术方案，重点关注微服务架构"', delay: 15000, narration: '代码审查专家分析技术方案，发现类型不匹配问题' },
-                    { type: 'cmd', text: 'tsh type 3 "请评估支付功能安全性需求"', delay: 15000, narration: '安全专家扫描系统，评估安全风险' },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看技术评估结果' },
-                    { type: 'cmd', text: 'tsh view 3', delay: 15000, narration: '查看安全评估报告' }
+                    { type: 'user', text: '分配任务：前端开发支付页面，后端开发支付接口', delay: 2500, narration: 'Claude-项目经理分配任务' },
+                    { type: 'cmd', text: 'tsh type 2 "开发支付页面，包含支付方式选择、金额输入、确认按钮"', delay: 12000, narration: 'Codex-前端开发开始开发支付页面' },
+                    { type: 'cmd', text: 'tsh type 3 "开发支付接口，包含创建订单、更新状态、退款功能"', delay: 12000, narration: 'OpenCode-后端开发开始开发支付接口' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看前端开发进度' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: '查看后端开发进度' }
                 ]
             },
-            'debug': {
-                name: '调试协作',
-                steps: 6,
-                intro: '订单更新失败，代码审查专家发现问题并修复，安全专家进行安全审查',
+            'dev-review-cycle': {
+                name: '开发与审核循环',
+                steps: 8,
+                intro: '前端和后端开发完成后，Trae-代码审查进行审查，发现问题并要求修改，直到通过',
                 actions: [
-                    { type: 'user', text: '订单状态更新失败了，请帮忙调试', delay: 2500, narration: '用户报告订单系统故障' },
-                    { type: 'cmd', text: 'tsh type 2 "请检查 order_service.py 的订单更新逻辑，读取 /data/prod/orders 目录"', delay: 8000, narration: '代码审查专家尝试读取生产目录，触发权限校验' },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看权限请求' },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '等待用户授权' },
-                    { type: 'cmd', text: 'tsh type 2 --key "Y\\r"', delay: 3000, narration: '用户授权读取权限' },
-                    { type: 'cmd', text: 'tsh view 2', delay: 5000, narration: '代码审查专家完成分析并修复问题，主动请求安全审查' },
-                    { type: 'cmd', text: 'tsh view 3', delay: 20000, narration: '安全专家审查修复方案，确认安全合规' }
+                    { type: 'user', text: '前端和后端开发完成，请Trae进行代码审查', delay: 2500, narration: 'Claude请求代码审查' },
+                    { type: 'cmd', text: 'tsh type 4 "请审查前端支付页面代码 payment_page.vue"', delay: 10000, narration: 'Trae-代码审查审查前端代码' },
+                    { type: 'cmd', text: 'tsh view 4', delay: 5000, narration: '查看审查结果：发现前端问题' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: 'Codex-前端开发收到审查反馈' },
+                    { type: 'cmd', text: 'tsh type 4 "请审查后端支付接口代码 payment_api.py"', delay: 10000, narration: 'Trae-代码审查审查后端代码' },
+                    { type: 'cmd', text: 'tsh view 4', delay: 5000, narration: '查看审查结果：发现后端问题' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: 'OpenCode-后端开发收到审查反馈' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 10000, narration: 'Codex-前端开发完成修改，Trae再次审查通过' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 10000, narration: 'OpenCode-后端开发完成修改，Trae再次审查通过' }
                 ]
             },
             'project-close': {
-                name: '项目收尾',
+                name: '项目验收与解散',
                 steps: 5,
-                intro: '支付功能开发完成，执行最终代码审查和安全验收，验收通过后解散临时团队',
+                intro: '所有代码审查通过后，运行验收测试，解散临时开发团队',
                 actions: [
-                    { type: 'user', text: '支付功能开发完成，请验收并关闭项目', delay: 2500, narration: '用户发起项目验收请求' },
-                    { type: 'cmd', text: 'tsh type 2 "请对支付功能进行最终代码审查，确认代码质量和架构合规"', delay: 10000, narration: '代码审查专家执行最终代码审查' },
-                    { type: 'cmd', text: 'tsh type 3 "请对支付功能进行安全验收审查，确认安全合规"', delay: 10000, narration: '安全专家执行安全验收审查' },
-                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看代码审查结果' },
-                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: '查看安全验收结果' },
+                    { type: 'user', text: '代码审查全部通过，请验收并解散团队', delay: 2500, narration: 'Claude发起项目验收' },
                     { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500, narration: '运行自动化验收测试' },
                     { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500, narration: '测试全部通过！验收合格' },
-                    { type: 'cmd', text: 'tsh close 3', delay: 1500, narration: '解散安全专家临时工位' },
-                    { type: 'cmd', text: 'tsh close 2', delay: 1500, narration: '解散代码审查专家临时工位' },
-                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '确认临时团队已解散' }
+                    { type: 'cmd', text: 'tsh close 4', delay: 1500, narration: '解散 Trae-代码审查临时工位' },
+                    { type: 'cmd', text: 'tsh close 3', delay: 1500, narration: '解散 OpenCode-后端开发临时工位' },
+                    { type: 'cmd', text: 'tsh close 2', delay: 1500, narration: '解散 Codex-前端开发临时工位' },
+                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '确认临时团队已解散，仅剩项目经理' }
                 ]
             }
         };
@@ -529,11 +525,7 @@ help                 显示帮助</pre>
                     
                     tab.status = 'working';
                     setTimeout(() => {
-                        const responses = [
-                            '收到！正在处理...',
-                            '好的，让我分析一下...',
-                            '明白！马上开始...'
-                        ];
+                        const responses = ['收到！正在安排...', '明白，立即执行...', '好的，我来协调...'];
                         const reply = responses[Math.floor(Math.random() * responses.length)];
                         agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
                         tab.status = 'idle';
@@ -546,73 +538,120 @@ help                 显示帮助</pre>
                     if (tab.status === 'working') return;
                     
                     tab.status = 'working';
-
-                    const steps = [];
-
-                    if (message.includes('/data/prod/')) {
-                        steps.push(
-                            { delay: 1500, text: '收到任务！正在分析代码...' },
-                            { delay: 2000, text: '📂 正在读取目录: /data/prod/orders' },
-                            { delay: 1500, text: '📄 读取文件: order_service.py' },
-                            { delay: 1200, text: '🔍 分析代码逻辑...' },
-                            { delay: 1800, text: '⚠️ 需要授权才能执行以下操作：\n\n操作：读取目录 /data/prod/\n原因：这个目录不在默认允许范围内\n请人工审批：[Y] 允许 / [N] 拒绝' }
-                        );
-                        
-                        let cumulativeDelay = 1000;
-                        steps.forEach((step) => {
-                            cumulativeDelay += step.delay;
-                            setTimeout(() => {
-                                addLine(tab.id, 'system', step.text);
-                                if (step.text.includes('需要授权')) {
-                                    tab.status = 'stuck';
-                                }
-                            }, cumulativeDelay);
-                        });
-                    } else if (message.includes('工作总结') || message.includes('总结报告')) {
-                        steps.push(
-                            { delay: 1500, text: '📊 正在整理技术工作总结...' },
-                            { delay: 2000, text: '📄 回顾项目代码变更...' },
-                            { delay: 1800, text: '✅ 技术工作总结报告:\n\n📈 完成的工作:\n1. 支付功能技术方案评估\n2. order_id类型不匹配问题修复\n3. 微服务架构优化建议\n\n🔧 技术债务:\n1. 建议引入DTO层统一数据类型转换\n2. 增加服务间契约测试\n3. 建立代码审查流程\n\n📝 后续建议:\n- 定期代码审查\n- 自动化测试覆盖率提升\n- 持续集成流程优化' }
-                        );
-                        
-                        let cumulativeDelay = 1000;
-                        steps.forEach((step, index) => {
-                            cumulativeDelay += step.delay;
-                            setTimeout(() => {
-                                addLine(tab.id, 'system', step.text);
-                                if (index === steps.length - 1) {
-                                    tab.status = 'idle';
-                                    setTimeout(() => {
-                                        agentExecuteCommand(tab.id, `tsh type ${senderId} "技术工作总结已完成，请查阅。"`);
-                                    }, 1500);
-                                }
-                            }, cumulativeDelay);
-                        });
-                    } else {
-                        steps.push(
-                            { delay: 1500, text: '收到任务！正在分析代码...' },
-                            { delay: 2000, text: '📂 正在读取文件: payment_service.py' },
-                            { delay: 1500, text: '📂 正在读取文件: order_service.py' },
-                            { delay: 2000, text: '🔍 分析中... 检查微服务架构' },
-                            { delay: 1500, text: '🔍 分析中... 发现数据类型不匹配问题' },
-                            { delay: 1800, text: '📝 正在生成评估报告...' },
-                            { delay: 2000, text: '✅ 分析完成！\n\n📊 技术评估结果:\n1. 类型不匹配: order_id字段定义为字符串，但数据库使用整数\n2. 需要优化: 建议引入DTO层统一数据类型转换\n3. 架构建议: 增加服务间契约测试\n\n已生成修复方案，等待审核。' }
-                        );
-                        
-                        let cumulativeDelay = 1000;
-                        steps.forEach((step, index) => {
-                            cumulativeDelay += step.delay;
-                            setTimeout(() => {
-                                addLine(tab.id, 'system', step.text);
-                                if (index === steps.length - 1) {
-                                    tab.status = 'idle';
-                                    setTimeout(() => {
-                                        agentExecuteCommand(tab.id, `tsh type ${senderId} "分析完成！已提供详细评估报告和修复建议。"`);
-                                    }, 1500);
-                                }
-                            }, cumulativeDelay);
-                        });
+                    let steps = [];
+                    let replyText = '';
+                    
+                    if (message.includes('支付页面') || message.includes('前端')) {
+                        steps = [
+                            { delay: 1500, text: '💻 Codex-前端开发: 收到任务！' },
+                            { delay: 2000, text: '📝 设计支付页面组件结构...' },
+                            { delay: 1800, text: '🎨 实现支付方式选择UI...' },
+                            { delay: 2000, text: '💰 实现金额输入组件...' },
+                            { delay: 1800, text: '✅ 实现确认按钮和表单验证...' },
+                            { delay: 2000, text: '✅ 支付页面开发完成！\n\n文件: payment_page.vue\n功能:\n- 支付方式选择（微信/支付宝/银行卡）\n- 金额输入与验证\n- 确认支付按钮\n- 错误提示组件' }
+                        ];
+                        replyText = '前端支付页面已完成，等待代码审查。';
+                    } else if (message.includes('审查') || message.includes('问题')) {
+                        steps = [
+                            { delay: 1500, text: '💻 Codex-前端开发: 收到审查反馈' },
+                            { delay: 2000, text: '📝 分析审查意见...' },
+                            { delay: 2000, text: '🔧 正在修改代码...' },
+                            { delay: 1800, text: '✅ 修改完成！已解决审查问题。' }
+                        ];
+                        replyText = '前端代码已按要求修改完成，请再次审查。';
+                    } else if (message.includes('入职')) {
+                        steps = [
+                            { delay: 1500, text: '🔐 Codex-前端开发: 开始入职自检...' },
+                            { delay: 2000, text: '✅ 工号验证通过: 2' },
+                            { delay: 1800, text: '✅ 身份确认: Codex-前端开发' },
+                            { delay: 1500, text: '🎉 入职完成！准备开始前端开发工作。' }
+                        ];
+                        replyText = '入职完成！我是Codex-前端开发，随时待命！';
                     }
+                    
+                    if (steps.length === 0) {
+                        addLine(tab.id, 'agent', '收到任务，准备开始...', { agentType: 'codex' });
+                        setTimeout(() => {
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "好的，马上开始处理。"`);
+                            tab.status = 'idle';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    let cumulativeDelay = 500;
+                    steps.forEach((step, index) => {
+                        cumulativeDelay += step.delay;
+                        setTimeout(() => {
+                            addLine(tab.id, 'agent', step.text, { agentType: 'codex' });
+                            if (index === steps.length - 1) {
+                                tab.status = 'idle';
+                                setTimeout(() => {
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
+                                }, 1500);
+                            }
+                        }, cumulativeDelay);
+                    });
+                }
+            },
+            'opencode': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
+                    let steps = [];
+                    let replyText = '';
+                    
+                    if (message.includes('支付接口') || message.includes('后端')) {
+                        steps = [
+                            { delay: 1500, text: '🚀 OpenCode-后端开发: 收到任务！' },
+                            { delay: 2000, text: '📝 设计支付接口API结构...' },
+                            { delay: 1800, text: '🔧 实现创建订单接口...' },
+                            { delay: 2000, text: '🔧 实现订单状态更新接口...' },
+                            { delay: 1800, text: '🔧 实现退款接口...' },
+                            { delay: 2000, text: '✅ 支付接口开发完成！\n\n文件: payment_api.py\n接口:\n- POST /api/orders/create\n- PUT /api/orders/{id}/status\n- POST /api/orders/{id}/refund\n- GET /api/orders/{id}' }
+                        ];
+                        replyText = '后端支付接口已完成，等待代码审查。';
+                    } else if (message.includes('审查') || message.includes('问题')) {
+                        steps = [
+                            { delay: 1500, text: '🚀 OpenCode-后端开发: 收到审查反馈' },
+                            { delay: 2000, text: '📝 分析审查意见...' },
+                            { delay: 2000, text: '🔧 正在修改代码...' },
+                            { delay: 1800, text: '✅ 修改完成！已解决审查问题。' }
+                        ];
+                        replyText = '后端代码已按要求修改完成，请再次审查。';
+                    } else if (message.includes('入职')) {
+                        steps = [
+                            { delay: 1500, text: '🔐 OpenCode-后端开发: 开始入职自检...' },
+                            { delay: 2000, text: '✅ 工号验证通过: 3' },
+                            { delay: 1800, text: '✅ 身份确认: OpenCode-后端开发' },
+                            { delay: 1500, text: '🎉 入职完成！准备开始后端开发工作。' }
+                        ];
+                        replyText = '入职完成！我是OpenCode-后端开发，随时待命！';
+                    }
+                    
+                    if (steps.length === 0) {
+                        addLine(tab.id, 'agent', '收到任务，准备开始...', { agentType: 'opencode' });
+                        setTimeout(() => {
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "好的，马上开始处理。"`);
+                            tab.status = 'idle';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    let cumulativeDelay = 500;
+                    steps.forEach((step, index) => {
+                        cumulativeDelay += step.delay;
+                        setTimeout(() => {
+                            addLine(tab.id, 'agent', step.text, { agentType: 'opencode' });
+                            if (index === steps.length - 1) {
+                                tab.status = 'idle';
+                                setTimeout(() => {
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
+                                }, 1500);
+                            }
+                        }, cumulativeDelay);
+                    });
                 }
             },
             'trae': {
@@ -621,47 +660,59 @@ help                 显示帮助</pre>
                     if (tab.status === 'working') return;
                     
                     tab.status = 'working';
-                    
-                    const isFixReview = message.includes('修复') || message.includes('审查');
-                    const isSummary = message.includes('安全合规') || message.includes('总结报告');
-                    
                     let steps = [];
                     let replyText = '';
                     
-                    if (isSummary) {
+                    if (message.includes('payment_page.vue') || message.includes('前端代码')) {
                         steps = [
-                            { delay: 1500, text: '🛡️ 正在整理安全合规总结...' },
-                            { delay: 2000, text: '📄 回顾安全评估记录...' },
-                            { delay: 1800, text: '✅ 安全合规总结报告:\n\n🛡️ 安全审查完成项:\n1. 支付功能安全性需求评估\n2. 修复方案安全审查通过\n3. 类型转换逻辑安全验证\n\n⚠️ 待处理安全事项:\n1. 当前使用HTTP，建议升级HTTPS\n2. 用户密码未加密存储，建议使用bcrypt\n3. 建议启用CSP头部和X-Frame-Options\n\n📝 安全建议:\n- 实施定期安全审计\n- 建立安全代码审查流程\n- 配置安全监控告警' }
+                            { delay: 1500, text: '🔍 Trae-代码审查: 开始审查前端代码' },
+                            { delay: 2000, text: '📂 读取 payment_page.vue...' },
+                            { delay: 1800, text: '🔍 分析组件结构...' },
+                            { delay: 2000, text: '🔍 检查表单验证逻辑...' },
+                            { delay: 1800, text: '⚠️ 发现问题:\n\n1. 金额输入缺少最小值验证\n2. 错误提示信息不够详细\n3. 支付方式选择缺少默认值\n\n📝 请Codex-前端开发修改以上问题后重新提交。' }
                         ];
-                        replyText = '安全合规总结已完成，请查阅。';
-                    } else if (isFixReview) {
+                        replyText = '前端代码审查完成，发现3个问题，请修改。';
+                    } else if (message.includes('payment_api.py') || message.includes('后端代码')) {
                         steps = [
-                            { delay: 1500, text: '收到！正在审查修复方案...' },
-                            { delay: 2000, text: '🔒 审查中... 检查类型转换安全性' },
-                            { delay: 1800, text: '🔒 审查中... 检查边界条件处理' },
-                            { delay: 2000, text: '🔒 审查中... 验证数据完整性' },
-                            { delay: 1500, text: '📝 正在生成审查报告...' },
-                            { delay: 2000, text: '✅ 修复方案审查完成！\n\n🛡️ 审查结果:\n1. 类型转换: order_id字符串转整数逻辑安全，已添加校验\n2. 边界处理: 空值和异常情况已正确处理\n3. 数据完整性: 事务边界清晰，不会产生脏数据\n\n修复方案符合安全标准，可以实施。' }
+                            { delay: 1500, text: '🔍 Trae-代码审查: 开始审查后端代码' },
+                            { delay: 2000, text: '📂 读取 payment_api.py...' },
+                            { delay: 1800, text: '🔍 分析接口逻辑...' },
+                            { delay: 2000, text: '🔍 检查错误处理...' },
+                            { delay: 1800, text: '⚠️ 发现问题:\n\n1. 订单ID类型不一致（前端传字符串，后端用整数）\n2. 退款接口缺少权限验证\n3. 状态更新缺少事务处理\n\n📝 请OpenCode-后端开发修改以上问题后重新提交。' }
                         ];
-                        replyText = '修复方案审查完成！符合安全标准，可以实施。';
-                    } else {
+                        replyText = '后端代码审查完成，发现3个问题，请修改。';
+                    } else if (message.includes('已按要求修改') || message.includes('再次审查')) {
                         steps = [
-                            { delay: 1500, text: '收到！正在进行安全评估...' },
-                            { delay: 2000, text: '🔒 扫描中... 检查加密配置' },
-                            { delay: 1800, text: '🔒 扫描中... 检查HTTPS配置' },
-                            { delay: 2000, text: '🔒 扫描中... 检查数据传输加密' },
-                            { delay: 1500, text: '📝 正在生成安全报告...' },
-                            { delay: 2000, text: '✅ 安全评估完成！\n\n🛡️ 安全评估结果:\n1. 使用 HTTPS: 当前使用HTTP，存在中间人攻击风险\n2. 加密敏感数据: 用户密码未加密存储，建议使用bcrypt\n3. 其他建议:\n   - 启用CSP头部\n   - 添加X-Frame-Options\n   - 实施定期安全审计\n\n已生成安全加固方案，等待审核。' }
+                            { delay: 1500, text: '🔍 Trae-代码审查: 重新审查修改后的代码' },
+                            { delay: 2000, text: '📂 读取修改后的文件...' },
+                            { delay: 1800, text: '🔍 验证修复内容...' },
+                            { delay: 2000, text: '✅ 审查通过！\n\n所有问题已修复:\n- 代码结构清晰\n- 错误处理完善\n- 类型一致\n- 权限验证正确\n\n🎉 代码质量合格，可以合并。' }
                         ];
-                        replyText = '安全评估完成！已提供详细安全建议。';
+                        replyText = '代码审查通过！质量合格。';
+                    } else if (message.includes('入职')) {
+                        steps = [
+                            { delay: 1500, text: '🔐 Trae-代码审查: 开始入职自检...' },
+                            { delay: 2000, text: '✅ 工号验证通过: 4' },
+                            { delay: 1800, text: '✅ 身份确认: Trae-代码审查' },
+                            { delay: 1500, text: '🎉 入职完成！准备开始代码审查工作。' }
+                        ];
+                        replyText = '入职完成！我是Trae-代码审查，随时待命！';
                     }
                     
-                    let cumulativeDelay = 1000;
+                    if (steps.length === 0) {
+                        addLine(tab.id, 'agent', '收到任务，准备开始...', { agentType: 'trae' });
+                        setTimeout(() => {
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "好的，马上开始审查。"`);
+                            tab.status = 'idle';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    let cumulativeDelay = 500;
                     steps.forEach((step, index) => {
                         cumulativeDelay += step.delay;
                         setTimeout(() => {
-                            addLine(tab.id, 'system', step.text);
+                            addLine(tab.id, 'agent', step.text, { agentType: 'trae' });
                             if (index === steps.length - 1) {
                                 tab.status = 'idle';
                                 setTimeout(() => {
@@ -684,7 +735,7 @@ help                 显示帮助</pre>
 
         function shouldReply(message, senderId) {
             if (senderId === null) return false;
-            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK', '分析完成', '安全评估完成', '收到任务', '已提供详细评估报告', '已提供详细安全建议', '已生成修复方案', '已生成安全加固方案'];
+            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK', '入职完成', '等待代码审查', '等待审查', '请修改', '请再次审查', '审查通过', '已按要求修改', '质量合格'];
             const trimmed = message.trim();
             return !closingWords.some(word => trimmed.includes(word));
         }
@@ -697,7 +748,7 @@ help                 显示帮助</pre>
                 type: type,
                 lines: [],
                 logs: [],
-                onboarded: name === 'Main',
+                onboarded: name.includes('Claude') || name === 'Main',
                 onboardSender: null,
                 status: 'idle'
             };
@@ -721,7 +772,7 @@ help                 显示帮助</pre>
             if (index === -1) return;
             state.tabs.splice(index, 1);
             if (state.tabs.length === 0) {
-                createTab('Main', 'claude');
+                createTab('Claude-项目经理', 'claude');
             } else if (state.currentTabId === tabId) {
                 const newIndex = Math.min(index, state.tabs.length - 1);
                 switchTab(state.tabs[newIndex].id);
@@ -1320,7 +1371,7 @@ help                 显示帮助</pre>
 
             state.tabs = [];
             state.nextTabId = 1;
-            const mainTab = createTab('Main', 'claude');
+            const mainTab = createTab('Claude-项目经理', 'claude');
             state.currentTabId = mainTab.id;
 
             narrationText.textContent = '点击「开始演示」观看 TeamShell 多 Agent 协作流程';
