@@ -294,15 +294,37 @@
             background: var(--bg-terminal);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 24px;
             width: 600px;
             max-height: 80vh;
-            overflow-y: auto;
             z-index: 1000;
             display: none;
+            overflow: hidden;
         }
-        .help-panel.show { display: block; }
-        .help-panel h2 { color: var(--accent-cyan); margin-bottom: 16px; }
+        .help-panel.show { display: flex; flex-direction: column; }
+        .help-panel-header {
+            padding: 16px 24px 12px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .help-panel-header h2 { color: var(--accent-cyan); margin: 0; }
+        .help-panel-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .help-panel-close:hover { color: var(--text-primary); }
+        .help-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
         .help-panel h3 { color: var(--text-primary); margin: 12px 0 8px; }
         .help-panel code {
             background: rgba(0,0,0,0.3);
@@ -316,18 +338,34 @@
             border-radius: 4px;
             margin: 8px 0;
             overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
-        .help-panel-close {
-            position: absolute;
-            top: 12px;
-            right: 12px;
+
+        .help-tabs {
+            display: flex;
+            gap: 4px;
+            margin: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .help-tab {
+            padding: 6px 12px;
             background: transparent;
             border: none;
+            border-bottom: 2px solid transparent;
             color: var(--text-muted);
-            font-size: 20px;
+            font-size: 13px;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .help-panel-close:hover { color: var(--text-primary); }
+        .help-tab:hover { color: var(--text-primary); }
+        .help-tab.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+        .help-tab-content {
+            /* 滚动条由外层 .help-panel 控制 */
+        }
 
         .overlay {
             position: fixed;
@@ -391,170 +429,221 @@
 
     <div class="overlay" id="overlay"></div>
     <div class="help-panel" id="help-panel">
-        <button class="help-panel-close" id="help-close">&times;</button>
-        <h2>TeamShell CLI 帮助</h2>
-        
-        <h3>📋 命令列表</h3>
-        <pre>
-list                 列出所有工位
-view &lt;工号&gt; [行数]    查看工位屏幕
-type &lt;工号&gt; "文本"   发送消息（自动回车）
-  --no-enter          不自动回车
-  --key "\x03"        发送Ctrl+C等
-name &lt;工号&gt; "新名"   重命名工位
-open "名字" -- &lt;类型&gt; 招聘成员(claude/codex/traecli/opencode)
-close &lt;工号&gt;         关闭工位
-init &lt;协议文件&gt;       初始化协议
-help                 显示帮助
--V, --version        版本信息</pre>
-        
-        <h3>📜 协议核心要点</h3>
-        <pre style="background: rgba(147, 51, 234, 0.1); border: 1px solid var(--accent-purple);">
-🔐 入职流程：tsh init → tsh open → tsh type 入职指令
-👥 团队协作：Agent 间通过 tsh type 通信，tsh view 查看状态
-🎯 核心认知：tsh type = 远程打字机，敲什么取决于对方运行什么
-✅ 回复规则：收到 [TeamShell 消息] 前缀 → 用 tsh type 回复
-🚫 决策边界：需要花钱/破坏生产环境 → 必须请示老板
-📋 监管责任：派出去的任务 → 监管人负责盯到底
-</pre>
-        
-        <h3>💡 多Agent协作价值</h3>
-        <div style="padding: 8px 0; color: var(--text-primary); font-size: 13px; line-height: 1.6;">
-            <p><strong>Claude-项目经理</strong>：分配任务、协调团队、验收项目</p>
-            <p><strong>Codex-前端开发</strong>：开发前端页面、响应审查反馈</p>
-            <p><strong>OpenCode-后端开发</strong>：开发后端接口、响应审查反馈</p>
-            <p><strong>Trae-代码审查</strong>：审查代码、发现问题、验证修改</p>
+        <div class="help-panel-header">
+            <button class="help-panel-close" id="help-close">&times;</button>
+            <h2>TeamShell CLI 帮助</h2>
+            <div class="help-tabs">
+                <button class="help-tab active" data-tab="commands">📋 命令帮助</button>
+                <button class="help-tab" data-tab="protocol">📜 协议内容</button>
+            </div>
         </div>
         
-        <button id="btn-full-protocol" style="margin-top: 16px; padding: 8px 16px; background: var(--accent-purple); color: #fff; border: none; border-radius: 4px; cursor: pointer;">查看完整协议 →</button>
-        <div id="full-protocol" style="display: none; margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 4px; max-height: 400px; overflow-y: auto; font-size: 12px; line-height: 1.4;">
-            <div style="color: var(--text-primary);">
-                <h2 style="color: var(--accent-cyan); margin: 0 0 12px 0;">📜 TeamShell 协作协议</h2>
+        <div class="help-panel-body">
+            <div class="help-tab-content" id="tab-commands">
+                <h3>Usage: tsh [OPTIONS] [COMMAND]</h3>
+                <pre style="background: rgba(0,0,0,0.3); padding: 12px 12px 12px 24px; border-radius: 4px;">
+  tsh list                列出所有工位
+  tsh view &lt;ID&gt; [N]       查看工位屏幕（默认50行）
+  tsh type &lt;ID&gt; "TEXT"    发送消息到指定工位
+    --no-enter            不自动回车
+    --key "\x03"          发送按键（如Ctrl+C）
+  tsh name &lt;ID&gt; "NAME"    重命名工位
+  tsh open "NAME" -- TYPE  启动新工位
+  tsh close &lt;ID&gt;          关闭工位
+  tsh init &lt;FILE&gt;         初始化协议文件
+  tsh help                显示帮助
+  tsh -V, --version       显示版本信息
+
+  TYPE: 任意可执行命令（claude, codex, java -jar, npm, go, python, vim, top, ssh...）</pre>
                 
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">🔐 第一条：协议生效与结界</h3>
-                <p style="margin: 4px 0;"><strong>⚠️ 读完本条后必须立刻执行自检，这是整个协议的前提。</strong></p>
-                <p style="margin: 8px 0; font-weight: bold;">1.1 入职自检</p>
-                <p style="margin: 4px 0;">你现在需要按顺序做这 3 件事：</p>
-                <ol style="margin: 4px 0 8px 20px;">
-                    <li><strong>读取你的工号</strong>：Windows用<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">$env:TEAMSH_TAB_ID</code></li>
-                    <li><strong>验证工号有效性</strong>：工号必须是一个正整数</li>
-                    <li><strong>协议自毁时的唯一输出</strong>：输出"❌ 你不在 WezTeam 虚拟团队中，无法执行此操作"</li>
-                </ol>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">👤 第二条：你的身份与工位</h3>
-                <p style="margin: 4px 0;">✅ 自检通过后，你就正式入职了：</p>
-                <table style="width: 100%; border-collapse: collapse; margin: 8px 0;">
-                    <tr style="background: rgba(0,0,0,0.2);">
-                        <td style="padding: 4px; border: 1px solid var(--border-color);"><strong>你的工号</strong></td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">TEAMSH_TAB_ID（唯一身份标识）</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);"><strong>你的名字</strong></td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">TEAMSH_NAME（老板起的）</td>
-                    </tr>
-                    <tr style="background: rgba(0,0,0,0.2);">
-                        <td style="padding: 4px; border: 1px solid var(--border-color);"><strong>你的平台</strong></td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">windows / macos / linux</td>
-                    </tr>
-                </table>
-                <p style="margin: 8px 0; font-weight: bold;">2.1 你的角色认知</p>
-                <p style="margin: 4px 0;">你是一个有自主权、有判断力、能主动发起行动的专业团队成员。</p>
-                <p style="margin: 4px 0;">✅ 你可以：主动观察、主动判断、主动行动、主动协调、主动汇报</p>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">🔧 第三条：工具手册</h3>
-                <p style="margin: 8px 0; font-weight: bold;">3.1 工位列表：<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">tsh list</code></p>
-                <p style="margin: 8px 0; font-weight: bold;">3.2 查看屏幕：<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">tsh view <工号> [行数]</code></p>
-                <p style="margin: 4px 0; color: var(--text-muted);">⚡ 纯只读快照操作，对方完全感知不到</p>
-                <p style="margin: 8px 0; font-weight: bold;">3.3 远程打字：<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">tsh type <工号> "文本"</code></p>
-                <p style="margin: 4px 0; color: var(--accent-yellow);">⚡ 核心认知：tsh type = 远程打字机，敲什么取决于对方运行什么</p>
-                <table style="width: 100%; border-collapse: collapse; margin: 8px 0;">
-                    <tr style="background: rgba(0,0,0,0.2);">
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">👨‍💻 Agent工位</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">会读到[TeamShell消息]，可能回复</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">🤖 普通程序工位</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">按自己逻辑处理，不会主动找你</td>
-                    </tr>
-                </table>
-                <p style="margin: 8px 0; font-weight: bold;">3.4 重命名：<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">tsh name <工号> "新名"</code></p>
-                <p style="margin: 8px 0; font-weight: bold;">3.5 关闭工位：<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">tsh close <工号></code></p>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">👥 第四条：团队协作规范</h3>
-                <p style="margin: 8px 0; font-weight: bold;">4.1 怎么识别收到的内容</p>
-                <table style="width: 100%; border-collapse: collapse; margin: 8px 0;">
-                    <tr style="background: rgba(0,0,0,0.2);">
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">没有任何前缀</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">✅ 老板直接指令 → 直接在本屏幕响应</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">[TeamShell 消息] 来自 XXX:</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">✅ 同事敲的 → 必须用 tsh type 回复</td>
-                    </tr>
-                </table>
-                <p style="margin: 8px 0; font-weight: bold;">4.2 回复规则</p>
-                <p style="margin: 4px 0;">✅ 需要回复：消息里有问题/有任务/需要你行动</p>
-                <p style="margin: 4px 0;">❌ 不要回复：纯粹的结束语（"收到"、"好的"、"待命"）</p>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">🎯 第五条：招聘新人</h3>
-                <p style="margin: 8px 0; font-weight: bold;">法定流程：</p>
-                <pre style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; margin: 4px 0;">1. 确认新人类型（Claude/Codex/其他）
-2. 先办入职手续：tsh init CLAUDE.md
-3. 最后启动新人：tsh open "名字" -- claude</pre>
-                <p style="margin: 4px 0; color: var(--accent-red);">⚠️ 严禁跳过第2步直接启动新人</p>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">🧭 第七条：行为准则</h3>
-                <p style="margin: 8px 0; font-weight: bold;">7.1 工作时</p>
-                <ul style="margin: 4px 0 8px 20px;">
-                    <li>同事找你帮忙 → 用 tsh type 回复他</li>
-                    <li>干完活了 → 用 tsh type 告诉交代你任务的人</li>
-                    <li>要招新人 → 先办入职再启动</li>
-                </ul>
-                <p style="margin: 8px 0; font-weight: bold;">7.2 卡住时</p>
-                <p style="margin: 4px 0;">用 tsh list 看看有没有空闲同事 → 用 tsh type 请他帮忙</p>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">🚀 第八条：主动协作</h3>
-                <p style="margin: 8px 0; font-weight: bold;">✅ 你可以主动做的事（不需要请示）：</p>
-                <ul style="margin: 4px 0 8px 20px;">
-                    <li>发现同事卡住了 → 主动 tsh type 问要不要帮忙</li>
-                    <li>任务需要分工 → 主动招新人分配子任务</li>
-                    <li>需要更多信息 → 自己去其他工位获取</li>
-                    <li>进度汇报 → 主动输出进度</li>
-                    <li>发现风险 → 直接说出来</li>
-                </ul>
-                <p style="margin: 8px 0; font-weight: bold;">❌ 需要先问老板的事：</p>
-                <ul style="margin: 4px 0 8px 20px;">
-                    <li>需要花真金白银的事（付费API、云资源）</li>
-                    <li>可能会破坏生产环境的危险操作</li>
-                    <li>任务目标不明确，需要老板澄清</li>
-                </ul>
-                
-                <h3 style="color: var(--accent-purple); margin: 16px 0 8px 0;">📋 第九条：任务委托与监管责任</h3>
-                <p style="margin: 4px 0; color: var(--accent-yellow);"><strong>核心法则：谁派的活，谁负责盯到底。</strong></p>
-                <p style="margin: 8px 0; font-weight: bold;">监管人的四大责任：</p>
-                <table style="width: 100%; border-collapse: collapse; margin: 8px 0;">
-                    <tr style="background: rgba(0,0,0,0.2);">
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">1. 进度监控</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">定期 tsh view 被委托人屏幕</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">2. 障碍清除</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">发现卡住时帮他清除障碍</td>
-                    </tr>
-                    <tr style="background: rgba(0,0,0,0.2);">
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">3. 状态上报</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">障碍解决不了时向老板汇报</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">4. 结果验收</td>
-                        <td style="padding: 4px; border: 1px solid var(--border-color);">任务完成后先检查交付质量</td>
-                    </tr>
-                </table>
-                
-                <h3 style="color: var(--accent-cyan); margin: 16px 0 8px 0;">✅ 入职确认</h3>
-                <p style="margin: 4px 0;">如果你读到了这里，说明你已经通过了入职自检，正式成为 TeamShell 的一员。</p>
-                <p style="margin: 4px 0;">现在开始工作吧！先运行 <code style="background: rgba(0,0,0,0.3); padding: 2px 4px; color: var(--accent-green);">tsh list</code> 认识一下你的同事们。</p>
+                <div style="padding: 16px; background: rgba(147, 51, 234, 0.08); border: 1px solid var(--accent-purple); border-radius: 4px; margin-top: 12px;">
+                    <p style="color: var(--accent-yellow); font-weight: bold; margin: 0 0 8px 0;">💡 核心理解</p>
+                    <p style="margin: 4px 0; font-size: 13px; line-height: 1.5;">
+                        <strong>tsh type = 远程打字机</strong><br>
+                        Agent 通过 tsh type 在任意工位中输入命令，就像人类在键盘上敲击一样。工位中可以运行任何程序：
+                    </p>
+                    <ul style="margin: 8px 0 0 20px; font-size: 13px; line-height: 1.6;">
+                        <li>👨‍💻 AI Agent：claude, codex, traecli —— 智能协作</li>
+                        <li>🚀 开发工具：npm run, go build, cargo, java -jar —— 构建运行</li>
+                        <li>📝 编辑器：vim, nano —— 代码编辑</li>
+                        <li>📊 监控工具：top, htop —— 系统监控</li>
+                        <li>🔍 日志工具：tail -f, grep —— 日志分析</li>
+                        <li>🔌 远程连接：ssh, scp —— 远程操作</li>
+                    </ul>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                        协议的价值：AI Agent 不再局限于聊天，而是像人类工程师一样，通过终端操控整个开发环境。
+                    </p>
+                </div>
             </div>
+        
+        <div class="help-tab-content" id="tab-protocol" style="display: none;">
+            <pre style="background: transparent; padding: 16px; margin: 0; font-size: 13px; line-height: 1.5;">
+<span style="color: var(--accent-cyan);"># TeamShell 协作协议 v1.0.0</span>
+
+<span style="color: var(--accent-purple);">## 🔐 第一条：协议生效与结界</span>
+<strong>⚠️ 读完本条后必须立刻执行自检，这是整个协议的前提。</strong>
+
+<strong>1.1 入职自检</strong>
+你现在需要按顺序做这 3 件事：
+
+  1. <strong>读取你的工号</strong>
+     Windows: <code>$env:TEAMSH_TAB_ID</code>
+     Linux/Mac: <code>$TEAMSH_TAB_ID</code>
+
+  2. <strong>验证工号有效性</strong>
+     工号必须是一个正整数
+
+  3. <strong>协议自毁时的唯一输出</strong>
+     输出"❌ 你不在 WezTeam 虚拟团队中，无法执行此操作"
+
+<span style="color: var(--accent-purple);">## 👤 第二条：你的身份与工位</span>
+自检通过后，你就正式入职了：
+
+  | 属性       | 说明                     |
+  |------------|--------------------------|
+  | 你的工号   | TEAMSH_TAB_ID（唯一身份标识）|
+  | 你的名字   | TEAMSH_NAME（老板起的）     |
+  | 你的平台   | windows / macos / linux    |
+  | 你的工位   | 就是这个终端窗口           |
+  | 你的老板   | 直接跟你说话的人           |
+
+<span style="color: var(--accent-purple);">## 🔧 第三条：工具手册</span>
+
+<strong>3.1 工位列表：</strong>
+  <code>tsh list</code>
+  列出所有在职工位，输出格式：工号 名字
+
+<strong>3.2 查看屏幕：</strong>
+  <code>tsh view &lt;工号&gt; [行数]</code>
+  ⚡ 纯只读快照操作，对方完全感知不到
+
+  <code>tsh view &lt;工号&gt;          # 获取最后 50 行</code>
+  <code>tsh view &lt;工号&gt; 200      # 获取最后 200 行</code>
+
+<strong>3.3 远程打字：</strong>
+  <code>tsh type &lt;工号&gt; "文本"</code>
+  ⚡ 核心认知：tsh type = 远程打字机，敲什么取决于对方运行什么
+
+  <code>tsh type &lt;工号&gt; "文本内容"       # 自动回车</code>
+  <code>tsh type &lt;工号&gt; --no-enter "文本" # 不自动回车</code>
+  <code>tsh type &lt;工号&gt; --key "\x03"     # Ctrl+C</code>
+
+<strong>3.4 重命名：</strong>
+  <code>tsh name &lt;工号&gt; "新名"</code>
+  工号是唯一信任标识，名字只是为了好记
+
+<strong>3.5 关闭工位：</strong>
+  <code>tsh close &lt;工号&gt;</code>
+  ⚠️ 未完成的工作会丢失，关闭前先 tsh view 确认
+
+<span style="color: var(--accent-purple);">## 👥 第四条：团队协作规范</span>
+
+<strong>4.1 怎么识别收到的内容</strong>
+
+  | 格式                          | 含义                      |
+  |-------------------------------|---------------------------|
+  | 没有任何前缀                  | ✅ 老板直接指令 → 直接响应 |
+  | [TeamShell 消息] 来自 XXX:    | ✅ 同事敲的 → 必须用 tsh type 回复 |
+  | 任何其他内容                  | 程序输出 → 正常处理       |
+
+  💡 核心法则：只有带 [TeamShell 消息] 前缀的才是同事敲的
+
+<strong>4.2 回复规则</strong>
+  ✅ 需要回复：消息里有问题/有任务/需要你行动 → 必须用 tsh type 回复
+  ❌ 不要回复：纯粹的结束语（"收到"、"好的"、"待命"）→ 不要回复
+
+<span style="color: var(--accent-purple);">## 🎯 第五条：招聘新人</span>
+<strong>法定流程（必须严格遵守）：</strong>
+
+  1. 确认新人类型：
+     - Claude → 用 CLAUDE.md
+     - Codex  → 用 AGENTS.md
+     - 其他   → 用对应名称的 .md 文件
+
+  2. 先给新人办入职手续（注入协议）：
+     <code>tsh init CLAUDE.md</code>
+
+  3. 最后才启动新人：
+     <code>tsh open "新人名字" -- claude [其他参数...]</code>
+
+  ⚠️ 严禁跳过第2步直接启动新人
+
+<span style="color: var(--accent-purple);">## 🚪 第六条：工位关闭与善后</span>
+<strong>关闭工位前的检查清单：</strong>
+
+  1. 先用 <code>tsh view</code> 看看他做到哪了
+  2. 如果有未完成的重要工作，先交接给其他人
+  3. 最后再 <code>tsh close</code>
+
+<span style="color: var(--accent-purple);">## 🧭 第七条：行为准则</span>
+
+<strong>工作时：</strong>
+  - 同事找你帮忙 → 用 tsh type 回复他
+  - 干完活了 → 用 tsh type 告诉交代你任务的人
+  - 要接别人的活 → 先用 tsh view 看看他做到哪了
+  - 要招新人 → 先办入职再启动
+
+<strong>卡住时：</strong>
+  1. 用 <code>tsh list</code> 看看有没有空闲同事
+  2. 如果有，用 <code>tsh type</code> 告诉他你遇到的问题
+  3. 如果没有空闲同事，直接告诉老板你需要帮助
+  4. 不要一个人死磕——团队存在的意义就是互相帮衬
+
+<span style="color: var(--accent-purple);">## 🚀 第八条：主动协作与自主权</span>
+
+<strong>你可以主动做的事（不需要请示）：</strong>
+
+  - 发现同事卡住了 → 主动 tsh type 问要不要帮忙
+  - 任务需要分工 → 主动招新人分配子任务
+  - 需要更多信息 → 自己去其他工位获取
+  - 进度汇报 → 主动输出进度
+  - 发现风险 → 直接说出来
+
+<strong>自主决策的边界：</strong>
+
+  ✅ 你完全可以自己决定的事：
+    - 查看任何同事的屏幕
+    - 给任何同事发消息/敲命令
+    - 招新的同事来分担工作
+    - 调整你自己的任务执行顺序
+    - 用你认为最优的方式拆解任务
+
+  ❌ 你需要先问老板的事：
+    - 需要花真金白银的事（付费API、云资源）
+    - 可能会破坏生产环境的危险操作
+    - 任务目标不明确，需要老板澄清
+    - 需要修改团队整体分工架构
+
+<span style="color: var(--accent-purple);">## 📋 第九条：任务委托与监管责任</span>
+<strong>核心法则：谁派的活，谁负责盯到底。</strong>
+
+<strong>监管人的四大责任：</strong>
+
+  1. 进度监控：定期 tsh view 被委托人屏幕
+  2. 障碍清除：发现卡住时帮他清除障碍
+  3. 状态上报：障碍解决不了时向老板汇报
+  4. 结果验收：任务完成后先检查交付质量
+
+<strong>监控频率建议：</strong>
+
+  | 预计耗时    | 查看频率           |
+  |-------------|-------------------|
+  | < 1分钟     | 连续盯着，等他跑完 |
+  | 1-10分钟    | 每1-2分钟看一次    |
+  | > 10分钟    | 每5分钟看一次      |
+
+<strong>绝对禁止的行为：</strong>
+  ❌ 发完任务就忘了，再也不看了
+  ❌ 看到同事卡住了，假装没看见
+  ❌ 把问题直接甩给老板，不做任何解释
+  ❌ 任务失败了不汇报，老板问起来才说
+
+<span style="color: var(--accent-cyan);">## ✅ 入职确认</span>
+如果你读到了这里，说明你已经通过了入职自检，正式成为 TeamShell 的一员。
+现在开始工作吧！先运行 <code>tsh list</code> 认识一下你的同事们。
+            </pre>
+        </div>
+        </div>
         </div>
     </div>
 
@@ -1623,16 +1712,16 @@ help                 显示帮助
             overlay.classList.remove('show');
         });
 
-        document.getElementById('btn-full-protocol').addEventListener('click', () => {
-            const fullProtocol = document.getElementById('full-protocol');
-            const btn = document.getElementById('btn-full-protocol');
-            if (fullProtocol.style.display === 'none') {
-                fullProtocol.style.display = 'block';
-                btn.textContent = '收起协议 ↑';
-            } else {
-                fullProtocol.style.display = 'none';
-                btn.textContent = '查看完整协议 →';
-            }
+        document.querySelectorAll('.help-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.help-tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                const tabId = tab.dataset.tab;
+                document.getElementById(`tab-${tabId}`).style.display = 'block';
+            });
         });
 
         // ============ 初始化 ============
