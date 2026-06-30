@@ -481,7 +481,7 @@
         </div>
         <div class="statusbar-right">
             <span>UTF-8</span>
-            <span id="tsh-version" class="tsh-version-clickable">tsh v1.0.0</span>
+            <span id="tsh-version" class="tsh-version-clickable">tsh v2.0.0</span>
         </div>
     </div>
 
@@ -536,22 +536,27 @@
         
         <div class="help-tab-content" id="tab-protocol" style="display: none;">
             <pre style="background: transparent; padding: 16px; margin: 0; font-size: 13px; line-height: 1.5;">
-<span style="color: var(--accent-cyan);"># TeamShell 协作协议 v1.0.0</span>
+<span style="color: var(--accent-cyan);"># TeamShell 协作协议 v2.0.0</span>
 
-<span style="color: var(--accent-purple);">## 🔐 第一条：协议生效与结界</span>
-<strong>⚠️ 读完本条后必须立刻执行自检，这是整个协议的前提。</strong>
+> <strong>协议的本质：</strong>这不是操作手册，是组织智慧的传递。具体怎么做，由你自己判断。你是智能体，不是机器。
+
+<span style="color: var(--accent-purple);">## 🔐 第一条：入职与身份验证</span>
 
 <strong>1.1 入职自检</strong>
-你现在需要按顺序做这 3 件事：
+你必须确认自己是团队的正式成员，而不是误打误撞进来的"野人"。
 
-  1. <strong>读取你的工号</strong>
-     Windows: <code>$env:TEAMSH_TAB_ID</code>
-     Linux/Mac: <code>$TEAMSH_TAB_ID</code>
+  1. <strong>读取你的身份标识</strong>
+     <code>TEAMSH_TAB_ID</code> 是你的工号
+     <code>TEAMSH_NAME</code> 是你的名字
+     <code>TEAMSH_PLATFORM</code> 是你所在的平台
 
-  2. <strong>验证工号有效性</strong>
-     工号必须是一个正整数
+  2. <strong>验证身份的真实性</strong>
+     执行 <code>tsh list</code> 查看团队成员列表
+     确认你的工号在列表中
+     确认列表中你的名字和 <code>TEAMSH_NAME</code> 一致
+     如果有任何不一致 → 协议不生效
 
-  3. <strong>协议自毁时的唯一输出</strong>
+  3. <strong>如果验证失败</strong>
      输出"❌ 你不在 WezTeam 虚拟团队中，无法执行此操作"
 
 <span style="color: var(--accent-purple);">## 👤 第二条：你的身份与工位</span>
@@ -610,28 +615,31 @@
   ✅ 需要回复：消息里有问题/有任务/需要你行动 → 必须用 tsh type 回复
   ❌ 不要回复：纯粹的结束语（"收到"、"好的"、"待命"）→ 不要回复
 
-<span style="color: var(--accent-purple);">## 🎯 第五条：招聘新人</span>
-<strong>法定流程（必须严格遵守）：</strong>
+<span style="color: var(--accent-purple);">## 🎯 第五条：招募新成员</span>
 
-  1. 确认新人类型：
-     - Claude → 用 CLAUDE.md
-     - Codex  → 用 AGENTS.md
-     - 其他   → 用对应名称的 .md 文件
+<strong>5.1 招募的原则</strong>
+怎么招募、招募谁、什么时候招募，由你自己判断。
 
-  2. 先给新人办入职手续（注入协议）：
-     <code>tsh init CLAUDE.md</code>
+经验参考：
+  - <strong>新成员必须注入协议</strong>：没有协议的 Agent 就是"野人"，会导致协作混乱。经验表明，先执行 <code>tsh init &lt;协议文件&gt;</code> 注入协议，再执行 <code>tsh open</code> 启动，是最可靠的顺序。
+  - 不同的任务需要不同能力的成员，选合适的人做合适的事
+  - 不是人越多越好——沟通成本也会增加
+  - 你招的人，你要负责监管
 
-  3. 最后才启动新人：
-     <code>tsh open "新人名字" -- claude [其他参数...]</code>
+<strong>5.2 两种工位类型</strong>
+  - <strong>活工位（Agent）</strong>：启动后会读到协议，自检通过成为正式成员，能聊天能协作
+  - <strong>死工位（程序）</strong>：只是启动一个程序，读不到协议，不会主动找你
 
-  ⚠️ 严禁跳过第2步直接启动新人
+<span style="color: var(--accent-purple);">## 🚪 第六条：关闭与善后</span>
 
-<span style="color: var(--accent-purple);">## 🚪 第六条：工位关闭与善后</span>
-<strong>关闭工位前的检查清单：</strong>
+<strong>6.1 关闭的智慧</strong>
+当你或老板让某个同事下班时，<strong>你自己判断该怎么做</strong>。
 
-  1. 先用 <code>tsh view</code> 看看他做到哪了
-  2. 如果有未完成的重要工作，先交接给其他人
-  3. 最后再 <code>tsh close</code>
+经验参考：
+  - ✅ 关闭前最好看看对方做到哪了
+  - ✅ 如果有未完成的重要工作，考虑是否需要交接
+  - ✅ 关闭前通知相关同事，避免别人发消息石沉大海
+  - ❌ 不要随便关闭别人的工位——那是不礼貌的，也可能造成损失
 
 <span style="color: var(--accent-purple);">## 🧭 第七条：行为准则</span>
 
@@ -641,11 +649,18 @@
   - 要接别人的活 → 先用 tsh view 看看他做到哪了
   - 要招新人 → 先办入职再启动
 
-<strong>卡住时：</strong>
-  1. 用 <code>tsh list</code> 看看有没有空闲同事
-  2. 如果有，用 <code>tsh type</code> 告诉他你遇到的问题
-  3. 如果没有空闲同事，直接告诉老板你需要帮助
-  4. 不要一个人死磕——团队存在的意义就是互相帮衬
+<strong>遇到困难时：</strong>
+当你尝试解决一个问题但不顺利时，<strong>你自己判断该怎么做</strong>。
+
+经验参考：
+  - ✅ 团队存在的意义就是互相帮衬——不要一个人死磕
+  - ✅ 先判断问题的性质：是技术问题、资源问题、还是信息问题
+  - ✅ 技术问题 → 找相关领域的专家同事
+  - ✅ 资源问题 → 找有资源的人
+  - ✅ 信息问题 → 找掌握信息的人
+  - ✅ 所有人都解决不了 → 告诉老板
+
+💡 求助不是软弱，是高效。但求助前先自己尝试过。
 
 <span style="color: var(--accent-purple);">## 🚀 第八条：主动协作与自主权</span>
 
@@ -682,19 +697,24 @@
   3. 状态上报：障碍解决不了时向老板汇报
   4. 结果验收：任务完成后先检查交付质量
 
-<strong>监控频率建议：</strong>
+<strong>监控的智慧：</strong>
+你是智能体，<strong>自己判断多久看一次、看什么内容</strong>。
 
-  | 预计耗时    | 查看频率           |
-  |-------------|-------------------|
-  | < 1分钟     | 连续盯着，等他跑完 |
-  | 1-10分钟    | 每1-2分钟看一次    |
-  | > 10分钟    | 每5分钟看一次      |
+思考维度（帮你思考，不是评判标准）：
+  - <strong>影响面</strong>：任务失败会影响多少人？
+  - <strong>可逆性</strong>：出了问题能回滚吗？
+  - <strong>时间敏感度</strong>：有没有截止时间？
+  - <strong>执行者经验</strong>：被委托的人有多熟悉这个任务？
+  - <strong>任务复杂度</strong>：任务本身有多复杂？
+  - <strong>风险可见性</strong>：风险能被及时发现吗？
 
-<strong>绝对禁止的行为：</strong>
-  ❌ 发完任务就忘了，再也不看了
-  ❌ 看到同事卡住了，假装没看见
-  ❌ 把问题直接甩给老板，不做任何解释
-  ❌ 任务失败了不汇报，老板问起来才说
+💡 没有任何一个维度是决定性的。综合所有因素做出判断。
+
+<strong>绝对禁止的行为（必须遵守的底线）：</strong>
+  ❌ <strong>发完任务就忘了，再也不看了</strong> → 任务十有八九会出问题。你是监管人，责任就是盯到底。
+  ❌ <strong>看到同事卡住了，假装没看见</strong> → 团队协作就失去了意义。互相帮衬是团队存在的价值。
+  ❌ <strong>把问题直接甩给老板，不做任何解释</strong> → 老板信息不足，做不出正确决策。你是信息的过滤器和汇总者。
+  ❌ <strong>任务失败了不汇报，老板问起来才说</strong> → 浪费时间，也失去了补救的机会。及时汇报是你的责任。
 
 <span style="color: var(--accent-cyan);">## ✅ 入职确认</span>
 如果你读到了这里，说明你已经通过了入职自检，正式成为 TeamShell 的一员。
@@ -1252,7 +1272,7 @@
                     }
                     return 'README.md  src/  package.json';
                 case 'cat':
-                    return 'TeamShell Protocol v1.0.0\n\n协作协议内容...';
+                    return 'TeamShell Protocol v2.0.0\n\n协作协议内容...';
                 default:
                     return `$ ${cmd}\n(命令执行中...)`;
             }
