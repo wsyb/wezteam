@@ -1,8 +1,29 @@
 use mux::pane::CachePolicy;
 use std::collections::HashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
+
+fn log_debug(msg: &str) {
+    let log_file = std::env::temp_dir().join("wezterm_extra_info.log");
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_file)
+    {
+        let elapsed = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or_default();
+        let secs = elapsed.as_secs() % 86400;
+        let hours = secs / 3600;
+        let mins = (secs % 3600) / 60;
+        let secs = secs % 60;
+        let millis = elapsed.subsec_millis();
+        let _ = writeln!(file, "[{:02}:{:02}:{:02}.{:03}] {}", hours, mins, secs, millis, msg);
+    }
+}
 
 type PaneId = usize;
 
@@ -45,11 +66,11 @@ pub fn get_extra_info(
     
     let cwd = match pane.get_current_working_dir(CachePolicy::AllowStale) {
         Some(url) => {
-            log::info!("Pane {} cwd: {}", pane_id, url);
+            log_debug(&format!("Pane {} cwd: {}", pane_id, url));
             url.to_string()
         }
         None => {
-            log::warn!("Pane {} failed to get cwd", pane_id);
+            log_debug(&format!("Pane {} failed to get cwd", pane_id));
             return (None, None);
         }
     };
@@ -60,17 +81,17 @@ pub fn get_extra_info(
         let cache = CACHE.lock().unwrap();
         if let Some(entry) = cache.entries.get(&key) {
             if entry.timestamp.elapsed() < cache_duration {
-                log::info!("Pane {} using cache", pane_id);
+                log_debug(&format!("Pane {} using cache", pane_id));
                 return (entry.git_branch.clone(), entry.last_command.clone());
             }
         }
     }
     
-    log::info!("Pane {} fetching fresh data", pane_id);
+    log_debug(&format!("Pane {} fetching fresh data", pane_id));
     let git_branch = fetch_git_branch(pane);
     let last_command = fetch_last_command(pane);
     
-    log::info!("Pane {} result: git={:?}, cmd={:?}", pane_id, git_branch, last_command);
+    log_debug(&format!("Pane {} result: git={:?}, cmd={:?}", pane_id, git_branch, last_command));
     
     {
         let mut cache = CACHE.lock().unwrap();
