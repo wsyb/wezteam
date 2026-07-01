@@ -44,8 +44,14 @@ pub fn get_extra_info(
     let cache_duration = Duration::from_millis(cache_duration_ms);
     
     let cwd = match pane.get_current_working_dir(CachePolicy::AllowStale) {
-        Some(url) => url.to_string(),
-        None => return (None, None),
+        Some(url) => {
+            log::info!("Pane {} cwd: {}", pane_id, url);
+            url.to_string()
+        }
+        None => {
+            log::warn!("Pane {} failed to get cwd", pane_id);
+            return (None, None);
+        }
     };
     
     let key = CacheKey { pane_id, cwd: cwd.clone() };
@@ -54,13 +60,17 @@ pub fn get_extra_info(
         let cache = CACHE.lock().unwrap();
         if let Some(entry) = cache.entries.get(&key) {
             if entry.timestamp.elapsed() < cache_duration {
+                log::info!("Pane {} using cache", pane_id);
                 return (entry.git_branch.clone(), entry.last_command.clone());
             }
         }
     }
     
+    log::info!("Pane {} fetching fresh data", pane_id);
     let git_branch = fetch_git_branch(pane);
     let last_command = fetch_last_command(pane);
+    
+    log::info!("Pane {} result: git={:?}, cmd={:?}", pane_id, git_branch, last_command);
     
     {
         let mut cache = CACHE.lock().unwrap();
