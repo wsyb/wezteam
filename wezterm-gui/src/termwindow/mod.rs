@@ -25,6 +25,7 @@ use crate::termwindow::render::{
     CachedLineState, LineQuadCacheKey, LineQuadCacheValue, LineToEleShapeCacheKey,
     LineToElementShapeItem,
 };
+use crate::termwindow::tab_extra_info::TabExtraInfoCache;
 use crate::termwindow::webgpu::WebGpuState;
 use ::wezterm_term::input::{ClickPosition, MouseButton as TMB};
 use ::window::*;
@@ -82,6 +83,7 @@ pub mod render;
 pub mod resize;
 mod selection;
 pub mod spawn;
+mod tab_extra_info;
 pub mod webgpu;
 use crate::spawn::SpawnWhere;
 use prevcursor::PrevCursorPos;

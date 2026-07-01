@@ -495,6 +495,14 @@ pub struct Config {
     #[dynamic(default)]
     pub tab_bar_vertical_position: VerticalTabBarPosition,
 
+    /// Show extra info (command and git) in vertical tab bar
+    #[dynamic(default = "default_true")]
+    pub tab_bar_vertical_extra_info: bool,
+
+    /// Cache duration for extra info in milliseconds
+    #[dynamic(default = "default_tab_extra_info_cache_ms")]
+    pub tab_bar_extra_info_cache_ms: u64,
+
     #[dynamic(default = "default_true")]
     pub mouse_wheel_scrolls_tabs: bool,
 
@@ -1889,6 +1897,10 @@ fn default_tab_max_width() -> usize {
 
 fn default_tab_bar_vertical_width() -> usize {
     200
+}
+
+fn default_tab_extra_info_cache_ms() -> u64 {
+    1000
 }
 
 fn default_update_interval() -> u64 {
