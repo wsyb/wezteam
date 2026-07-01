@@ -1,5 +1,5 @@
 use crate::customglyph::*;
-use crate::tabbar::{TabBarItem, TabEntry};
+use crate::tabbar::{parse_status_text, TabBarItem, TabEntry};
 use crate::termwindow::box_model::*;
 use crate::termwindow::render::corners::*;
 use crate::termwindow::tab_extra_info::TabExtraInfoCache;
@@ -9,8 +9,9 @@ use crate::termwindow::{UIItem, UIItemType};
 use crate::utilsprites::RenderMetrics;
 use config::{Dimension, DimensionContext, TabBarColors};
 use std::rc::Rc;
+use termwiz::cell::CellAttributes;
 use wezterm_font::LoadedFont;
-use wezterm_term::color::{ColorAttribute, ColorPalette};
+use wezterm_term::color::{AnsiColor, ColorAttribute, ColorPalette};
 use window::color::LinearRgba;
 use window::{IntegratedTitleButtonAlignment, IntegratedTitleButtonStyle};
 
@@ -620,26 +621,26 @@ impl crate::TermWindow {
                                 
                                 // Git branch
                                 if let Some(git) = cache.get_git_branch(pane_obj.as_ref()) {
-                                    let git_line = Element::with_line(&font, &git, palette)
-                                        .font_size(Some(Dimension::Cells(0.85)))
+                                    let git_line = parse_status_text(&git, CellAttributes::default());
+                                    let git_elem = Element::with_line(&font, &git_line, palette)
                                         .colors(ElementColors {
                                             border: BorderColor::default(),
                                             bg: tab_bg_linear.into(),
-                                            text: palette.bright_green.to_linear().into(),
+                                            text: palette.colors.0[AnsiColor::Lime as usize].to_linear().into(),
                                         });
-                                    extra_lines.push(git_line);
+                                    extra_lines.push(git_elem);
                                 }
                                 
                                 // Last command
                                 if let Some(cmd) = cache.get_last_command(pane_obj.as_ref()) {
-                                    let cmd_line = Element::with_line(&font, &cmd, palette)
-                                        .font_size(Some(Dimension::Cells(0.85)))
+                                    let cmd_line = parse_status_text(&cmd, CellAttributes::default());
+                                    let cmd_elem = Element::with_line(&font, &cmd_line, palette)
                                         .colors(ElementColors {
                                             border: BorderColor::default(),
                                             bg: tab_bg_linear.into(),
-                                            text: palette.bright_black.to_linear().into(),
+                                            text: palette.colors.0[AnsiColor::Grey as usize].to_linear().into(),
                                         });
-                                    extra_lines.push(cmd_line);
+                                    extra_lines.push(cmd_elem);
                                 }
                             }
                         }

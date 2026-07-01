@@ -1,0 +1,77 @@
+   Compiling openssl-sys v0.9.111
+note: did not finalize incremental compilation session directory `\\?\D:\work\wezteam\target\debug\incremental\vtparse-1sscpuc210l0z\s-hjhqvkoduu-1fzn5t2-working`: 拒绝访问。 (os error 5)
+  |
+  = help: the next build will not be able to reuse work from this compilation
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> filedescriptor\src\windows.rs:324:18
+    |
+324 |     fn as_socket(&self) -> BorrowedSocket {
+    |                  ^^^^^     ^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                  |
+    |                  the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+324 |     fn as_socket(&self) -> BorrowedSocket<'_> {
+    |                                          ++++
+
+warning: `filedescriptor` (lib) generated 1 warning (run `cargo fix --lib -p filedescriptor` to apply 1 suggestion)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> termwiz\src\terminal\windows.rs:773:27
+    |
+773 |     fn probe_capabilities(&mut self) -> Option<ProbeCapabilities> {
+    |                           ^^^^^^^^^            ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                           |
+    |                           the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+773 |     fn probe_capabilities(&mut self) -> Option<ProbeCapabilities<'_>> {
+    |                                                                 ++++
+
+warning: `termwiz` (lib) generated 1 warning (run `cargo fix --lib -p termwiz` to apply 1 suggestion)
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> wezterm-uds\src\lib.rs:72:18
+   |
+72 |     fn as_socket(&self) -> BorrowedSocket {
+   |                  ^^^^^     ^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                  |
+   |                  the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+72 |     fn as_socket(&self) -> BorrowedSocket<'_> {
+   |                                          ++++
+
+warning: `wezterm-uds` (lib) generated 1 warning (run `cargo fix --lib -p wezterm-uds` to apply 1 suggestion)
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> procinfo\src\windows.rs:36:17
+   |
+36 |     pub fn iter(&self) -> ProcIter {
+   |                 ^^^^^     ^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+36 |     pub fn iter(&self) -> ProcIter<'_> {
+   |                                   ++++
+
+warning: `procinfo` (lib) generated 1 warning (run `cargo fix --lib -p procinfo` to apply 1 suggestion)
+note: did not finalize incremental compilation session directory `\\?\D:\work\wezteam\target\debug\incremental\bintree-3ew4dju8dnpdc\s-hjhqdwo81g-1fteq57-working`: 拒绝访问。 (os error 5)
+  |
+  = help: the next build will not be able to reuse work from this compilation
+
+note: did not finalize incremental compilation session directory `\\?\D:\work\wezteam\target\debug\incremental\base91-2i9j7zwbm28ag\s-hjhqwkgige-0dzleyn-working`: 拒绝访问。 (os error 5)
+  |
+  = help: the next build will not be able to reuse work from this compilation
+

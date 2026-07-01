@@ -3472,7 +3472,7 @@ impl TermWindow {
         }
     }
 
-    fn get_tab_information(&mut self) -> Vec<TabInformation> {
+    fn get_tab_information(&self) -> Vec<TabInformation> {
         let mux = Mux::get();
         let window = match mux.get_window(self.mux_window_id) {
             Some(window) => window,

@@ -1,0 +1,13 @@
+{
+  "globalPaused": false,
+  "isSingle": false,
+  "isInitial": true,
+  "codebaseId": "1232138625118982144",
+  "codebaseBranchId": "1232265213387034624",
+  "taskId": "1232265213441560576",
+  "branch": "feature/vertical-tab-bar",
+  "isBaselineInitial": false,
+  "finishedCount": 0,
+  "taskStatus": "WAITING",
+  "taskProgress": "0"
+}
