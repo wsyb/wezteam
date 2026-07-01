@@ -64,7 +64,7 @@ pub fn get_extra_info(
     let pane_id = pane.pane_id();
     let cache_duration = Duration::from_millis(cache_duration_ms);
     
-    let cwd = match pane.get_current_working_dir(CachePolicy::MustRefetch) {
+    let cwd = match pane.get_current_working_dir(CachePolicy::FetchImmediate) {
         Some(url) => {
             log_debug(&format!("Pane {} cwd: {}", pane_id, url));
             url.to_string()
@@ -107,7 +107,7 @@ pub fn get_extra_info(
 }
 
 fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
-    let proc_info = match pane.get_foreground_process_info(CachePolicy::MustRefetch) {
+    let proc_info = match pane.get_foreground_process_info(CachePolicy::FetchImmediate) {
         Some(info) => info,
         None => {
             log_debug("fetch_last_command: failed to get proc_info");
@@ -152,7 +152,7 @@ fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
 }
 
 fn fetch_git_branch(pane: &dyn mux::pane::Pane) -> Option<String> {
-    let cwd = match pane.get_current_working_dir(CachePolicy::MustRefetch) {
+    let cwd = match pane.get_current_working_dir(CachePolicy::FetchImmediate) {
         Some(url) => url,
         None => {
             log_debug("fetch_git_branch: failed to get cwd");
