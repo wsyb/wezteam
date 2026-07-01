@@ -490,9 +490,13 @@ impl crate::TermWindow {
         let new_tab_colors = colors.new_tab();
         let new_tab_hover_colors = colors.new_tab_hover();
 
+        // Get tab information for extra info
+        let tabs_info = self.get_tab_information();
+        let show_extra = self.config.tab_bar_vertical_extra_info;
+
         let mut tab_children = vec![];
 
-        for item in items {
+        for (idx, item) in items.iter().enumerate() {
             let element = Element::with_line(&font, &item.title, palette);
 
             let bg_color = item
@@ -602,8 +606,50 @@ impl crate::TermWindow {
                             .unwrap_or_else(|| colors.inactive_tab().bg_color.into())
                             .to_linear()
                     };
+
+                    // Add extra info lines (git branch, command)
+                    let mut extra_lines = vec![];
+                    if show_extra && idx < tabs_info.len() {
+                        let tab_info = &tabs_info[idx];
+                        if let Some(pane) = &tab_info.active_pane {
+                            // Get pane to fetch extra info
+                            let mux = mux::Mux::get();
+                            if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
+                                let mut cache = TabExtraInfoCache::new(self.config.tab_bar_extra_info_cache_ms);
+                                
+                                // Git branch
+                                if let Some(git) = cache.get_git_branch(pane_obj.as_ref()) {
+                                    let git_line = Element::with_line(&font, &git, palette)
+                                        .font_size(Some(Dimension::Cells(0.85)))
+                                        .colors(ElementColors {
+                                            border: BorderColor::default(),
+                                            bg: tab_bg_linear.into(),
+                                            text: palette.bright_green.to_linear().into(),
+                                        });
+                                    extra_lines.push(git_line);
+                                }
+                                
+                                // Last command
+                                if let Some(cmd) = cache.get_last_command(pane_obj.as_ref()) {
+                                    let cmd_line = Element::with_line(&font, &cmd, palette)
+                                        .font_size(Some(Dimension::Cells(0.85)))
+                                        .colors(ElementColors {
+                                            border: BorderColor::default(),
+                                            bg: tab_bg_linear.into(),
+                                            text: palette.bright_black.to_linear().into(),
+                                        });
+                                    extra_lines.push(cmd_line);
+                                }
+                            }
+                        }
+                    }
+
                     elem.content = match elem.content {
                         ElementContent::Children(mut kids) => {
+                            // Add extra info lines first
+                            kids.extend(extra_lines);
+                            
+                            // Add close button
                             if self.config.show_close_tab_button_in_tabs {
                                 kids.push(make_vertical_x_button(
                                     &font, &metrics, &colors, tab_idx, active,
