@@ -107,42 +107,99 @@ pub fn get_extra_info(
 }
 
 fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
-    let proc_info = pane.get_foreground_process_info(CachePolicy::AllowStale)?;
+    let proc_info = match pane.get_foreground_process_info(CachePolicy::AllowStale) {
+        Some(info) => info,
+        None => {
+            log_debug("fetch_last_command: failed to get proc_info");
+            return None;
+        }
+    };
     
     if proc_info.argv.is_empty() {
+        log_debug("fetch_last_command: argv is empty");
         return None;
     }
     
     let cmd = &proc_info.argv[0];
-    let cmd_name = Path::new(cmd).file_name()?.to_str()?.to_string();
+    let cmd_name = match Path::new(cmd).file_name() {
+        Some(name) => match name.to_str() {
+            Some(s) => s.to_string(),
+            None => {
+                log_debug(&format!("fetch_last_command: cmd_name not utf8: {:?}", name));
+                return None;
+            }
+        }
+        None => {
+            log_debug(&format!("fetch_last_command: no filename in: {}", cmd));
+            return None;
+        }
+    };
     
     if is_shell_command(&cmd_name) {
+        log_debug(&format!("fetch_last_command: {} is shell, skipping", cmd_name));
         return None;
     }
     
     let full_cmd = if proc_info.argv.len() > 1 {
         format!("{} {}", cmd_name, proc_info.argv[1..].join(" "))
     } else {
-        cmd_name
+        cmd_name.clone()
     };
     
-    Some(truncate_command(&full_cmd, 20))
+    let result = truncate_command(&full_cmd, 20);
+    log_debug(&format!("fetch_last_command: {} -> {}", cmd_name, result));
+    Some(result)
 }
 
 fn fetch_git_branch(pane: &dyn mux::pane::Pane) -> Option<String> {
-    let cwd = pane.get_current_working_dir(CachePolicy::AllowStale)?;
+    let cwd = match pane.get_current_working_dir(CachePolicy::AllowStale) {
+        Some(url) => url,
+        None => {
+            log_debug("fetch_git_branch: failed to get cwd");
+            return None;
+        }
+    };
     
     if cwd.scheme() != "file" {
+        log_debug(&format!("fetch_git_branch: not file scheme: {}", cwd.scheme()));
         return None;
     }
     
-    let path = cwd.to_file_path().ok()?;
-    let git_dir = find_git_dir(&path)?;
+    let path = match cwd.to_file_path() {
+        Ok(p) => p,
+        Err(_) => {
+            log_debug(&format!("fetch_git_branch: failed to convert to path: {}", cwd));
+            return None;
+        }
+    };
     
-    let branch = read_git_branch(&git_dir)?;
-    let status = get_git_status(&git_dir)?;
+    let git_dir = match find_git_dir(&path) {
+        Some(dir) => dir,
+        None => {
+            log_debug(&format!("fetch_git_branch: no .git in {:?}", path));
+            return None;
+        }
+    };
     
-    Some(format!("git:{} {}", branch, status))
+    let branch = match read_git_branch(&git_dir) {
+        Some(b) => b,
+        None => {
+            log_debug(&format!("fetch_git_branch: failed to read branch from {:?}", git_dir));
+            return None;
+        }
+    };
+    
+    let status = match get_git_status(&git_dir) {
+        Some(s) => s,
+        None => {
+            log_debug(&format!("fetch_git_branch: failed to get status from {:?}", git_dir));
+            return None;
+        }
+    };
+    
+    let result = format!("git:{} {}", branch, status);
+    log_debug(&format!("fetch_git_branch: {:?}", result));
+    Some(result)
 }
 
 fn is_shell_command(cmd: &str) -> bool {
