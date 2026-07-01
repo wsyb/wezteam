@@ -36,6 +36,7 @@ struct CacheKey {
 struct CacheEntry {
     git_branch: Option<String>,
     last_command: Option<String>,
+    last_non_shell_command: Option<String>,
     timestamp: Instant,
 }
 
@@ -77,33 +78,37 @@ pub fn get_extra_info(
     
     let key = CacheKey { pane_id, cwd: cwd.clone() };
     
-    {
+    let git_branch = fetch_git_branch(pane);
+    let current_cmd = fetch_last_command(pane);
+    
+    let (result_cmd, cache_cmd) = {
         let cache = CACHE.lock().unwrap();
         if let Some(entry) = cache.entries.get(&key) {
             if entry.timestamp.elapsed() < cache_duration {
-                log_debug(&format!("Pane {} using cache", pane_id));
-                return (entry.git_branch.clone(), entry.last_command.clone());
+                let cmd = current_cmd.clone().or(entry.last_non_shell_command.clone());
+                (cmd, entry.last_non_shell_command.clone())
+            } else {
+                let cmd = current_cmd.clone().or(entry.last_non_shell_command.clone());
+                (cmd, current_cmd.clone().or(entry.last_non_shell_command.clone()))
             }
+        } else {
+            (current_cmd.clone(), current_cmd.clone())
         }
-    }
-    
-    log_debug(&format!("Pane {} fetching fresh data", pane_id));
-    let git_branch = fetch_git_branch(pane);
-    let last_command = fetch_last_command(pane);
-    
-    log_debug(&format!("Pane {} result: git={:?}, cmd={:?}", pane_id, git_branch, last_command));
+    };
     
     {
         let mut cache = CACHE.lock().unwrap();
         cache.cache_duration = cache_duration;
         cache.entries.insert(key, CacheEntry {
             git_branch: git_branch.clone(),
-            last_command: last_command.clone(),
+            last_command: current_cmd.clone(),
+            last_non_shell_command: cache_cmd,
             timestamp: Instant::now(),
         });
     }
     
-    (git_branch, last_command)
+    log_debug(&format!("Pane {} result: git={:?}, cmd={:?}", pane_id, git_branch, result_cmd));
+    (git_branch, result_cmd)
 }
 
 fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
