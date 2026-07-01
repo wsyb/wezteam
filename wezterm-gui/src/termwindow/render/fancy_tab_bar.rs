@@ -487,6 +487,11 @@ impl crate::TermWindow {
         let items = self.tab_bar.items();
         let colors = self.tab_bar_colors();
         let bar_colors = self.bar_element_colors();
+        
+        log::info!("build_vertical_fancy_tab_bar: tab_bar_width={}, window_width={}, override={:?}", 
+            tab_bar_width, 
+            self.dimensions.pixel_width,
+            self.vertical_tab_bar_width_override);
 
         let active_tab_colors = colors.active_tab();
         let new_tab_colors = colors.new_tab();
