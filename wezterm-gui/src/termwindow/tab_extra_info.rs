@@ -152,8 +152,19 @@ fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
 }
 
 fn fetch_git_branch_from_path(path_str: &str) -> Option<String> {
-    // Parse path from pane title (might be "D:\work\wezteam" or similar)
-    let path = Path::new(path_str);
+    // Parse path from pane title
+    // The title might be reversed like "wezteam\work\D:" instead of "D:\work\wezteam"
+    let path_str = if path_str.contains(':') && path_str.chars().last() == Some(':') {
+        // Reversed path: "wezteam\work\D:" -> "D:\work\wezteam"
+        let parts: Vec<&str> = path_str.split('\\').rev().collect();
+        parts.join("\\")
+    } else {
+        path_str.to_string()
+    };
+    
+    log_debug(&format!("fetch_git_branch_from_path: normalized path: {}", path_str));
+    
+    let path = Path::new(&path_str);
     
     let git_dir = match find_git_dir(path) {
         Some(dir) => dir,
