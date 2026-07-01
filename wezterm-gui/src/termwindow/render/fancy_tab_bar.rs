@@ -523,7 +523,7 @@ impl crate::TermWindow {
                     let mut elem = element
                         .item_type(UIItemType::TabBar(item.item.clone()))
                         .display(DisplayType::Block)
-                        .max_width(Some(Dimension::Pixels(tab_bar_width - 10.)))
+                        .max_width(Some(Dimension::Percent(1.0)))
                         .padding(BoxDimension {
                             left: Dimension::Cells(0.5),
                             right: Dimension::Cells(0.5),
@@ -940,8 +940,7 @@ fn make_vertical_x_button(
         },
     )
     .zindex(1)
-    .vertical_align(VerticalAlign::Middle)
-    .float(Float::Right)
+    .display(DisplayType::Block)
     .item_type(UIItemType::CloseTab(tab_idx))
     // Default: invisible (text and bg match the tab background)
     .colors(ElementColors {
