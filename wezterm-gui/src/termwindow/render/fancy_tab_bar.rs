@@ -2,6 +2,7 @@ use crate::customglyph::*;
 use crate::tabbar::{TabBarItem, TabEntry};
 use crate::termwindow::box_model::*;
 use crate::termwindow::render::corners::*;
+use crate::termwindow::tab_extra_info::TabExtraInfoCache;
 
 use crate::termwindow::render::window_buttons::window_button_element;
 use crate::termwindow::{UIItem, UIItemType};
