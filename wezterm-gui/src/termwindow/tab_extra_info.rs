@@ -60,25 +60,20 @@ lazy_static::lazy_static! {
 
 pub fn get_extra_info(
     pane: &dyn mux::pane::Pane,
+    pane_title: &str,
     cache_duration_ms: u64,
 ) -> (Option<String>, Option<String>) {
     let pane_id = pane.pane_id();
     let cache_duration = Duration::from_millis(cache_duration_ms);
     
-    let cwd = match pane.get_current_working_dir(CachePolicy::FetchImmediate) {
-        Some(url) => {
-            log_debug(&format!("Pane {} cwd: {}", pane_id, url));
-            url.to_string()
-        }
-        None => {
-            log_debug(&format!("Pane {} failed to get cwd", pane_id));
-            return (None, None);
-        }
-    };
+    // Use pane_title as cwd (more reliable than get_current_working_dir)
+    log_debug(&format!("Pane {} title: {}", pane_id, pane_title));
+    
+    let cwd = pane_title.to_string();
     
     let key = CacheKey { pane_id, cwd: cwd.clone() };
     
-    let git_branch = fetch_git_branch(pane);
+    let git_branch = fetch_git_branch_from_path(&cwd);
     let current_cmd = fetch_last_command(pane);
     
     let (result_cmd, cache_cmd) = {
@@ -156,32 +151,14 @@ fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
     Some(result)
 }
 
-fn fetch_git_branch(pane: &dyn mux::pane::Pane) -> Option<String> {
-    let cwd = match pane.get_current_working_dir(CachePolicy::FetchImmediate) {
-        Some(url) => url,
-        None => {
-            log_debug("fetch_git_branch: failed to get cwd");
-            return None;
-        }
-    };
+fn fetch_git_branch_from_path(path_str: &str) -> Option<String> {
+    // Parse path from pane title (might be "D:\work\wezteam" or similar)
+    let path = Path::new(path_str);
     
-    if cwd.scheme() != "file" {
-        log_debug(&format!("fetch_git_branch: not file scheme: {}", cwd.scheme()));
-        return None;
-    }
-    
-    let path = match cwd.to_file_path() {
-        Ok(p) => p,
-        Err(_) => {
-            log_debug(&format!("fetch_git_branch: failed to convert to path: {}", cwd));
-            return None;
-        }
-    };
-    
-    let git_dir = match find_git_dir(&path) {
+    let git_dir = match find_git_dir(path) {
         Some(dir) => dir,
         None => {
-            log_debug(&format!("fetch_git_branch: no .git in {:?}", path));
+            log_debug(&format!("fetch_git_branch_from_path: no .git in {:?}", path));
             return None;
         }
     };
@@ -189,7 +166,7 @@ fn fetch_git_branch(pane: &dyn mux::pane::Pane) -> Option<String> {
     let branch = match read_git_branch(&git_dir) {
         Some(b) => b,
         None => {
-            log_debug(&format!("fetch_git_branch: failed to read branch from {:?}", git_dir));
+            log_debug(&format!("fetch_git_branch_from_path: failed to read branch from {:?}", git_dir));
             return None;
         }
     };
@@ -197,13 +174,13 @@ fn fetch_git_branch(pane: &dyn mux::pane::Pane) -> Option<String> {
     let status = match get_git_status(&git_dir) {
         Some(s) => s,
         None => {
-            log_debug(&format!("fetch_git_branch: failed to get status from {:?}", git_dir));
+            log_debug(&format!("fetch_git_branch_from_path: failed to get status from {:?}", git_dir));
             return None;
         }
     };
     
     let result = format!("git:{} {}", branch, status);
-    log_debug(&format!("fetch_git_branch: {:?}", result));
+    log_debug(&format!("fetch_git_branch_from_path: {:?}", result));
     Some(result)
 }
 

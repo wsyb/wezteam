@@ -626,7 +626,9 @@ impl crate::TermWindow {
                             if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
                                 let cache_duration = self.config.tab_bar_extra_info_cache_ms;
                                 
-                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), cache_duration);
+                                // Use pane title as cwd (more reliable than get_current_working_dir)
+                                let pane_title = &pane.title;
+                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), pane_title, cache_duration);
                                 
                                 log::info!("Tab {} extra info: git={:?}, cmd={:?}", tab_idx, git, cmd);
                                 
