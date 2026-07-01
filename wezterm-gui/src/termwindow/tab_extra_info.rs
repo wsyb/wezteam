@@ -79,15 +79,23 @@ pub fn get_extra_info(
     let (result_cmd, cache_cmd) = {
         let cache = CACHE.lock().unwrap();
         if let Some(entry) = cache.entries.get(&key) {
-            if entry.timestamp.elapsed() < cache_duration {
-                let cmd = current_cmd.clone().or(entry.last_non_shell_command.clone());
-                (cmd, entry.last_non_shell_command.clone())
+            // Use current command if available, otherwise use cached non-shell command
+            let cmd = current_cmd.clone().or(entry.last_non_shell_command.clone());
+            // Update cache: keep current if it's non-shell, otherwise keep previous
+            let new_cache = if current_cmd.is_some() {
+                current_cmd.clone()
             } else {
-                let cmd = current_cmd.clone().or(entry.last_non_shell_command.clone());
-                (cmd, current_cmd.clone().or(entry.last_non_shell_command.clone()))
-            }
+                entry.last_non_shell_command.clone()
+            };
+            (cmd, new_cache)
         } else {
-            (current_cmd.clone(), current_cmd.clone())
+            // No cache yet
+            let new_cache = if current_cmd.is_some() {
+                current_cmd.clone()
+            } else {
+                None
+            };
+            (current_cmd.clone(), new_cache)
         }
     };
     
