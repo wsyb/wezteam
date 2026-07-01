@@ -2,7 +2,7 @@ use crate::customglyph::*;
 use crate::tabbar::{parse_status_text, TabBarItem, TabEntry};
 use crate::termwindow::box_model::*;
 use crate::termwindow::render::corners::*;
-use crate::termwindow::tab_extra_info::TabExtraInfoCache;
+use crate::termwindow::tab_extra_info::{get_git_branch_cached, get_last_command_cached};
 
 use crate::termwindow::render::window_buttons::window_button_element;
 use crate::termwindow::{UIItem, UIItemType};
@@ -611,16 +611,14 @@ impl crate::TermWindow {
 
                     // Add extra info lines (git branch, command)
                     let mut extra_lines = vec![];
-                    if show_extra && idx < tabs_info.len() {
-                        let tab_info = &tabs_info[idx];
+                    if show_extra && tab_idx < tabs_info.len() {
+                        let tab_info = &tabs_info[tab_idx];
                         if let Some(pane) = &tab_info.active_pane {
-                            // Get pane to fetch extra info
                             let mux = mux::Mux::get();
                             if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
-                                let mut cache = TabExtraInfoCache::new(self.config.tab_bar_extra_info_cache_ms);
+                                let cache_duration = self.config.tab_bar_extra_info_cache_ms;
                                 
-                                // Git branch
-                                if let Some(git) = cache.get_git_branch(pane_obj.as_ref()) {
+                                if let Some(git) = get_git_branch_cached(pane_obj.as_ref(), cache_duration) {
                                     let git_line = parse_status_text(&git, CellAttributes::default());
                                     let git_elem = Element::with_line(&font, &git_line, palette)
                                         .colors(ElementColors {
@@ -631,8 +629,7 @@ impl crate::TermWindow {
                                     extra_lines.push(git_elem);
                                 }
                                 
-                                // Last command
-                                if let Some(cmd) = cache.get_last_command(pane_obj.as_ref()) {
+                                if let Some(cmd) = get_last_command_cached(pane_obj.as_ref(), cache_duration) {
                                     let cmd_line = parse_status_text(&cmd, CellAttributes::default());
                                     let cmd_elem = Element::with_line(&font, &cmd_line, palette)
                                         .colors(ElementColors {
