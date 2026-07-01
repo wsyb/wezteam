@@ -523,7 +523,6 @@ impl crate::TermWindow {
                     let mut elem = element
                         .item_type(UIItemType::TabBar(item.item.clone()))
                         .display(DisplayType::Block)
-                        .max_width(Some(Dimension::Pixels(tab_bar_width - 10.)))
                         .padding(BoxDimension {
                             left: Dimension::Cells(0.5),
                             right: Dimension::Cells(0.5),
