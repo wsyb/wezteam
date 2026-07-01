@@ -618,7 +618,12 @@ impl crate::TermWindow {
                             if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
                                 let cache_duration = self.config.tab_bar_extra_info_cache_ms;
                                 
-                                if let Some(git) = get_git_branch_cached(pane_obj.as_ref(), cache_duration) {
+                                let git = get_git_branch_cached(pane_obj.as_ref(), cache_duration);
+                                let cmd = get_last_command_cached(pane_obj.as_ref(), cache_duration);
+                                
+                                log::info!("Tab {} extra info: git={:?}, cmd={:?}", tab_idx, git, cmd);
+                                
+                                if let Some(git) = git {
                                     let git_line = parse_status_text(&git, CellAttributes::default());
                                     let git_elem = Element::with_line(&font, &git_line, palette)
                                         .display(DisplayType::Block)
@@ -630,7 +635,7 @@ impl crate::TermWindow {
                                     extra_lines.push(git_elem);
                                 }
                                 
-                                if let Some(cmd) = get_last_command_cached(pane_obj.as_ref(), cache_duration) {
+                                if let Some(cmd) = cmd {
                                     let cmd_line = parse_status_text(&cmd, CellAttributes::default());
                                     let cmd_elem = Element::with_line(&font, &cmd_line, palette)
                                         .display(DisplayType::Block)
@@ -641,13 +646,15 @@ impl crate::TermWindow {
                                         });
                                     extra_lines.push(cmd_elem);
                                 }
+                                
+                                log::info!("Tab {} extra_lines count: {}", tab_idx, extra_lines.len());
                             }
                         }
                     }
 
                     elem.content = match elem.content {
                         ElementContent::Children(mut kids) => {
-                            // Add extra info lines first
+                            // Add extra info lines after title
                             kids.extend(extra_lines);
                             
                             // Add close button
