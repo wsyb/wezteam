@@ -6,22 +6,27 @@ use std::time::{Duration, Instant};
 
 type PaneId = usize;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct CacheKey {
+    pane_id: PaneId,
+    cwd: String,
+}
+
 struct CacheEntry {
-    value: String,
+    git_branch: Option<String>,
+    last_command: Option<String>,
     timestamp: Instant,
 }
 
 struct GlobalCache {
-    git_branch: HashMap<PaneId, CacheEntry>,
-    last_command: HashMap<PaneId, CacheEntry>,
+    entries: HashMap<CacheKey, CacheEntry>,
     cache_duration: Duration,
 }
 
 impl GlobalCache {
     fn new() -> Self {
         Self {
-            git_branch: HashMap::new(),
-            last_command: HashMap::new(),
+            entries: HashMap::new(),
             cache_duration: Duration::from_millis(1000),
         }
     }
@@ -31,58 +36,43 @@ lazy_static::lazy_static! {
     static ref CACHE: Arc<Mutex<GlobalCache>> = Arc::new(Mutex::new(GlobalCache::new()));
 }
 
-pub fn get_git_branch_cached(pane: &dyn mux::pane::Pane, cache_duration_ms: u64) -> Option<String> {
+pub fn get_extra_info(
+    pane: &dyn mux::pane::Pane,
+    cache_duration_ms: u64,
+) -> (Option<String>, Option<String>) {
     let pane_id = pane.pane_id();
     let cache_duration = Duration::from_millis(cache_duration_ms);
     
+    let cwd = match pane.get_current_working_dir(CachePolicy::AllowStale) {
+        Some(url) => url.to_string(),
+        None => return (None, None),
+    };
+    
+    let key = CacheKey { pane_id, cwd: cwd.clone() };
+    
     {
         let cache = CACHE.lock().unwrap();
-        if let Some(entry) = cache.git_branch.get(&pane_id) {
+        if let Some(entry) = cache.entries.get(&key) {
             if entry.timestamp.elapsed() < cache_duration {
-                return Some(entry.value.clone());
+                return (entry.git_branch.clone(), entry.last_command.clone());
             }
         }
     }
     
-    let branch = fetch_git_branch(pane)?;
+    let git_branch = fetch_git_branch(pane);
+    let last_command = fetch_last_command(pane);
     
     {
         let mut cache = CACHE.lock().unwrap();
         cache.cache_duration = cache_duration;
-        cache.git_branch.insert(pane_id, CacheEntry {
-            value: branch.clone(),
+        cache.entries.insert(key, CacheEntry {
+            git_branch: git_branch.clone(),
+            last_command: last_command.clone(),
             timestamp: Instant::now(),
         });
     }
     
-    Some(branch)
-}
-
-pub fn get_last_command_cached(pane: &dyn mux::pane::Pane, cache_duration_ms: u64) -> Option<String> {
-    let pane_id = pane.pane_id();
-    let cache_duration = Duration::from_millis(cache_duration_ms);
-    
-    {
-        let cache = CACHE.lock().unwrap();
-        if let Some(entry) = cache.last_command.get(&pane_id) {
-            if entry.timestamp.elapsed() < cache_duration {
-                return Some(entry.value.clone());
-            }
-        }
-    }
-    
-    let cmd = fetch_last_command(pane)?;
-    
-    {
-        let mut cache = CACHE.lock().unwrap();
-        cache.cache_duration = cache_duration;
-        cache.last_command.insert(pane_id, CacheEntry {
-            value: cmd.clone(),
-            timestamp: Instant::now(),
-        });
-    }
-    
-    Some(cmd)
+    (git_branch, last_command)
 }
 
 fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {

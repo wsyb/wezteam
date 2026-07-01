@@ -2,7 +2,7 @@ use crate::customglyph::*;
 use crate::tabbar::{parse_status_text, TabBarItem, TabEntry};
 use crate::termwindow::box_model::*;
 use crate::termwindow::render::corners::*;
-use crate::termwindow::tab_extra_info::{get_git_branch_cached, get_last_command_cached};
+use crate::termwindow::tab_extra_info::get_extra_info;
 
 use crate::termwindow::render::window_buttons::window_button_element;
 use crate::termwindow::{UIItem, UIItemType};
@@ -626,8 +626,7 @@ impl crate::TermWindow {
                             if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
                                 let cache_duration = self.config.tab_bar_extra_info_cache_ms;
                                 
-                                let git = get_git_branch_cached(pane_obj.as_ref(), cache_duration);
-                                let cmd = get_last_command_cached(pane_obj.as_ref(), cache_duration);
+                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), cache_duration);
                                 
                                 log::info!("Tab {} extra info: git={:?}, cmd={:?}", tab_idx, git, cmd);
                                 
