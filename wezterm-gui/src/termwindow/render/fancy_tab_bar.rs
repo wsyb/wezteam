@@ -663,8 +663,14 @@ impl crate::TermWindow {
 
                     elem.content = match elem.content {
                         ElementContent::Children(mut kids) => {
+                            let kids_before = kids.len();
+                            let extra_count = extra_lines.len();
                             // Add extra info lines after title
                             kids.extend(extra_lines);
+                            let kids_after = kids.len();
+                            
+                            log::info!("Tab {} kids: before={}, after={}, extra_lines={}", 
+                                tab_idx, kids_before, kids_after, extra_count);
                             
                             // Add close button
                             if self.config.show_close_tab_button_in_tabs {
@@ -675,7 +681,10 @@ impl crate::TermWindow {
                             }
                             ElementContent::Children(kids)
                         }
-                        other => other,
+                        other => {
+                            log::warn!("Tab {} content is not Children: {:?}", tab_idx, std::mem::discriminant(&other));
+                            other
+                        }
                     };
 
                     tab_children.push(elem);
