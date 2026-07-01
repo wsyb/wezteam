@@ -495,6 +495,8 @@ impl crate::TermWindow {
         // Get tab information for extra info
         let tabs_info = self.get_tab_information();
         let show_extra = self.config.tab_bar_vertical_extra_info;
+        
+        log::info!("build_vertical_fancy_tab_bar: show_extra={}, tabs_info.len()={}", show_extra, tabs_info.len());
 
         let mut tab_children = vec![];
 
@@ -611,8 +613,14 @@ impl crate::TermWindow {
 
                     // Add extra info lines (git branch, command)
                     let mut extra_lines = vec![];
+                    
+                    log::info!("Tab {} checking: show_extra={}, tab_idx={}, tabs_info.len()={}", 
+                        tab_idx, show_extra, tab_idx, tabs_info.len());
+                    
                     if show_extra && tab_idx < tabs_info.len() {
                         let tab_info = &tabs_info[tab_idx];
+                        log::info!("Tab {} has active_pane: {}", tab_idx, tab_info.active_pane.is_some());
+                        
                         if let Some(pane) = &tab_info.active_pane {
                             let mux = mux::Mux::get();
                             if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
@@ -648,6 +656,8 @@ impl crate::TermWindow {
                                 }
                                 
                                 log::info!("Tab {} extra_lines count: {}", tab_idx, extra_lines.len());
+                            } else {
+                                log::warn!("Tab {} failed to get pane object", tab_idx);
                             }
                         }
                     }
