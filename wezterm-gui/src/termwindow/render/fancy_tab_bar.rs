@@ -621,6 +621,7 @@ impl crate::TermWindow {
                                 if let Some(git) = get_git_branch_cached(pane_obj.as_ref(), cache_duration) {
                                     let git_line = parse_status_text(&git, CellAttributes::default());
                                     let git_elem = Element::with_line(&font, &git_line, palette)
+                                        .display(DisplayType::Block)
                                         .colors(ElementColors {
                                             border: BorderColor::default(),
                                             bg: tab_bg_linear.into(),
@@ -632,6 +633,7 @@ impl crate::TermWindow {
                                 if let Some(cmd) = get_last_command_cached(pane_obj.as_ref(), cache_duration) {
                                     let cmd_line = parse_status_text(&cmd, CellAttributes::default());
                                     let cmd_elem = Element::with_line(&font, &cmd_line, palette)
+                                        .display(DisplayType::Block)
                                         .colors(ElementColors {
                                             border: BorderColor::default(),
                                             bg: tab_bg_linear.into(),
