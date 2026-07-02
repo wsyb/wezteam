@@ -60,31 +60,29 @@ lazy_static::lazy_static! {
 
 pub fn get_extra_info(
     pane: &dyn mux::pane::Pane,
-    pane_title: &str,
+    pane_cwd: Option<&str>,
     cache_duration_ms: u64,
 ) -> (Option<String>, Option<String>) {
     let pane_id = pane.pane_id();
     let cache_duration = Duration::from_millis(cache_duration_ms);
-    
-    // Use pane_title as cwd (more reliable than get_current_working_dir)
-    log_debug(&format!("Pane {} title: {}", pane_id, pane_title));
-    
-    let cwd = pane_title.to_string();
-    
-    let key = CacheKey { pane_id, cwd: cwd.clone() };
-    
-    let git_branch = fetch_git_branch_from_path(&cwd);
+
+    // git_branch: derive from real cwd, never from title (title changes when tools like
+    // claude/codex set their own name via OSC sequences)
+    let git_branch = pane_cwd
+        .and_then(|cwd| fetch_git_branch_from_path(cwd));
+
+    // current_cmd: from foreground process (the program the user is running)
     let current_cmd = fetch_last_command(pane);
 
-    // When pane title changes (e.g. shell → node), cache key changes.
-    // But the old cached last_non_shell_command (e.g. "npm run dev") leaks through.
-    // Fix: only use current_cmd, never fall back to stale cached command.
     let result_cmd = current_cmd.clone();
 
     {
         let mut cache = CACHE.lock().unwrap();
         cache.cache_duration = cache_duration;
-        cache.entries.insert(key, CacheEntry {
+        cache.entries.insert(CacheKey {
+            pane_id,
+            cwd: pane_cwd.unwrap_or("").to_string(),
+        }, CacheEntry {
             git_branch: git_branch.clone(),
             last_command: current_cmd.clone(),
             last_non_shell_command: result_cmd.clone(),

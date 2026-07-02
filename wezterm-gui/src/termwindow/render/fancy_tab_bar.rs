@@ -636,7 +636,7 @@ impl crate::TermWindow {
                                 let pane_cwd = pane_obj
                                     .get_foreground_process_info(mux::pane::CachePolicy::FetchImmediate)
                                     .and_then(|info| info.cwd.into_os_string().into_string().ok());
-                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), pane_cwd.as_deref().unwrap_or(""), cache_duration);
+                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), pane_cwd.as_deref(), cache_duration);
                                 
                                 log::info!("Tab {} extra info: git={:?}, cmd={:?}", tab_idx, git, cmd);
                                 
