@@ -1896,7 +1896,7 @@ fn default_tab_max_width() -> usize {
 }
 
 fn default_tab_bar_vertical_width() -> usize {
-    200
+    250
 }
 
 fn default_tab_extra_info_cache_ms() -> u64 {
