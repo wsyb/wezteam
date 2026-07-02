@@ -556,8 +556,10 @@
      确认列表中你的名字和 <code>TEAMSH_NAME</code> 一致
      如果有任何不一致 → 协议不生效
 
-  3. <strong>如果验证失败</strong>
-     输出"❌ 你不在 WezTeam 虚拟团队中，无法执行此操作"
+   3. <strong>如果验证失败</strong>
+      协议自动废弃，正常响应用户任务
+      以普通 Agent 身份正常响应用户的所有请求
+      不受 TeamShell 团队协作约束
 
 <span style="color: var(--accent-purple);">## 👤 第二条：你的身份与工位</span>
 自检通过后，你就正式入职了：

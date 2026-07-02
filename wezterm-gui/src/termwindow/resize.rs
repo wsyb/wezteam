@@ -206,8 +206,7 @@ impl super::TermWindow {
                 + (border.top + border.bottom).get() as usize
                 + tab_bar_height as usize;
 
-            let vertical_tab_bar_width =
-                Self::tab_bar_pixel_width_impl(&self.config, self.show_tab_bar) as usize;
+            let vertical_tab_bar_width = self.tab_bar_pixel_width() as usize;
             let pixel_width = (cols * self.render_metrics.cell_size.width as usize)
                 + (padding_left + padding_right)
                 + (border.left + border.right).get() as usize
@@ -251,8 +250,7 @@ impl super::TermWindow {
                 config.window_padding.bottom.evaluate_as_pixels(v_context) as usize;
             let padding_right = effective_right_padding(&config, h_context);
 
-            let vertical_tab_bar_width =
-                Self::tab_bar_pixel_width_impl(&self.config, self.show_tab_bar) as usize;
+            let vertical_tab_bar_width = self.tab_bar_pixel_width() as usize;
             let avail_width = dimensions
                 .pixel_width
                 .saturating_sub(
@@ -577,5 +575,78 @@ pub fn effective_right_padding(config: &ConfigHandle, context: DimensionContext)
         context.pixel_cell as usize
     } else {
         config.window_padding.right.evaluate_as_pixels(context) as usize
+    }
+}
+
+impl super::TermWindow {
+    /// Recalculate terminal size after the vertical tab bar width changes.
+    /// Unlike apply_dimensions, this does NOT early-return when window pixel
+    /// dimensions are unchanged — the sidebar width changed but the OS window
+    /// did not, so we must recompute cols and resize all tabs.
+    pub fn recalc_terminal_for_sidebar(&mut self) {
+        let dimensions = self.dimensions;
+        let config = &self.config;
+
+        let tab_bar_height = if self.show_tab_bar {
+            self.tab_bar_pixel_height().unwrap_or(0.)
+        } else {
+            0.
+        };
+        let border = self.get_os_border();
+
+        let h_context = DimensionContext {
+            dpi: dimensions.dpi as f32,
+            pixel_max: self.terminal_size.pixel_width as f32,
+            pixel_cell: self.render_metrics.cell_size.width as f32,
+        };
+        let v_context = DimensionContext {
+            dpi: dimensions.dpi as f32,
+            pixel_max: self.terminal_size.pixel_height as f32,
+            pixel_cell: self.render_metrics.cell_size.height as f32,
+        };
+        let padding_left = config.window_padding.left.evaluate_as_pixels(h_context) as usize;
+        let padding_top = config.window_padding.top.evaluate_as_pixels(v_context) as usize;
+        let padding_bottom =
+            config.window_padding.bottom.evaluate_as_pixels(v_context) as usize;
+        let padding_right = effective_right_padding(&config, h_context);
+
+        let vertical_tab_bar_width = self.tab_bar_pixel_width() as usize;
+        let avail_width = dimensions
+            .pixel_width
+            .saturating_sub(
+                (padding_left + padding_right) as usize
+                    + (border.left + border.right).get() as usize,
+            )
+            .saturating_sub(vertical_tab_bar_width);
+        let avail_height = dimensions
+            .pixel_height
+            .saturating_sub(
+                (padding_top + padding_bottom) as usize
+                    + (border.top + border.bottom).get() as usize,
+            )
+            .saturating_sub(tab_bar_height as usize);
+
+        let rows = avail_height / self.render_metrics.cell_size.height as usize;
+        let cols = avail_width / self.render_metrics.cell_size.width as usize;
+
+        let size = TerminalSize {
+            rows,
+            cols,
+            pixel_height: rows * self.render_metrics.cell_size.height as usize,
+            pixel_width: cols * self.render_metrics.cell_size.width as usize,
+            dpi: dimensions.dpi as u32,
+        };
+
+        self.terminal_size = size;
+
+        let mux = Mux::get();
+        if let Some(mux_window) = mux.get_window(self.mux_window_id) {
+            for tab in mux_window.iter() {
+                tab.resize(size);
+            }
+        }
+        self.resize_overlays();
+        self.invalidate_fancy_tab_bar();
+        self.update_title();
     }
 }

@@ -132,9 +132,13 @@ impl super::TermWindow {
                     // Completed a window drag
                     return;
                 }
-                if press == &MousePress::Left && self.dragging.take().is_some() {
-                    // Completed a drag
-                    return;
+                if press == &MousePress::Left {
+                    if let Some((item, _)) = self.dragging.take() {
+                        if item.item_type == UIItemType::VerticalTabBarResize {
+                            self.recalc_terminal_for_sidebar();
+                        }
+                        return;
+                    }
                 }
             }
 
