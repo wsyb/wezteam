@@ -124,19 +124,33 @@ fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
             return None;
         }
     };
-    
+
     if is_shell_command(&cmd_name) {
         log_debug(&format!("fetch_last_command: {} is shell, skipping", cmd_name));
         return None;
     }
-    
-    let full_cmd = if proc_info.argv.len() > 1 {
-        format!("{} {}", cmd_name, proc_info.argv[1..].join(" "))
-    } else {
+
+    // Build command from argv, stripping directory paths from each argument
+    // so "node D:/packages/nodejs/xxxx/claude.cmd" becomes "node claude.cmd"
+    let args: Vec<String> = proc_info.argv[1..]
+        .iter()
+        .map(|arg| {
+            Path::new(arg)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(arg)
+                .to_string()
+        })
+        .collect();
+
+    let full_cmd = if args.is_empty() {
         cmd_name.clone()
+    } else {
+        format!("{} {}", cmd_name, args.join(" "))
     };
-    
-    let result = truncate_command(&full_cmd, 20);
+
+    // 60 chars: enough for "npm run dev", "python server.py", "claude --model sonnet"
+    let result = truncate_command(&full_cmd, 60);
     log_debug(&format!("fetch_last_command: {} -> {}", cmd_name, result));
     Some(result)
 }
