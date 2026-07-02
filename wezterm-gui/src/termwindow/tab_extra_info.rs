@@ -75,41 +75,23 @@ pub fn get_extra_info(
     
     let git_branch = fetch_git_branch_from_path(&cwd);
     let current_cmd = fetch_last_command(pane);
-    
-    let (result_cmd, cache_cmd) = {
-        let cache = CACHE.lock().unwrap();
-        if let Some(entry) = cache.entries.get(&key) {
-            // Use current command if available, otherwise use cached non-shell command
-            let cmd = current_cmd.clone().or(entry.last_non_shell_command.clone());
-            // Update cache: keep current if it's non-shell, otherwise keep previous
-            let new_cache = if current_cmd.is_some() {
-                current_cmd.clone()
-            } else {
-                entry.last_non_shell_command.clone()
-            };
-            (cmd, new_cache)
-        } else {
-            // No cache yet
-            let new_cache = if current_cmd.is_some() {
-                current_cmd.clone()
-            } else {
-                None
-            };
-            (current_cmd.clone(), new_cache)
-        }
-    };
-    
+
+    // When pane title changes (e.g. shell → node), cache key changes.
+    // But the old cached last_non_shell_command (e.g. "npm run dev") leaks through.
+    // Fix: only use current_cmd, never fall back to stale cached command.
+    let result_cmd = current_cmd.clone();
+
     {
         let mut cache = CACHE.lock().unwrap();
         cache.cache_duration = cache_duration;
         cache.entries.insert(key, CacheEntry {
             git_branch: git_branch.clone(),
             last_command: current_cmd.clone(),
-            last_non_shell_command: cache_cmd,
+            last_non_shell_command: result_cmd.clone(),
             timestamp: Instant::now(),
         });
     }
-    
+
     log_debug(&format!("Pane {} result: git={:?}, cmd={:?}", pane_id, git_branch, result_cmd));
     (git_branch, result_cmd)
 }
@@ -160,6 +142,9 @@ fn fetch_last_command(pane: &dyn mux::pane::Pane) -> Option<String> {
 }
 
 fn fetch_git_branch_from_path(path_str: &str) -> Option<String> {
+    // NOTE: path_str 是倒序的（如 "src\wezteam\work\D:"），需要反转后才能正确向上查找 .git
+    // 反转逻辑只用于内部查找，不影响显示。如果修改此逻辑，请测试 Windows/macOS/Linux 三端。
+
     // Parse path from pane title
     // The title might be reversed like "wezteam\work\D:" instead of "D:\work\wezteam"
     let path_str = if path_str.contains(':') && path_str.chars().last() == Some(':') {

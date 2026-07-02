@@ -1896,6 +1896,7 @@ fn default_tab_max_width() -> usize {
 }
 
 fn default_tab_bar_vertical_width() -> usize {
+    // 250px 以确保 Git 分支 + 命令信息完整显示（之前 200px 会截断长路径）
     250
 }
 
