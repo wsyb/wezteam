@@ -39,7 +39,7 @@ jobs:
         run: "apt-get install -y openssh-server"
       - name: "Workaround git permissions issue"
         shell: bash
-        run: "git config --global --add safe.directory /__w/wsyb/wezteam"
+        run: "git config --global --add safe.directory /__w/wezteam/wezteam"
       - name: "checkout repo"
         uses: actions/checkout@v4
         with:
@@ -106,7 +106,7 @@ jobs:
     steps:
       - name: "Workaround git permissions issue"
         shell: bash
-        run: "git config --global --add safe.directory /__w/wsyb/wezteam"
+        run: "git config --global --add safe.directory /__w/wezteam/wezteam"
       - name: "checkout repo"
         uses: actions/checkout@v4
       - name: "Download artifact"
