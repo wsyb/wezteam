@@ -133,6 +133,7 @@ pub struct LocalPane {
     #[cfg(unix)]
     leader: Arc<Mutex<Option<CachedLeaderInfo>>>,
     command_description: String,
+    initial_cwd: Option<std::path::PathBuf>,
 }
 
 #[async_trait(?Send)]
@@ -515,6 +516,11 @@ impl Pane for LocalPane {
             .get_current_dir()
             .cloned()
             .or_else(|| self.divine_current_working_dir(policy))
+            .or_else(|| {
+                self.initial_cwd
+                    .as_ref()
+                    .and_then(|path| Url::from_directory_path(path).ok())
+            })
     }
 
     fn tty_name(&self) -> Option<String> {
@@ -993,6 +999,7 @@ impl LocalPane {
         writer: Box<dyn Write + Send>,
         domain_id: DomainId,
         command_description: String,
+        initial_cwd: Option<std::path::PathBuf>,
     ) -> Self {
         let (process, signaller, pid) = split_child(process);
 
@@ -1019,6 +1026,7 @@ impl LocalPane {
             #[cfg(unix)]
             leader: Arc::new(Mutex::new(None)),
             command_description,
+            initial_cwd,
         }
     }
 

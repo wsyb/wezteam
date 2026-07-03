@@ -6,8 +6,18 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
 
-fn log_debug(msg: &str) {
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static LOG_INITIALIZED: AtomicBool = AtomicBool::new(false);
+
+pub fn log_debug(msg: &str) {
     let log_file = std::env::temp_dir().join("wezterm_extra_info.log");
+    
+    // 第一次写入时清空日志文件
+    if LOG_INITIALIZED.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+        let _ = std::fs::remove_file(&log_file);
+    }
+    
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
@@ -69,7 +79,10 @@ pub fn get_extra_info(
     // git_branch: derive from real cwd, never from title (title changes when tools like
     // claude/codex set their own name via OSC sequences)
     let git_branch = pane_cwd
-        .and_then(|cwd| fetch_git_branch_from_path(cwd));
+        .and_then(|cwd| {
+            log_debug(&format!("get_extra_info: attempting to fetch git branch from cwd={:?}", cwd));
+            fetch_git_branch_from_path(cwd)
+        });
 
     // current_cmd: from foreground process (the program the user is running)
     let current_cmd = fetch_last_command(pane);

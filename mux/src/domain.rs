@@ -601,7 +601,7 @@ impl Domain for LocalDomain {
     ) -> anyhow::Result<Arc<dyn Pane>> {
         let pane_id = alloc_pane_id();
         let cmd = self
-            .build_command(command, command_dir, pane_id)
+            .build_command(command, command_dir.clone(), pane_id)
             .await
             .context("build_command")?;
         let pair = self
@@ -635,6 +635,8 @@ impl Domain for LocalDomain {
             terminal.enable_conpty_quirks();
         }
 
+        let initial_cwd = command_dir.map(std::path::PathBuf::from);
+
         let pane: Arc<dyn Pane> = match child_result {
             Ok(child) => Arc::new(LocalPane::new(
                 pane_id,
@@ -644,6 +646,7 @@ impl Domain for LocalDomain {
                 Box::new(writer),
                 self.id,
                 command_description,
+                initial_cwd.clone(),
             )),
             Err(err) => {
                 // Show the error to the user in the new pane
@@ -660,6 +663,7 @@ impl Domain for LocalDomain {
                     Box::new(writer),
                     self.id,
                     command_description,
+                    initial_cwd.clone(),
                 ))
             }
         };

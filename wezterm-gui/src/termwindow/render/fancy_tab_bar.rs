@@ -91,6 +91,8 @@ impl crate::TermWindow {
     }
 
     pub fn build_fancy_tab_bar(&self, palette: &ColorPalette) -> anyhow::Result<ComputedElement> {
+        crate::termwindow::tab_extra_info::log_debug(&format!("build_fancy_tab_bar: tab_bar_vertical={}", self.config.tab_bar_vertical));
+        
         if self.config.tab_bar_vertical {
             return self.build_vertical_fancy_tab_bar(palette);
         }
@@ -488,10 +490,10 @@ impl crate::TermWindow {
         let colors = self.tab_bar_colors();
         let bar_colors = self.bar_element_colors();
         
-        log::info!("build_vertical_fancy_tab_bar: tab_bar_width={}, window_width={}, override={:?}", 
+        crate::termwindow::tab_extra_info::log_debug(&format!("build_vertical_fancy_tab_bar: tab_bar_width={}, window_width={}, override={:?}", 
             tab_bar_width, 
             self.dimensions.pixel_width,
-            self.vertical_tab_bar_width_override);
+            self.vertical_tab_bar_width_override));
 
         let active_tab_colors = colors.active_tab();
         let new_tab_colors = colors.new_tab();
@@ -501,7 +503,7 @@ impl crate::TermWindow {
         let tabs_info = self.get_tab_information();
         let show_extra = self.config.tab_bar_vertical_extra_info;
         
-        log::info!("build_vertical_fancy_tab_bar: show_extra={}, tabs_info.len()={}", show_extra, tabs_info.len());
+        crate::termwindow::tab_extra_info::log_debug(&format!("build_vertical_fancy_tab_bar: show_extra={}, tabs_info.len()={}", show_extra, tabs_info.len()));
 
         let mut tab_children = vec![];
 
@@ -616,7 +618,7 @@ impl crate::TermWindow {
                             .to_linear()
                     };
 
-                    // Add extra info lines (git branch, command)
+                    // Add extra info lines (path, git branch, command)
                     let mut extra_lines = vec![];
                     
                     log::info!("Tab {} checking: show_extra={}, tab_idx={}, tabs_info.len()={}", 
@@ -631,26 +633,68 @@ impl crate::TermWindow {
                             if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
                                 let cache_duration = self.config.tab_bar_extra_info_cache_ms;
 
-                                // Use foreground process cwd directly — pane.title may have been
-                                // modified by the running program (e.g. claude, codex) via OSC sequences.
-                                let pane_cwd = pane_obj
+                                // 获取 CWD（优先 OSC 7，回退到进程检查）
+                                let osc7_cwd = pane_obj
+                                    .get_current_working_dir(mux::pane::CachePolicy::FetchImmediate)
+                                    .and_then(|url| url.to_file_path().ok())
+                                    .and_then(|path| path.into_os_string().into_string().ok());
+                                
+                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} osc7_cwd: {:?}", tab_idx, osc7_cwd));
+                                
+                                let proc_cwd = pane_obj
                                     .get_foreground_process_info(mux::pane::CachePolicy::FetchImmediate)
                                     .and_then(|info| info.cwd.into_os_string().into_string().ok());
-                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), pane_cwd.as_deref(), cache_duration);
-                                
-                                log::info!("Tab {} extra info: git={:?}, cmd={:?}", tab_idx, git, cmd);
-                                
-                                if let Some(git) = git {
-                                    let git_line = parse_status_text(&git, CellAttributes::default());
-                                    let git_elem = Element::with_line(&font, &git_line, palette)
+
+                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} proc_cwd: {:?}", tab_idx, proc_cwd));
+
+                                let pane_cwd = osc7_cwd.or(proc_cwd);
+
+                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} pane_cwd: {:?}", tab_idx, pane_cwd));
+
+                                // 检查 tab 标题是否是路径
+                                let title_str = item.title.as_str().to_string();
+
+                                // 去除 tab 编号前缀（如 "1: "、"2: "）
+                                let title_without_prefix = title_str
+                                    .splitn(2, ": ")
+                                    .last()
+                                    .unwrap_or(&title_str);
+
+                                // 检查标题是否是路径：包含路径分隔符或冒号
+                                let title_is_path = title_without_prefix.contains('/')
+                                    || title_without_prefix.contains('\\')
+                                    || title_without_prefix.contains(':');
+
+                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} title: {:?}, without_prefix: {:?}, is_path: {}", tab_idx, title_str, title_without_prefix, title_is_path));
+
+                                // 如果标题是路径，直接用标题上的路径
+                                if title_is_path {
+                                    // 直接用标题上的路径
+                                    let path_line = parse_status_text(title_without_prefix, CellAttributes::default());
+                                    let path_elem = Element::with_line(&font, &path_line, palette)
                                         .display(DisplayType::Block)
                                         .colors(ElementColors {
                                             border: BorderColor::default(),
                                             bg: tab_bg_linear.into(),
-                                            text: palette.colors.0[AnsiColor::Lime as usize].to_linear().into(),
+                                            text: palette.colors.0[AnsiColor::Blue as usize].to_linear().into(),
                                         });
-                                    extra_lines.push(git_elem);
+                                    extra_lines.push(path_elem);
+                                    crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} added path from title: {}", tab_idx, title_without_prefix));
+                                } else if let Some(cwd) = pane_cwd.as_ref() {
+                                    // 标题不是路径，用 pane_cwd
+                                    let path_line = parse_status_text(cwd, CellAttributes::default());
+                                    let path_elem = Element::with_line(&font, &path_line, palette)
+                                        .display(DisplayType::Block)
+                                        .colors(ElementColors {
+                                            border: BorderColor::default(),
+                                            bg: tab_bg_linear.into(),
+                                            text: palette.colors.0[AnsiColor::Blue as usize].to_linear().into(),
+                                        });
+                                    extra_lines.push(path_elem);
+                                    crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} added path from cwd: {}", tab_idx, cwd));
                                 }
+                                
+                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), pane_cwd.as_deref(), cache_duration);
                                 
                                 if let Some(cmd) = cmd {
                                     let cmd_line = parse_status_text(&cmd, CellAttributes::default());
@@ -993,3 +1037,4 @@ fn make_vertical_x_button(
         bottom: Dimension::Cells(0.),
     })
 }
+
