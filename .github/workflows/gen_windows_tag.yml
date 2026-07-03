@@ -33,11 +33,11 @@ jobs:
           path: |
             vendor
             .cargo/config
-          key: "cargo-deps-${{ hashFiles('**/Cargo.lock') }}"
+          key: "cargo-deps-${{ hashFiles('**/Cargo.toml') }}"
       - name: "Vendor dependecies"
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
-        run: "cargo vendor --locked --versioned-dirs >> .cargo/config"
+        run: "cargo vendor --versioned-dirs >> .cargo/config"
       - name: "Build wezterm (Release mode)"
         shell: cmd
         run: |
