@@ -281,6 +281,12 @@ details.
   causes the tab bar to be hidden when there is only a single tab.
 * [tab_bar_at_bottom](lua/config/tab_bar_at_bottom.md) places the tab
   bar at the bottom of the window instead of the top
+* [tab_bar_vertical](lua/config/tab_bar_vertical.md) renders the tab bar
+  vertically on the left or right side of the window
+* [tab_bar_vertical_width](lua/config/tab_bar_vertical_width.md) sets the
+  width in pixels of the vertical tab bar
+* [tab_bar_vertical_position](lua/config/tab_bar_vertical_position.md) sets
+  the position (`"Left"` or `"Right"`) of the vertical tab bar
 * [tab_max_width](lua/config/tab_max_width.md) sets the maximum width, measured in cells,
   of a given tab when using retro tab mode.
 
@@ -397,6 +403,35 @@ config.colors = {
 
       -- The same options that were listed under the `active_tab` section above
       -- can also be used for `new_tab_hover`.
+    },
+  },
+}
+```
+
+#### Vertical Tab Bar Extra Info
+
+When the vertical tab bar is enabled, each tab can display extra information
+(path, git branch, current command) below the tab title.
+See [Tab Bar Extra Info](lua/config/tab_bar_extra_info.md) for full documentation.
+
+```lua
+config.colors = {
+  tab_bar = {
+    extra_info = {
+      path = {
+        show = true,
+        fg_color = '#6699ff',
+        intensity = 'Bold',
+      },
+      git_branch = {
+        show = true,
+        fg_color = '#50fa7b',
+        italic = true,
+      },
+      current_command = {
+        show = true,
+        fg_color = '#bd93f9',
+      },
     },
   },
 }

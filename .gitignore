@@ -24,6 +24,8 @@ Cargo.lock
 /.atomcode/
 /.codex/
 /.gemini/
+/.codeartsdoer/
+/.mimicode/
 
 # =====================
 # Local environment
@@ -33,6 +35,10 @@ Cargo.lock
 /__pycache__/
 **/*.rs.bk
 /nix/result
+/build.log
+/path-test/
+/teamshell-*.html
+/docs/dev/
 
 # =====================
 # Installer / package outputs

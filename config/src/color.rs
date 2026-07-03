@@ -350,6 +350,59 @@ impl TabBarColor {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, FromDynamic, ToDynamic)]
+pub struct ExtraInfoItemStyle {
+    #[dynamic(default = "default_true")]
+    pub show: bool,
+    #[dynamic(default)]
+    pub fg_color: Option<RgbaColor>,
+    #[dynamic(default)]
+    pub bg_color: Option<RgbaColor>,
+    #[dynamic(default)]
+    pub intensity: Option<wezterm_term::Intensity>,
+    #[dynamic(default)]
+    pub italic: Option<bool>,
+    #[dynamic(default)]
+    pub underline: Option<wezterm_term::Underline>,
+}
+
+impl Default for ExtraInfoItemStyle {
+    fn default() -> Self {
+        Self {
+            show: true,
+            fg_color: None,
+            bg_color: None,
+            intensity: None,
+            italic: None,
+            underline: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, FromDynamic, ToDynamic)]
+pub struct ExtraInfoStyle {
+    #[dynamic(default)]
+    pub path: Option<ExtraInfoItemStyle>,
+    #[dynamic(default)]
+    pub git_branch: Option<ExtraInfoItemStyle>,
+    #[dynamic(default)]
+    pub current_command: Option<ExtraInfoItemStyle>,
+}
+
+impl ExtraInfoStyle {
+    pub fn path(&self) -> ExtraInfoItemStyle {
+        self.path.clone().unwrap_or_default()
+    }
+
+    pub fn git_branch(&self) -> ExtraInfoItemStyle {
+        self.git_branch.clone().unwrap_or_default()
+    }
+
+    pub fn current_command(&self) -> ExtraInfoItemStyle {
+        self.current_command.clone().unwrap_or_default()
+    }
+}
+
 /// Specifies the colors to use for the tab bar portion of the UI.
 /// These are not part of the terminal model and cannot be updated
 /// in the same way that the dynamic color schemes are.
@@ -384,6 +437,10 @@ pub struct TabBarColors {
 
     #[dynamic(default)]
     pub inactive_tab_edge_hover: Option<RgbaColor>,
+
+    /// Styling for the extra info panel in vertical tab bar
+    #[dynamic(default)]
+    pub extra_info: Option<ExtraInfoStyle>,
 }
 
 impl TabBarColors {
@@ -427,6 +484,10 @@ impl TabBarColors {
             .unwrap_or_else(default_inactive_tab_edge_hover)
     }
 
+    pub fn extra_info(&self) -> ExtraInfoStyle {
+        self.extra_info.clone().unwrap_or_default()
+    }
+
     pub fn overlay_with(&self, other: &Self) -> Self {
         macro_rules! overlay {
             ($name:ident) => {
@@ -446,6 +507,7 @@ impl TabBarColors {
             inactive_tab_edge_hover: overlay!(inactive_tab_edge_hover),
             new_tab: overlay!(new_tab),
             new_tab_hover: overlay!(new_tab_hover),
+            extra_info: overlay!(extra_info),
         }
     }
 }

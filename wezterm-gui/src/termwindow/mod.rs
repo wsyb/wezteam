@@ -2027,9 +2027,9 @@ impl TermWindow {
                 window.invalidate();
             }
         } else {
-            // 即使传统 TabBarState 相等，如果启用了垂直 tab bar 且启用了 extra info，
-            // 也需要确保 fancy_tab_bar 被 invalidate，以便重新计算额外信息（路径、git、命令）
-            if self.config.tab_bar_vertical && self.config.tab_bar_vertical_extra_info {
+            // Even when TabBarState is equal, if vertical tab bar is enabled,
+            // invalidate fancy_tab_bar to recalculate extra info (path, git, command)
+            if self.config.tab_bar_vertical {
                 self.invalidate_fancy_tab_bar();
             }
         }

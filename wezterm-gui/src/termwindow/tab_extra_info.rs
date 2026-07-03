@@ -1,47 +1,47 @@
-//! Tab 信息面板：为垂直 Tab 栏提供路径、Git 分支、当前命令。
+//! Tab info panel: provides path, git branch, and current command for vertical tab bar.
 //!
-//! 数据流：
-//!   标题含路径分隔符 → 从标题提取倒序路径 → 正序化查 git
-//!   标题不含分隔符 → 从 OSC 7 取正序 CWD → 倒序化显示 + 正序查 git
+//! Data flow:
+//!   Title contains path separator -> extract reversed path from title -> normalize for git lookup
+//!   Title has no separator -> get normal CWD from OSC 7 -> reverse for display + use as-is for git
 //!
-//! 显示规则：
-//!   路径：倒序显示（与 tab 标题格式一致），仅当标题非路径时显示
-//!   Git：正序路径查 .git/HEAD，仅当在 git 仓库中时显示
-//!   命令：前台进程，仅当非 shell 时显示
+//! Display rules:
+//!   Path: shown in reversed order (matching tab title format), only when title is not a path
+//!   Git: look up .git/HEAD using normal path, only shown when inside a git repo
+//!   Command: foreground process, only shown when not a shell
 
 use mux::pane::CachePolicy;
 use std::path::Path;
 
 // ============================================================
-// 公共 API
+// Public API
 // ============================================================
 
-/// Tab 面板额外信息
+/// Extra info for a tab in the vertical tab bar
 pub struct TabExtraInfo {
-    /// 倒序路径（与 tab 标题格式一致，仅当标题非路径时显示）
+    /// Reversed path (matching tab title format, only shown when title is not a path)
     pub reversed_path: Option<String>,
-    /// Git 分支名
+    /// Git branch name
     pub git_branch: Option<String>,
-    /// 当前命令（已过滤 shell 本身）
+    /// Current command (shell processes filtered out)
     pub current_command: Option<String>,
 }
 
-/// 获取 Tab 额外信息
+/// Get extra info for a tab
 ///
-/// 入口函数，数据层与 UI 层的唯一接口。
+/// Entry point and the only interface between the data layer and the UI layer.
 pub fn get_tab_extra_info(pane: &dyn mux::pane::Pane, tab_title: &str) -> TabExtraInfo {
     let title_path = extract_reversed_path_from_title(tab_title);
     let osc7_cwd = get_pane_cwd(pane);
     let title_is_path = title_path.is_some();
 
-    // 倒序路径：仅当标题非路径时显示，从 OSC 7 CWD 倒序化
+    // Reversed path: only shown when title is not a path, derived from OSC 7 CWD
     let reversed_path = if !title_is_path {
         osc7_cwd.as_ref().map(|p| path_to_reversed(p))
     } else {
         None
     };
 
-    // 正序 CWD：标题路径正序化优先，其次 OSC 7
+    // Normal CWD: title path normalized takes priority, then OSC 7
     let normal_cwd = if title_is_path {
         title_path.as_ref().map(|p| reversed_to_normal(p))
     } else {
@@ -56,26 +56,26 @@ pub fn get_tab_extra_info(pane: &dyn mux::pane::Pane, tab_title: &str) -> TabExt
 }
 
 // ============================================================
-// 路径：倒序 ↔ 正序
+// Path: reversed <-> normal
 // ============================================================
 
-/// 正序路径 → 倒序路径
+/// Normal path -> reversed path
 ///
-/// "D:\work\wezteam" → "wezteam\work\D:"
-/// "/home/user/project" → "project/user/home"
+/// "D:\work\project" -> "project\work\D:"
+/// "/home/user/project" -> "project/user/home"
 fn path_to_reversed(path: &str) -> String {
     reverse_path_components(path)
 }
 
-/// 倒序路径 → 正序路径
+/// Reversed path -> normal path
 ///
-/// "wezteam\work\D:" → "D:\work\wezteam"
-/// "project/user/home" → "/home/user/project"（Unix 不存在倒序，但逻辑等价）
+/// "project\work\D:" -> "D:\work\project"
+/// "project/user/home" -> "/home/user/project" (Unix reversal is logically equivalent)
 fn reversed_to_normal(reversed: &str) -> String {
     reverse_path_components(reversed)
 }
 
-/// 路径组件反转（倒序↔正序互为逆运算，逻辑相同）
+/// Reverse path components (reversed<->normal are inverse operations, same logic)
 fn reverse_path_components(path: &str) -> String {
     let trimmed = path.trim_end_matches(|c| c == '\\' || c == '/');
     let sep = if trimmed.contains('\\') { '\\' } else { '/' };
@@ -83,10 +83,11 @@ fn reverse_path_components(path: &str) -> String {
     parts.join(&sep.to_string())
 }
 
-/// 从 tab 标题提取倒序路径
+/// Extract reversed path from tab title
 ///
-/// 标题含路径分隔符（/ 或 \）时视为路径，去除编号前缀后返回。
-/// 标题不含分隔符时返回 None。
+/// When the title contains a path separator (/ or \), it is treated as a path.
+/// The tab index prefix is stripped before returning.
+/// Returns None when the title contains no separator.
 fn extract_reversed_path_from_title(title: &str) -> Option<String> {
     let clean = strip_tab_index(title);
     if !clean.contains('/') && !clean.contains('\\') {
@@ -95,15 +96,15 @@ fn extract_reversed_path_from_title(title: &str) -> Option<String> {
     Some(clean.to_string())
 }
 
-/// 去除 tab 编号前缀
+/// Strip tab index prefix
 ///
-/// "1: wezteam\work\D:" → "wezteam\work\D:"
-/// "claude" → "claude"
+/// "1: project\work\D:" -> "project\work\D:"
+/// "claude" -> "claude"
 fn strip_tab_index(title: &str) -> &str {
     title.splitn(2, ": ").last().unwrap_or(title)
 }
 
-/// 获取 pane 当前工作目录（OSC 7，正序）
+/// Get pane current working directory (OSC 7, normal order)
 fn get_pane_cwd(pane: &dyn mux::pane::Pane) -> Option<String> {
     pane.get_current_working_dir(CachePolicy::FetchImmediate)
         .and_then(|url| url.to_file_path().ok())
@@ -111,16 +112,16 @@ fn get_pane_cwd(pane: &dyn mux::pane::Pane) -> Option<String> {
 }
 
 // ============================================================
-// Git 分支
+// Git branch
 // ============================================================
 
-/// 从正序路径获取 git 分支名
+/// Get git branch name from a normal (non-reversed) path
 fn get_git_branch(normal_path: &str) -> Option<String> {
     let git_dir = find_git_dir(Path::new(normal_path))?;
     read_git_branch(&git_dir)
 }
 
-/// 从起始路径向上查找 .git 目录
+/// Walk up from start path to find .git directory
 fn find_git_dir(start: &Path) -> Option<std::path::PathBuf> {
     let mut current = start;
     loop {
@@ -132,10 +133,10 @@ fn find_git_dir(start: &Path) -> Option<std::path::PathBuf> {
     }
 }
 
-/// 读取 .git/HEAD 获取分支名
+/// Read branch name from .git/HEAD
 ///
-/// 正常分支：ref: refs/heads/main → "main"
-/// Detached HEAD：abc1234 → "HEAD"
+/// Normal branch: ref: refs/heads/main -> "main"
+/// Detached HEAD: abc1234 -> "HEAD"
 fn read_git_branch(git_dir: &Path) -> Option<String> {
     let head = std::fs::read_to_string(git_dir.join("HEAD")).ok()?;
     if let Some(branch) = head.strip_prefix("ref: refs/heads/") {
@@ -146,12 +147,12 @@ fn read_git_branch(git_dir: &Path) -> Option<String> {
 }
 
 // ============================================================
-// 当前命令
+// Current command
 // ============================================================
 
 const SHELLS: &[&str] = &["bash", "zsh", "fish", "sh", "pwsh", "powershell", "cmd"];
 
-/// 获取前台进程命令（过滤 shell 本身）
+/// Get foreground process command (shell processes filtered out)
 fn get_current_command(pane: &dyn mux::pane::Pane) -> Option<String> {
     let info = pane.get_foreground_process_info(CachePolicy::FetchImmediate)?;
     if info.argv.is_empty() {
@@ -164,12 +165,12 @@ fn get_current_command(pane: &dyn mux::pane::Pane) -> Option<String> {
     Some(format_command(&name, &info.argv[1..]))
 }
 
-/// 判断进程名是否为 shell
+/// Check if a process name is a shell
 fn is_shell(name: &str) -> bool {
     SHELLS.iter().any(|s| name.eq_ignore_ascii_case(s))
 }
 
-/// 格式化命令行
+/// Format command line display
 fn format_command(name: &str, args: &[String]) -> String {
     if args.is_empty() {
         name.to_string()
@@ -179,7 +180,7 @@ fn format_command(name: &str, args: &[String]) -> String {
 }
 
 // ============================================================
-// 测试
+// Tests
 // ============================================================
 
 #[cfg(test)]
@@ -190,12 +191,12 @@ mod tests {
 
     #[test]
     fn test_path_to_reversed_windows() {
-        assert_eq!(path_to_reversed("D:\\work\\wezteam"), "wezteam\\work\\D:");
+        assert_eq!(path_to_reversed("D:\\work\\project"), "project\\work\\D:");
     }
 
     #[test]
     fn test_path_to_reversed_windows_trailing_slash() {
-        assert_eq!(path_to_reversed("D:\\work\\wezteam\\"), "wezteam\\work\\D:");
+        assert_eq!(path_to_reversed("D:\\work\\project\\"), "project\\work\\D:");
     }
 
     #[test]
@@ -210,14 +211,14 @@ mod tests {
 
     #[test]
     fn test_path_to_reversed_single_component() {
-        assert_eq!(path_to_reversed("wezteam"), "wezteam");
+        assert_eq!(path_to_reversed("project"), "project");
     }
 
     // ---- reversed_to_normal ----
 
     #[test]
     fn test_reversed_to_normal_windows() {
-        assert_eq!(reversed_to_normal("wezteam\\work\\D:"), "D:\\work\\wezteam");
+        assert_eq!(reversed_to_normal("project\\work\\D:"), "D:\\work\\project");
     }
 
     #[test]
@@ -227,13 +228,13 @@ mod tests {
 
     #[test]
     fn test_reversed_to_normal_roundtrip() {
-        let original = "D:\\work\\wezteam";
+        let original = "D:\\work\\project";
         assert_eq!(reversed_to_normal(&path_to_reversed(original)), original);
     }
 
     #[test]
     fn test_path_to_reversed_roundtrip() {
-        let original = "wezteam\\work\\D:";
+        let original = "project\\work\\D:";
         assert_eq!(path_to_reversed(&reversed_to_normal(original)), original);
     }
 
@@ -241,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_strip_tab_index_with_prefix() {
-        assert_eq!(strip_tab_index("1: wezteam\\work\\D:"), "wezteam\\work\\D:");
+        assert_eq!(strip_tab_index("1: project\\work\\D:"), "project\\work\\D:");
     }
 
     #[test]
@@ -256,7 +257,7 @@ mod tests {
 
     #[test]
     fn test_strip_tab_index_no_space_after_colon() {
-        // "1:abc" — 没有 ": " 模式，整体返回
+        // "1:abc" -- no ": " pattern, return as-is
         assert_eq!(strip_tab_index("1:abc"), "1:abc");
     }
 
@@ -265,16 +266,16 @@ mod tests {
     #[test]
     fn test_extract_path_from_reversed_title() {
         assert_eq!(
-            extract_reversed_path_from_title("1: wezteam\\work\\D:"),
-            Some("wezteam\\work\\D:".to_string())
+            extract_reversed_path_from_title("1: project\\work\\D:"),
+            Some("project\\work\\D:".to_string())
         );
     }
 
     #[test]
     fn test_extract_path_from_normal_title() {
         assert_eq!(
-            extract_reversed_path_from_title("1: D:\\work\\wezteam"),
-            Some("D:\\work\\wezteam".to_string())
+            extract_reversed_path_from_title("1: D:\\work\\project"),
+            Some("D:\\work\\project".to_string())
         );
     }
 
@@ -340,7 +341,6 @@ mod tests {
 
     #[test]
     fn test_find_git_dir_in_project_root() {
-        // 当前目录就是 git 仓库根目录
         let cwd = std::env::current_dir().unwrap();
         let result = find_git_dir(&cwd);
         assert!(result.is_some(), "should find .git in project root");
@@ -348,7 +348,6 @@ mod tests {
 
     #[test]
     fn test_find_git_dir_in_subdirectory() {
-        // src 是项目子目录，向上查找应找到 .git
         let cwd = std::env::current_dir().unwrap();
         let src_dir = cwd.join("src");
         if src_dir.exists() {
@@ -359,7 +358,6 @@ mod tests {
 
     #[test]
     fn test_find_git_dir_not_found() {
-        // 系统根目录不应有 .git
         let result = find_git_dir(Path::new("C:\\"));
         assert!(result.is_none(), "should not find .git in drive root");
     }
@@ -372,20 +370,18 @@ mod tests {
         let git_dir = find_git_dir(&cwd).expect("should find .git");
         let branch = read_git_branch(&git_dir);
         assert!(branch.is_some(), "should read branch from .git/HEAD");
-        // 当前项目在 main 分支
         let name = branch.unwrap();
         assert!(!name.is_empty(), "branch name should not be empty");
     }
 
-    // ---- 集成：extract + reversed_to_normal 联动 ----
+    // ---- Integration: extract + reversed_to_normal ----
 
     #[test]
     fn test_title_path_to_normal_cwd() {
-        // 模拟完整流程：标题是倒序路径 → 提取 → 正序化 → 可用于 git 查找
-        let title = "1: wezteam\\work\\D:";
+        let title = "1: project\\work\\D:";
         let reversed = extract_reversed_path_from_title(title).unwrap();
         let normal = reversed_to_normal(&reversed);
-        assert_eq!(normal, "D:\\work\\wezteam");
+        assert_eq!(normal, "D:\\work\\project");
     }
 
     #[test]
@@ -396,7 +392,7 @@ mod tests {
         assert_eq!(normal, "home/user/project");
     }
 
-    // ---- 边界情况 ----
+    // ---- Edge cases ----
 
     #[test]
     fn test_empty_title() {

@@ -483,7 +483,7 @@ pub struct Config {
     pub tab_bar_at_bottom: bool,
 
     /// If true, render the tab bar vertically instead of horizontally.
-    #[dynamic(default)]
+    #[dynamic(default = "default_true")]
     pub tab_bar_vertical: bool,
 
     /// The width in pixels of the vertical tab bar when tab_bar_vertical is true.
@@ -494,10 +494,6 @@ pub struct Config {
     /// Position of the vertical tab bar: "Left" or "Right". Defaults to "Left".
     #[dynamic(default)]
     pub tab_bar_vertical_position: VerticalTabBarPosition,
-
-    /// Show extra info (command and git) in vertical tab bar
-    #[dynamic(default = "default_true")]
-    pub tab_bar_vertical_extra_info: bool,
 
     #[dynamic(default = "default_true")]
     pub mouse_wheel_scrolls_tabs: bool,
@@ -1892,7 +1888,7 @@ fn default_tab_max_width() -> usize {
 }
 
 fn default_tab_bar_vertical_width() -> usize {
-    // 250px 以确保 Git 分支 + 命令信息完整显示（之前 200px 会截断长路径）
+    // 250px to ensure git branch + command info displays fully (200px truncated long paths)
     250
 }
 

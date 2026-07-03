@@ -4,12 +4,12 @@
 
 #define MyAppName "wezteam"
 ;#define MyAppVersion "1.5"
-#define MyAppPublisher "Wez Furlong"
-#define MyAppURL "http://wezterm.org"
+#define MyAppPublisher "WezTeam"
+#define MyAppURL "https://github.com/wsyb/wezteam"
 #define MyAppExeName "wezterm-gui.exe"
 
 [Setup]
-AppId={{BCF6F0DA-5B9A-408D-8562-F680AE6E1EAF}
+AppId={{6E73EE54-DF77-4952-9DAB-563AC13F75DC}
 ArchitecturesAllowed=x64compatible arm64
 ArchitecturesInstallIn64BitMode=x64compatible arm64
 AppName={#MyAppName}

@@ -7,7 +7,7 @@ use crate::termwindow::tab_extra_info::get_tab_extra_info;
 use crate::termwindow::render::window_buttons::window_button_element;
 use crate::termwindow::{UIItem, UIItemType};
 use crate::utilsprites::RenderMetrics;
-use config::{Dimension, DimensionContext, TabBarColors};
+use config::{Dimension, DimensionContext, ExtraInfoItemStyle, ExtraInfoStyle, TabBarColors};
 use std::rc::Rc;
 use termwiz::cell::CellAttributes;
 use wezterm_font::LoadedFont;
@@ -494,7 +494,7 @@ impl crate::TermWindow {
 
         // Get tab information for extra info
         let tabs_info = self.get_tab_information();
-        let show_extra = self.config.tab_bar_vertical_extra_info;
+        let extra_info_style = colors.extra_info();
 
         let mut tab_children = vec![];
 
@@ -609,9 +609,9 @@ impl crate::TermWindow {
                             .to_linear()
                     };
 
-                    // 额外信息面板
+                    // Extra info panel
                     let extra_lines = build_extra_info(
-                        show_extra, tab_idx, &tabs_info, &item.title,
+                        &extra_info_style, tab_idx, &tabs_info, &item.title,
                         &font, palette, tab_bg_linear,
                     );
 
@@ -928,12 +928,11 @@ fn make_vertical_x_button(
 
 
 // ============================================================
-// 额外信息面板渲染（UI 层，与数据层 tab_extra_info 分离）
+// Extra info panel rendering (UI layer, separated from data layer tab_extra_info)
 // ============================================================
 
-/// 构建额外信息面板元素列表
 fn build_extra_info(
-    show_extra: bool,
+    style: &ExtraInfoStyle,
     tab_idx: usize,
     tabs_info: &[crate::termwindow::TabInformation],
     title: &termwiz::surface::Line,
@@ -941,7 +940,7 @@ fn build_extra_info(
     palette: &ColorPalette,
     tab_bg: window::color::LinearRgba,
 ) -> Vec<Element> {
-    if !show_extra || tab_idx >= tabs_info.len() {
+    if tab_idx >= tabs_info.len() {
         return vec![];
     }
     let tab_info = &tabs_info[tab_idx];
@@ -961,35 +960,65 @@ fn build_extra_info(
     let title_str = title.as_str().to_string();
     let info = get_tab_extra_info(pane_obj.as_ref(), &title_str);
 
+    let path_style = style.path();
+    let git_style = style.git_branch();
+    let cmd_style = style.current_command();
+
     let mut elements = vec![];
 
-    if let Some(path) = &info.reversed_path {
-        elements.push(make_info_line(font, path, palette, tab_bg, AnsiColor::Blue));
+    if path_style.show {
+        if let Some(path) = &info.reversed_path {
+            elements.push(make_info_line(font, path, palette, tab_bg, AnsiColor::Blue, &path_style));
+        }
     }
-    if let Some(git) = &info.git_branch {
-        elements.push(make_info_line(font, &format!("git:{}", git), palette, tab_bg, AnsiColor::Green));
+    if git_style.show {
+        if let Some(git) = &info.git_branch {
+            elements.push(make_info_line(font, &format!("git:{}", git), palette, tab_bg, AnsiColor::Green, &git_style));
+        }
     }
-    if let Some(cmd) = &info.current_command {
-        elements.push(make_info_line(font, cmd, palette, tab_bg, AnsiColor::Grey));
+    if cmd_style.show {
+        if let Some(cmd) = &info.current_command {
+            elements.push(make_info_line(font, cmd, palette, tab_bg, AnsiColor::Grey, &cmd_style));
+        }
     }
 
     elements
 }
 
-/// 创建一行信息文本元素
 fn make_info_line(
     font: &Rc<LoadedFont>,
     text: &str,
     palette: &ColorPalette,
     bg: window::color::LinearRgba,
-    color: AnsiColor,
+    default_color: AnsiColor,
+    style: &ExtraInfoItemStyle,
 ) -> Element {
-    let line = parse_status_text(text, CellAttributes::default());
+    let mut attrs = CellAttributes::default();
+    if let Some(intensity) = style.intensity {
+        attrs.set_intensity(intensity);
+    }
+    if let Some(true) = style.italic {
+        attrs.set_italic(true);
+    }
+    if let Some(underline) = style.underline {
+        attrs.set_underline(underline);
+    }
+
+    let fg = style
+        .fg_color
+        .map(|c| c.to_linear().into())
+        .unwrap_or_else(|| palette.colors.0[default_color as usize].to_linear().into());
+    let bg_color = style
+        .bg_color
+        .map(|c| c.to_linear().into())
+        .unwrap_or_else(|| bg.into());
+
+    let line = parse_status_text(text, attrs);
     Element::with_line(font, &line, palette)
         .display(DisplayType::Block)
         .colors(ElementColors {
             border: BorderColor::default(),
-            bg: bg.into(),
-            text: palette.colors.0[color as usize].to_linear().into(),
+            bg: bg_color,
+            text: fg,
         })
 }
