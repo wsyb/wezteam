@@ -56,7 +56,7 @@ jobs:
       - name: "Vendor dependecies"
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
-        run: "cargo vendor --locked --versioned-dirs >> .cargo/config"
+        run: "cargo update && cargo vendor --versioned-dirs >> .cargo/config"
       - name: "Install System Deps"
         shell: bash
         run: "env CI=yes PATH=$PATH ./get-deps"
