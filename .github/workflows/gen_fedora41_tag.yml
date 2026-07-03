@@ -52,7 +52,7 @@ jobs:
           path: |
             vendor
             .cargo/config
-          key: "cargo-deps-${{ hashFiles('**/Cargo.lock') }}"
+          key: "cargo-deps-${{ hashFiles('**/Cargo.toml') }}"
       - name: "Vendor dependecies"
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
