@@ -41,33 +41,36 @@ jobs:
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
         run: "cargo vendor --versioned-dirs >> .cargo/config"
+      - name: "Install OpenSSL"
+        shell: bash
+        run: "brew install openssl@3"
       - name: "Install System Deps"
         shell: bash
         run: "env CI=yes PATH=$PATH ./get-deps"
       - name: "Build wezterm (Release mode Intel)"
         shell: bash
-        run: "cargo build --target x86_64-apple-darwin -p wezterm --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target x86_64-apple-darwin -p wezterm --release"
       - name: "Build wezterm (Release mode ARM)"
         shell: bash
-        run: "cargo build --target aarch64-apple-darwin -p wezterm --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target aarch64-apple-darwin -p wezterm --release"
       - name: "Build wezterm-gui (Release mode Intel)"
         shell: bash
-        run: "cargo build --target x86_64-apple-darwin -p wezterm-gui --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target x86_64-apple-darwin -p wezterm-gui --release"
       - name: "Build wezterm-gui (Release mode ARM)"
         shell: bash
-        run: "cargo build --target aarch64-apple-darwin -p wezterm-gui --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target aarch64-apple-darwin -p wezterm-gui --release"
       - name: "Build wezterm-mux-server (Release mode Intel)"
         shell: bash
-        run: "cargo build --target x86_64-apple-darwin -p wezterm-mux-server --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target x86_64-apple-darwin -p wezterm-mux-server --release"
       - name: "Build wezterm-mux-server (Release mode ARM)"
         shell: bash
-        run: "cargo build --target aarch64-apple-darwin -p wezterm-mux-server --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target aarch64-apple-darwin -p wezterm-mux-server --release"
       - name: "Build strip-ansi-escapes (Release mode Intel)"
         shell: bash
-        run: "cargo build --target x86_64-apple-darwin -p strip-ansi-escapes --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target x86_64-apple-darwin -p strip-ansi-escapes --release"
       - name: "Build strip-ansi-escapes (Release mode ARM)"
         shell: bash
-        run: "cargo build --target aarch64-apple-darwin -p strip-ansi-escapes --release"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo build --target aarch64-apple-darwin -p strip-ansi-escapes --release"
       - name: "Install cargo-nextest from Cargo"
         uses: baptiste0928/cargo-install@v3
         with:
@@ -75,7 +78,7 @@ jobs:
           cache-key: "macos"
       - name: "Test"
         shell: bash
-        run: "cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin"
       - name: "Package"
         env:
           MACOS_APPLEID: ${{ secrets.MACOS_APPLEID }}
