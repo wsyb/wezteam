@@ -39,6 +39,12 @@ jobs:
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
         run: "cargo vendor --versioned-dirs >> .cargo/config"
+      - name: "Install OpenSSL via vcpkg"
+        shell: powershell
+        run: |
+          vcpkg install openssl:x64-windows
+          $env:OPENSSL_DIR = "C:\vcpkg\installed\x64-windows"
+          echo "OPENSSL_DIR=$env:OPENSSL_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: "Build wezterm (Release mode)"
         shell: cmd
         run: |
