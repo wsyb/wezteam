@@ -74,7 +74,7 @@ jobs:
           cache-key: "macos"
       - name: "Test"
         shell: bash
-        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin '!wezterm-ssh::lib::e2e::sftp::symlink_should_create_symlink_pointing_to_directory' '!wezterm-ssh::lib::e2e::sftp::symlink_should_create_symlink_pointing_to_file' '!wezterm-ssh::lib::e2e::sftp::symlink_should_succeed_even_if_path_missing'"
+        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin --exclude 'wezterm-ssh::lib::e2e::sftp::symlink_should_create_symlink_pointing_to_directory' --exclude 'wezterm-ssh::lib::e2e::sftp::symlink_should_create_symlink_pointing_to_file' --exclude 'wezterm-ssh::lib::e2e::sftp::symlink_should_succeed_even_if_path_missing'"
       - name: "Package"
         env:
           MACOS_APPLEID: ${{ secrets.MACOS_APPLEID }}
