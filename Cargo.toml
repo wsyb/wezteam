@@ -157,7 +157,7 @@ objc2 = "0.6"
 objc2-core-graphics = "0.3"
 objc2-foundation = "0.3"
 objc2-user-notifications = "0.3"
-openssl = { version = "0.10.57", features = ["vendored"] }
+openssl = { version = "0.10.57" }
 ordered-float = {version="4.1", default-features=false}
 parking_lot = "0.12"
 passfd = "0.1.6"
