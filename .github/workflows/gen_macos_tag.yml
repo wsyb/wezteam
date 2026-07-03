@@ -14,6 +14,7 @@ jobs:
       SCCACHE_GHA_ENABLED: "true"
       RUSTC_WRAPPER: "sccache"
       MACOSX_DEPLOYMENT_TARGET: "10.12"
+      OPENSSL_NO_VENDOR: "true"
 
     steps:
       - name: "checkout repo"
