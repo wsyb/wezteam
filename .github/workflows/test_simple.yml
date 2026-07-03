@@ -1,0 +1,15 @@
+name: test_simple
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "checkout repo"
+        uses: actions/checkout@v4
+      - name: "Test echo"
+        run: "echo 'Hello World'"
