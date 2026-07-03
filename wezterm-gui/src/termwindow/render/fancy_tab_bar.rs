@@ -2,7 +2,7 @@ use crate::customglyph::*;
 use crate::tabbar::{parse_status_text, TabBarItem, TabEntry};
 use crate::termwindow::box_model::*;
 use crate::termwindow::render::corners::*;
-use crate::termwindow::tab_extra_info::get_extra_info;
+use crate::termwindow::tab_extra_info::get_tab_extra_info;
 
 use crate::termwindow::render::window_buttons::window_button_element;
 use crate::termwindow::{UIItem, UIItemType};
@@ -91,8 +91,6 @@ impl crate::TermWindow {
     }
 
     pub fn build_fancy_tab_bar(&self, palette: &ColorPalette) -> anyhow::Result<ComputedElement> {
-        crate::termwindow::tab_extra_info::log_debug(&format!("build_fancy_tab_bar: tab_bar_vertical={}", self.config.tab_bar_vertical));
-        
         if self.config.tab_bar_vertical {
             return self.build_vertical_fancy_tab_bar(palette);
         }
@@ -489,11 +487,6 @@ impl crate::TermWindow {
         let items = self.tab_bar.items();
         let colors = self.tab_bar_colors();
         let bar_colors = self.bar_element_colors();
-        
-        crate::termwindow::tab_extra_info::log_debug(&format!("build_vertical_fancy_tab_bar: tab_bar_width={}, window_width={}, override={:?}", 
-            tab_bar_width, 
-            self.dimensions.pixel_width,
-            self.vertical_tab_bar_width_override));
 
         let active_tab_colors = colors.active_tab();
         let new_tab_colors = colors.new_tab();
@@ -502,8 +495,6 @@ impl crate::TermWindow {
         // Get tab information for extra info
         let tabs_info = self.get_tab_information();
         let show_extra = self.config.tab_bar_vertical_extra_info;
-        
-        crate::termwindow::tab_extra_info::log_debug(&format!("build_vertical_fancy_tab_bar: show_extra={}, tabs_info.len()={}", show_extra, tabs_info.len()));
 
         let mut tab_children = vec![];
 
@@ -618,115 +609,15 @@ impl crate::TermWindow {
                             .to_linear()
                     };
 
-                    // Add extra info lines (path, git branch, command)
-                    let mut extra_lines = vec![];
-                    
-                    log::info!("Tab {} checking: show_extra={}, tab_idx={}, tabs_info.len()={}", 
-                        tab_idx, show_extra, tab_idx, tabs_info.len());
-                    
-                    if show_extra && tab_idx < tabs_info.len() {
-                        let tab_info = &tabs_info[tab_idx];
-                        log::info!("Tab {} has active_pane: {}", tab_idx, tab_info.active_pane.is_some());
-                        
-                        if let Some(pane) = &tab_info.active_pane {
-                            let mux = mux::Mux::get();
-                            if let Some(pane_obj) = mux.get_pane(pane.pane_id) {
-                                let cache_duration = self.config.tab_bar_extra_info_cache_ms;
-
-                                // 获取 CWD（优先 OSC 7，回退到进程检查）
-                                let osc7_cwd = pane_obj
-                                    .get_current_working_dir(mux::pane::CachePolicy::FetchImmediate)
-                                    .and_then(|url| url.to_file_path().ok())
-                                    .and_then(|path| path.into_os_string().into_string().ok());
-                                
-                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} osc7_cwd: {:?}", tab_idx, osc7_cwd));
-                                
-                                let proc_cwd = pane_obj
-                                    .get_foreground_process_info(mux::pane::CachePolicy::FetchImmediate)
-                                    .and_then(|info| info.cwd.into_os_string().into_string().ok());
-
-                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} proc_cwd: {:?}", tab_idx, proc_cwd));
-
-                                let pane_cwd = osc7_cwd.or(proc_cwd);
-
-                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} pane_cwd: {:?}", tab_idx, pane_cwd));
-
-                                // 检查 tab 标题是否是路径
-                                let title_str = item.title.as_str().to_string();
-
-                                // 去除 tab 编号前缀（如 "1: "、"2: "）
-                                let title_without_prefix = title_str
-                                    .splitn(2, ": ")
-                                    .last()
-                                    .unwrap_or(&title_str);
-
-                                // 检查标题是否是路径：包含路径分隔符或冒号
-                                let title_is_path = title_without_prefix.contains('/')
-                                    || title_without_prefix.contains('\\')
-                                    || title_without_prefix.contains(':');
-
-                                crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} title: {:?}, without_prefix: {:?}, is_path: {}", tab_idx, title_str, title_without_prefix, title_is_path));
-
-                                // 如果标题是路径，直接用标题上的路径
-                                if title_is_path {
-                                    // 直接用标题上的路径
-                                    let path_line = parse_status_text(title_without_prefix, CellAttributes::default());
-                                    let path_elem = Element::with_line(&font, &path_line, palette)
-                                        .display(DisplayType::Block)
-                                        .colors(ElementColors {
-                                            border: BorderColor::default(),
-                                            bg: tab_bg_linear.into(),
-                                            text: palette.colors.0[AnsiColor::Blue as usize].to_linear().into(),
-                                        });
-                                    extra_lines.push(path_elem);
-                                    crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} added path from title: {}", tab_idx, title_without_prefix));
-                                } else if let Some(cwd) = pane_cwd.as_ref() {
-                                    // 标题不是路径，用 pane_cwd
-                                    let path_line = parse_status_text(cwd, CellAttributes::default());
-                                    let path_elem = Element::with_line(&font, &path_line, palette)
-                                        .display(DisplayType::Block)
-                                        .colors(ElementColors {
-                                            border: BorderColor::default(),
-                                            bg: tab_bg_linear.into(),
-                                            text: palette.colors.0[AnsiColor::Blue as usize].to_linear().into(),
-                                        });
-                                    extra_lines.push(path_elem);
-                                    crate::termwindow::tab_extra_info::log_debug(&format!("Tab {} added path from cwd: {}", tab_idx, cwd));
-                                }
-                                
-                                let (git, cmd) = get_extra_info(pane_obj.as_ref(), pane_cwd.as_deref(), cache_duration);
-                                
-                                if let Some(cmd) = cmd {
-                                    let cmd_line = parse_status_text(&cmd, CellAttributes::default());
-                                    let cmd_elem = Element::with_line(&font, &cmd_line, palette)
-                                        .display(DisplayType::Block)
-                                        .colors(ElementColors {
-                                            border: BorderColor::default(),
-                                            bg: tab_bg_linear.into(),
-                                            text: palette.colors.0[AnsiColor::Grey as usize].to_linear().into(),
-                                        });
-                                    extra_lines.push(cmd_elem);
-                                }
-                                
-                                log::info!("Tab {} extra_lines count: {}", tab_idx, extra_lines.len());
-                            } else {
-                                log::warn!("Tab {} failed to get pane object", tab_idx);
-                            }
-                        }
-                    }
+                    // 额外信息面板
+                    let extra_lines = build_extra_info(
+                        show_extra, tab_idx, &tabs_info, &item.title,
+                        &font, palette, tab_bg_linear,
+                    );
 
                     elem.content = match elem.content {
                         ElementContent::Children(mut kids) => {
-                            let kids_before = kids.len();
-                            let extra_count = extra_lines.len();
-                            // Add extra info lines after title
                             kids.extend(extra_lines);
-                            let kids_after = kids.len();
-                            
-                            log::info!("Tab {} kids: before={}, after={}, extra_lines={}", 
-                                tab_idx, kids_before, kids_after, extra_count);
-                            
-                            // Add close button
                             if self.config.show_close_tab_button_in_tabs {
                                 kids.push(make_vertical_x_button(
                                     &font, &metrics, &colors, tab_idx, active,
@@ -735,10 +626,7 @@ impl crate::TermWindow {
                             }
                             ElementContent::Children(kids)
                         }
-                        other => {
-                            log::warn!("Tab {} content is not Children: {:?}", tab_idx, std::mem::discriminant(&other));
-                            other
-                        }
+                        other => other
                     };
 
                     tab_children.push(elem);
@@ -1038,3 +926,70 @@ fn make_vertical_x_button(
     })
 }
 
+
+// ============================================================
+// 额外信息面板渲染（UI 层，与数据层 tab_extra_info 分离）
+// ============================================================
+
+/// 构建额外信息面板元素列表
+fn build_extra_info(
+    show_extra: bool,
+    tab_idx: usize,
+    tabs_info: &[crate::termwindow::TabInformation],
+    title: &termwiz::surface::Line,
+    font: &Rc<LoadedFont>,
+    palette: &ColorPalette,
+    tab_bg: window::color::LinearRgba,
+) -> Vec<Element> {
+    if !show_extra || tab_idx >= tabs_info.len() {
+        return vec![];
+    }
+    let tab_info = &tabs_info[tab_idx];
+    let pane = match &tab_info.active_pane {
+        Some(p) => p,
+        None => return vec![],
+    };
+    let mux = match mux::Mux::try_get() {
+        Some(m) => m,
+        None => return vec![],
+    };
+    let pane_obj = match mux.get_pane(pane.pane_id) {
+        Some(obj) => obj,
+        None => return vec![],
+    };
+
+    let title_str = title.as_str().to_string();
+    let info = get_tab_extra_info(pane_obj.as_ref(), &title_str);
+
+    let mut elements = vec![];
+
+    if let Some(path) = &info.reversed_path {
+        elements.push(make_info_line(font, path, palette, tab_bg, AnsiColor::Blue));
+    }
+    if let Some(git) = &info.git_branch {
+        elements.push(make_info_line(font, &format!("git:{}", git), palette, tab_bg, AnsiColor::Green));
+    }
+    if let Some(cmd) = &info.current_command {
+        elements.push(make_info_line(font, cmd, palette, tab_bg, AnsiColor::Grey));
+    }
+
+    elements
+}
+
+/// 创建一行信息文本元素
+fn make_info_line(
+    font: &Rc<LoadedFont>,
+    text: &str,
+    palette: &ColorPalette,
+    bg: window::color::LinearRgba,
+    color: AnsiColor,
+) -> Element {
+    let line = parse_status_text(text, CellAttributes::default());
+    Element::with_line(font, &line, palette)
+        .display(DisplayType::Block)
+        .colors(ElementColors {
+            border: BorderColor::default(),
+            bg: bg.into(),
+            text: palette.colors.0[color as usize].to_linear().into(),
+        })
+}
