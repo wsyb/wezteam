@@ -499,10 +499,6 @@ pub struct Config {
     #[dynamic(default = "default_true")]
     pub tab_bar_vertical_extra_info: bool,
 
-    /// Cache duration for extra info in milliseconds
-    #[dynamic(default = "default_tab_extra_info_cache_ms")]
-    pub tab_bar_extra_info_cache_ms: u64,
-
     #[dynamic(default = "default_true")]
     pub mouse_wheel_scrolls_tabs: bool,
 
@@ -1898,10 +1894,6 @@ fn default_tab_max_width() -> usize {
 fn default_tab_bar_vertical_width() -> usize {
     // 250px 以确保 Git 分支 + 命令信息完整显示（之前 200px 会截断长路径）
     250
-}
-
-fn default_tab_extra_info_cache_ms() -> u64 {
-    1000
 }
 
 fn default_update_interval() -> u64 {

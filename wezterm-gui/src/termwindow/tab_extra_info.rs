@@ -64,10 +64,7 @@ pub fn get_tab_extra_info(pane: &dyn mux::pane::Pane, tab_title: &str) -> TabExt
 /// "D:\work\wezteam" → "wezteam\work\D:"
 /// "/home/user/project" → "project/user/home"
 fn path_to_reversed(path: &str) -> String {
-    let trimmed = path.trim_end_matches(|c| c == '\\' || c == '/');
-    let sep = if trimmed.contains('\\') { '\\' } else { '/' };
-    let parts: Vec<&str> = trimmed.split(sep).filter(|s| !s.is_empty()).rev().collect();
-    parts.join(&sep.to_string())
+    reverse_path_components(path)
 }
 
 /// 倒序路径 → 正序路径
@@ -75,7 +72,12 @@ fn path_to_reversed(path: &str) -> String {
 /// "wezteam\work\D:" → "D:\work\wezteam"
 /// "project/user/home" → "/home/user/project"（Unix 不存在倒序，但逻辑等价）
 fn reversed_to_normal(reversed: &str) -> String {
-    let trimmed = reversed.trim_end_matches(|c| c == '\\' || c == '/');
+    reverse_path_components(reversed)
+}
+
+/// 路径组件反转（倒序↔正序互为逆运算，逻辑相同）
+fn reverse_path_components(path: &str) -> String {
+    let trimmed = path.trim_end_matches(|c| c == '\\' || c == '/');
     let sep = if trimmed.contains('\\') { '\\' } else { '/' };
     let parts: Vec<&str> = trimmed.split(sep).filter(|s| !s.is_empty()).rev().collect();
     parts.join(&sep.to_string())
