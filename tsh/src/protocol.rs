@@ -1,6 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TabState {
+    pub tab_index: usize,
+    pub name: String,
+    pub process_alive: bool,
+    pub last_output_ago_secs: u64,
+    pub status: Option<String>,
+    pub progress: Option<u8>,
+    pub task: Option<String>,
+    pub blocked_reason: Option<String>,
+    pub last_report: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
 pub enum IpcRequest {
     #[serde(rename = "type")]
@@ -13,8 +26,18 @@ pub enum IpcRequest {
     TypeRaw { tab_index: usize, data: String },
     #[serde(rename = "view")]
     View { tab_index: usize, line_count: usize },
-    #[serde(rename = "list")]
-    List,
+    #[serde(rename = "status")]
+    Status,
+    #[serde(rename = "report")]
+    Report {
+        tab_index: usize,
+        key: String,
+        value: Option<String>,
+    },
+    #[serde(rename = "query")]
+    Query {
+        tab_index: usize,
+    },
     #[serde(rename = "open")]
     Open {
         name: String,
@@ -45,13 +68,9 @@ pub struct IpcResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tabs: Option<Vec<TabInfo>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TabInfo {
-    pub index: usize,
-    pub name: String,
+    pub states: Option<Vec<TabState>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<TabState>,
 }
 
 pub type Request = IpcRequest;
@@ -66,6 +85,7 @@ pub fn error_response(msg: &str) -> IpcResponse {
         tab: None,
         lines: None,
         text: None,
-        tabs: None,
+        states: None,
+        state: None,
     }
 }

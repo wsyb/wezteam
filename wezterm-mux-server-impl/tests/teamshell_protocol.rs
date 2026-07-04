@@ -1,4 +1,4 @@
-use wezterm_mux_server_impl::teamshell::protocol::{IpcRequest, IpcResponse, TabInfo};
+use wezterm_mux_server_impl::teamshell::protocol::{IpcRequest, IpcResponse, TabState};
 
 #[test]
 fn ipc_request_uses_cmd_tag_and_snake_case_names() {
@@ -36,10 +36,18 @@ fn ipc_response_omits_empty_optional_fields() {
         tab: None,
         lines: None,
         text: None,
-        tabs: Some(vec![TabInfo {
-            index: 6,
+        states: Some(vec![TabState {
+            tab_index: 6,
             name: "星河".to_string(),
+            process_alive: true,
+            last_output_ago_secs: 3,
+            status: Some("running".to_string()),
+            progress: Some(80),
+            task: Some("查日志".to_string()),
+            blocked_reason: None,
+            last_report: None,
         }]),
+        state: None,
     };
 
     let value = serde_json::to_value(&response).unwrap();
@@ -48,6 +56,7 @@ fn ipc_response_omits_empty_optional_fields() {
     assert_eq!(value["status"], "received");
     assert!(value.get("error").is_none());
     assert!(value.get("target").is_none());
-    assert_eq!(value["tabs"][0]["index"], 6);
-    assert_eq!(value["tabs"][0]["name"], "星河");
+    assert_eq!(value["states"][0]["tab_index"], 6);
+    assert_eq!(value["states"][0]["name"], "星河");
+    assert_eq!(value["states"][0]["progress"], 80);
 }

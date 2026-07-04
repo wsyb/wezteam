@@ -4,7 +4,7 @@ use mux::Mux;
 use tokio::io::{duplex, AsyncBufReadExt, AsyncWriteExt, BufReader};
 use wezterm_mux_server_impl::teamshell::handler::Handler;
 use wezterm_mux_server_impl::teamshell::output;
-use wezterm_mux_server_impl::teamshell::protocol::{IpcRequest, IpcResponse, TabInfo};
+use wezterm_mux_server_impl::teamshell::protocol::{IpcRequest, IpcResponse, TabState};
 use wezterm_mux_server_impl::teamshell::server::handle_stream;
 
 fn with_empty_mux() {
@@ -22,7 +22,7 @@ fn handler_returns_ipc_response_for_missing_tab() {
 }
 
 #[test]
-fn output_formats_ipc_response_as_plain_text() {
+fn output_formats_status_response() {
     let response = IpcResponse {
         ok: true,
         error: None,
@@ -31,13 +31,25 @@ fn output_formats_ipc_response_as_plain_text() {
         tab: None,
         lines: None,
         text: None,
-        tabs: Some(vec![TabInfo {
-            index: 6,
+        states: Some(vec![TabState {
+            tab_index: 6,
             name: "星河".to_string(),
+            process_alive: true,
+            last_output_ago_secs: 3,
+            status: Some("running".to_string()),
+            progress: Some(80),
+            task: Some("查日志".to_string()),
+            blocked_reason: None,
+            last_report: None,
         }]),
+        state: None,
     };
 
-    assert_eq!(output::format_response(&response), "6 星河");
+    let output = output::format_response(&response);
+    assert!(output.contains("6 星河"));
+    assert!(output.contains("[running]"));
+    assert!(output.contains("80%"));
+    assert!(output.contains("task=查日志"));
 }
 
 #[tokio::test]

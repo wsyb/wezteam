@@ -1,6 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TabState {
+    pub tab_index: usize,
+    pub name: String,
+    pub process_alive: bool,
+    pub last_output_ago_secs: u64,
+    pub status: Option<String>,
+    pub progress: Option<u8>,
+    pub task: Option<String>,
+    pub blocked_reason: Option<String>,
+    pub last_report: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
 pub enum IpcRequest {
     #[serde(rename = "type")]
@@ -13,8 +26,18 @@ pub enum IpcRequest {
     TypeRaw { tab_index: usize, data: String },
     #[serde(rename = "view")]
     View { tab_index: usize, line_count: usize },
-    #[serde(rename = "list")]
-    List,
+    #[serde(rename = "status")]
+    Status,
+    #[serde(rename = "report")]
+    Report {
+        tab_index: usize,
+        key: String,
+        value: Option<String>,
+    },
+    #[serde(rename = "query")]
+    Query {
+        tab_index: usize,
+    },
     #[serde(rename = "open")]
     Open {
         name: String,
@@ -45,13 +68,9 @@ pub struct IpcResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tabs: Option<Vec<TabInfo>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TabInfo {
-    pub index: usize,
-    pub name: String,
+    pub states: Option<Vec<TabState>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<TabState>,
 }
 
 impl IpcRequest {
@@ -60,7 +79,9 @@ impl IpcRequest {
             Self::Type { .. } => "type",
             Self::TypeRaw { .. } => "type_raw",
             Self::View { .. } => "view",
-            Self::List => "list",
+            Self::Status => "status",
+            Self::Report { .. } => "report",
+            Self::Query { .. } => "query",
             Self::Open { .. } => "open",
             Self::Close { .. } => "close",
             Self::Name { .. } => "name",
@@ -78,11 +99,12 @@ impl IpcResponse {
             tab: None,
             lines: None,
             text: None,
-            tabs: None,
+            states: None,
+            state: None,
         }
     }
 
-    pub fn list(tabs: Vec<TabInfo>) -> Self {
+    pub fn status_list(states: Vec<TabState>) -> Self {
         Self {
             ok: true,
             error: None,
@@ -91,7 +113,8 @@ impl IpcResponse {
             tab: None,
             lines: None,
             text: None,
-            tabs: Some(tabs),
+            states: Some(states),
+            state: None,
         }
     }
 
@@ -104,7 +127,8 @@ impl IpcResponse {
             tab: None,
             lines: None,
             text: None,
-            tabs: None,
+            states: None,
+            state: None,
         }
     }
 
@@ -117,7 +141,8 @@ impl IpcResponse {
             tab: None,
             lines: Some(lines),
             text: Some(text),
-            tabs: None,
+            states: None,
+            state: None,
         }
     }
 
@@ -130,7 +155,8 @@ impl IpcResponse {
             tab: Some(tab),
             lines: None,
             text: Some(name),
-            tabs: None,
+            states: None,
+            state: None,
         }
     }
 
@@ -143,7 +169,8 @@ impl IpcResponse {
             tab: None,
             lines: None,
             text: None,
-            tabs: None,
+            states: None,
+            state: None,
         }
     }
 
@@ -156,7 +183,36 @@ impl IpcResponse {
             tab: None,
             lines: None,
             text: Some(new_name),
-            tabs: None,
+            states: None,
+            state: None,
+        }
+    }
+
+    pub fn reported(target: usize) -> Self {
+        Self {
+            ok: true,
+            error: None,
+            status: Some("reported".to_string()),
+            target: Some(target),
+            tab: None,
+            lines: None,
+            text: None,
+            states: None,
+            state: None,
+        }
+    }
+
+    pub fn queried(state: TabState) -> Self {
+        Self {
+            ok: true,
+            error: None,
+            status: None,
+            target: Some(state.tab_index),
+            tab: None,
+            lines: None,
+            text: None,
+            states: None,
+            state: Some(state),
         }
     }
 }
@@ -168,28 +224,34 @@ mod tests {
     #[test]
     fn error_response_sets_error_fields() {
         let response = IpcResponse::error("boom".to_string());
-
         assert!(!response.ok);
         assert_eq!(response.error.as_deref(), Some("boom"));
     }
 
     #[test]
-    fn list_response_sets_tabs() {
-        let response = IpcResponse::list(vec![TabInfo {
-            index: 6,
+    fn status_list_response_sets_states() {
+        let states = vec![TabState {
+            tab_index: 6,
             name: "星河".to_string(),
-        }]);
-
+            process_alive: true,
+            last_output_ago_secs: 3,
+            status: Some("running".to_string()),
+            progress: Some(80),
+            task: Some("查日志".to_string()),
+            blocked_reason: None,
+            last_report: None,
+        }];
+        let response = IpcResponse::status_list(states);
         assert!(response.ok);
-        let tabs = response.tabs.as_ref().unwrap();
-        assert_eq!(tabs[0].index, 6);
-        assert_eq!(tabs[0].name, "星河");
+        let s = response.states.as_ref().unwrap();
+        assert_eq!(s[0].tab_index, 6);
+        assert_eq!(s[0].name, "星河");
+        assert_eq!(s[0].progress, Some(80));
     }
 
     #[test]
     fn delivered_response_sets_status_and_target() {
         let response = IpcResponse::delivered(2);
-
         assert!(response.ok);
         assert_eq!(response.status.as_deref(), Some("delivered"));
         assert_eq!(response.target, Some(2));
@@ -198,7 +260,6 @@ mod tests {
     #[test]
     fn text_response_sets_lines_and_text() {
         let response = IpcResponse::text(2, vec!["a".to_string()], "a".to_string());
-
         assert!(response.ok);
         assert_eq!(response.target, Some(2));
         assert_eq!(response.lines.as_ref().unwrap(), &vec!["a".to_string()]);
@@ -208,7 +269,6 @@ mod tests {
     #[test]
     fn created_response_sets_status_tab_and_name() {
         let response = IpcResponse::created(3, "Mimo".to_string());
-
         assert!(response.ok);
         assert_eq!(response.status.as_deref(), Some("created"));
         assert_eq!(response.tab, Some(3));
@@ -218,7 +278,6 @@ mod tests {
     #[test]
     fn closed_response_sets_status_and_target() {
         let response = IpcResponse::closed(3);
-
         assert!(response.ok);
         assert_eq!(response.status.as_deref(), Some("closed"));
         assert_eq!(response.target, Some(3));
@@ -227,7 +286,6 @@ mod tests {
     #[test]
     fn renamed_response_sets_status_target_and_name() {
         let response = IpcResponse::renamed(3, "云雀".to_string());
-
         assert!(response.ok);
         assert_eq!(response.status.as_deref(), Some("renamed"));
         assert_eq!(response.target, Some(3));
@@ -235,8 +293,37 @@ mod tests {
     }
 
     #[test]
+    fn reported_response_sets_status_and_target() {
+        let response = IpcResponse::reported(2);
+        assert!(response.ok);
+        assert_eq!(response.status.as_deref(), Some("reported"));
+        assert_eq!(response.target, Some(2));
+    }
+
+    #[test]
+    fn queried_response_sets_state() {
+        let state = TabState {
+            tab_index: 3,
+            name: "后端".to_string(),
+            process_alive: true,
+            last_output_ago_secs: 240,
+            status: Some("blocked".to_string()),
+            progress: Some(30),
+            task: Some("API开发".to_string()),
+            blocked_reason: Some("需要权限".to_string()),
+            last_report: None,
+        };
+        let response = IpcResponse::queried(state);
+        assert!(response.ok);
+        assert_eq!(response.target, Some(3));
+        let s = response.state.as_ref().unwrap();
+        assert_eq!(s.status.as_deref(), Some("blocked"));
+        assert_eq!(s.progress, Some(30));
+    }
+
+    #[test]
     fn command_name_returns_names_for_all_request_variants() {
-        let cases = vec![
+        let cases: Vec<(IpcRequest, &str)> = vec![
             (
                 IpcRequest::Type {
                     tab_index: 1,
@@ -259,7 +346,21 @@ mod tests {
                 },
                 "view",
             ),
-            (IpcRequest::List, "list"),
+            (IpcRequest::Status, "status"),
+            (
+                IpcRequest::Report {
+                    tab_index: 1,
+                    key: "progress".to_string(),
+                    value: Some("60".to_string()),
+                },
+                "report",
+            ),
+            (
+                IpcRequest::Query {
+                    tab_index: 1,
+                },
+                "query",
+            ),
             (
                 IpcRequest::Open {
                     name: String::new(),
@@ -283,5 +384,25 @@ mod tests {
         for (request, expected) in cases {
             assert_eq!(request.command_name(), expected);
         }
+    }
+
+    #[test]
+    fn tab_state_serialization_roundtrip() {
+        let state = TabState {
+            tab_index: 1,
+            name: "测试".to_string(),
+            process_alive: true,
+            last_output_ago_secs: 5,
+            status: Some("running".to_string()),
+            progress: Some(60),
+            task: Some("重构".to_string()),
+            blocked_reason: None,
+            last_report: None,
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        let decoded: TabState = serde_json::from_str(&json).unwrap();
+        assert_eq!(decoded.tab_index, 1);
+        assert_eq!(decoded.name, "测试");
+        assert_eq!(decoded.progress, Some(60));
     }
 }

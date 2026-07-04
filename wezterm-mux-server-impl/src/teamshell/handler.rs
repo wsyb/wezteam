@@ -1,10 +1,49 @@
+use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::sync::{LazyLock, Mutex};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+
 use mux::pane::Pane;
 use mux::tab;
 use mux::Mux;
 use portable_pty::CommandBuilder;
 use wezterm_term::TerminalSize;
 
-use super::protocol::{IpcRequest, IpcResponse, TabInfo};
+use super::protocol::{IpcRequest, IpcResponse, TabState};
+
+struct ActivityInfo {
+    last_change: Instant,
+    content_hash: u64,
+}
+
+#[derive(Debug, Clone)]
+struct ReportedState {
+    status: Option<String>,
+    progress: Option<u8>,
+    task: Option<String>,
+    blocked_reason: Option<String>,
+    last_report: Option<String>,
+}
+
+static ACTIVITY_TRACKER: LazyLock<Mutex<HashMap<usize, ActivityInfo>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+static STATE_STORE: LazyLock<Mutex<HashMap<usize, ReportedState>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn simple_hash(s: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+    hasher.finish()
+}
+
+fn now_timestamp_secs() -> String {
+    let duration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    format!("{}", duration.as_secs())
+}
 
 pub struct Handler;
 
@@ -21,7 +60,13 @@ impl Handler {
                 tab_index,
                 line_count,
             } => Self::see(tab_index, Some(line_count)),
-            IpcRequest::List => Self::list(),
+            IpcRequest::Status => Self::status(),
+            IpcRequest::Report {
+                tab_index,
+                key,
+                value,
+            } => Self::report(tab_index, &key, value.as_deref()),
+            IpcRequest::Query { tab_index } => Self::query(tab_index),
             IpcRequest::Open {
                 name,
                 command,
@@ -37,29 +82,181 @@ impl Handler {
         }
     }
 
-    pub fn list() -> IpcResponse {
+    pub fn status() -> IpcResponse {
         let mux = Mux::get();
-        let mut tabs: Vec<TabInfo> = Vec::new();
+        let mut result = Vec::new();
 
         for window_id in mux.iter_windows() {
             if let Some(win) = mux.get_window(window_id) {
                 for tab in win.iter() {
-                    let title = tab.get_title();
                     let tab_id = tab.tab_id();
-                    tabs.push(TabInfo {
-                        index: tab_id + 1,
-                        name: if title.is_empty() {
-                            format!("tab_{}", tab_id + 1)
+                    let external_id = tab_id + 1;
+                    let title = tab.get_title();
+                    let name = if title.is_empty() {
+                        format!("tab_{}", external_id)
+                    } else {
+                        title
+                    };
+
+                    let (process_alive, last_output_ago_secs) = {
+                        if let Some(pane) = tab.get_active_pane() {
+                            let dims = pane.get_dimensions();
+                            let end = dims.physical_top + dims.viewport_rows as isize;
+                            let start = end.saturating_sub(1);
+                            let (_, lines) = pane.get_lines(start..end);
+                            let last_line = lines
+                                .last()
+                                .map(|l| l.as_str().to_string())
+                                .unwrap_or_default();
+
+                            let mut tracker = ACTIVITY_TRACKER.lock().unwrap();
+                            let now = Instant::now();
+                            let entry = tracker.entry(external_id).or_insert(ActivityInfo {
+                                last_change: now,
+                                content_hash: 0,
+                            });
+
+                            let current_hash = simple_hash(&last_line);
+                            if current_hash != entry.content_hash {
+                                entry.content_hash = current_hash;
+                                entry.last_change = now;
+                            }
+
+                            (true, now.duration_since(entry.last_change).as_secs())
                         } else {
-                            title
-                        },
+                            (false, u64::MAX)
+                        }
+                    };
+
+                    let reported = STATE_STORE
+                        .lock()
+                        .unwrap()
+                        .get(&external_id)
+                        .cloned();
+
+                    result.push(TabState {
+                        tab_index: external_id,
+                        name,
+                        process_alive,
+                        last_output_ago_secs,
+                        status: reported.as_ref().and_then(|r| r.status.clone()),
+                        progress: reported.as_ref().and_then(|r| r.progress),
+                        task: reported.as_ref().and_then(|r| r.task.clone()),
+                        blocked_reason: reported.as_ref().and_then(|r| r.blocked_reason.clone()),
+                        last_report: reported.as_ref().and_then(|r| r.last_report.clone()),
                     });
                 }
             }
         }
 
-        tabs.sort_by_key(|t| t.index);
-        IpcResponse::list(tabs)
+        result.sort_by_key(|t| t.tab_index);
+        IpcResponse::status_list(result)
+    }
+
+    pub fn report(tab_index: usize, key: &str, value: Option<&str>) -> IpcResponse {
+        let mut store = STATE_STORE.lock().unwrap();
+        let entry = store.entry(tab_index).or_insert(ReportedState {
+            status: None,
+            progress: None,
+            task: None,
+            blocked_reason: None,
+            last_report: None,
+        });
+
+        let now = now_timestamp_secs();
+        entry.last_report = Some(now);
+
+        match key {
+            "progress" => {
+                if let Some(v) = value {
+                    entry.progress = v.parse::<u8>().ok();
+                }
+            }
+            "task" => {
+                entry.task = value.map(|s| s.to_string());
+            }
+            "status" => {
+                entry.status = value.map(|s| s.to_string());
+            }
+            "blocked" => {
+                entry.status = Some("blocked".to_string());
+                entry.blocked_reason = value.map(|s| s.to_string());
+            }
+            "done" => {
+                entry.status = Some("done".to_string());
+                entry.progress = Some(100);
+            }
+            _ => {
+                return IpcResponse::error(format!("unknown report key: {key}"));
+            }
+        }
+
+        IpcResponse::reported(tab_index)
+    }
+
+    pub fn query(tab_index: usize) -> IpcResponse {
+        let mux = Mux::get();
+        let tab_id = Self::id_to_tab_id(tab_index);
+
+        let tab = match mux.get_tab(tab_id) {
+            Some(t) => t,
+            None => return IpcResponse::error(format!("tab {tab_index} not found")),
+        };
+
+        let title = tab.get_title();
+        let name = if title.is_empty() {
+            format!("tab_{tab_index}")
+        } else {
+            title
+        };
+
+        let (process_alive, last_output_ago_secs) = {
+            if let Some(pane) = tab.get_active_pane() {
+                let dims = pane.get_dimensions();
+                let end = dims.physical_top + dims.viewport_rows as isize;
+                let start = end.saturating_sub(1);
+                let (_, lines) = pane.get_lines(start..end);
+                let last_line = lines
+                    .last()
+                    .map(|l| l.as_str().to_string())
+                    .unwrap_or_default();
+
+                let mut tracker = ACTIVITY_TRACKER.lock().unwrap();
+                let now = Instant::now();
+                let entry = tracker.entry(tab_index).or_insert(ActivityInfo {
+                    last_change: now,
+                    content_hash: 0,
+                });
+
+                let current_hash = simple_hash(&last_line);
+                if current_hash != entry.content_hash {
+                    entry.content_hash = current_hash;
+                    entry.last_change = now;
+                }
+
+                (true, now.duration_since(entry.last_change).as_secs())
+            } else {
+                (false, u64::MAX)
+            }
+        };
+
+        let reported = STATE_STORE
+            .lock()
+            .unwrap()
+            .get(&tab_index)
+            .cloned();
+
+        IpcResponse::queried(TabState {
+            tab_index,
+            name,
+            process_alive,
+            last_output_ago_secs,
+            status: reported.as_ref().and_then(|r| r.status.clone()),
+            progress: reported.as_ref().and_then(|r| r.progress),
+            task: reported.as_ref().and_then(|r| r.task.clone()),
+            blocked_reason: reported.as_ref().and_then(|r| r.blocked_reason.clone()),
+            last_report: reported.as_ref().and_then(|r| r.last_report.clone()),
+        })
     }
 
     pub fn send(target: usize, text: &str) -> IpcResponse {
@@ -134,7 +331,16 @@ impl Handler {
                     if !name.is_empty() {
                         tab.set_title(name);
                     }
-                    IpcResponse::created(tab.tab_id() + 1, name.to_string())
+                    let external_id = tab.tab_id() + 1;
+                    let now = Instant::now();
+                    ACTIVITY_TRACKER.lock().unwrap().insert(
+                        external_id,
+                        ActivityInfo {
+                            last_change: now,
+                            content_hash: 0,
+                        },
+                    );
+                    IpcResponse::created(external_id, name.to_string())
                 }
                 Err(e) => IpcResponse::error(format!("open failed: {e:#}")),
             },
@@ -152,6 +358,8 @@ impl Handler {
                     pane.kill();
                 }
                 mux.remove_tab(tab_id);
+                ACTIVITY_TRACKER.lock().unwrap().remove(&target);
+                STATE_STORE.lock().unwrap().remove(&target);
                 IpcResponse::closed(target)
             }
             None => IpcResponse::error(format!("tab {target} not found")),
@@ -252,5 +460,58 @@ mod tests {
             command.get_env("TEAMSH_TAB_ID"),
             Some(std::ffi::OsStr::new("3"))
         );
+    }
+
+    #[test]
+    fn simple_hash_returns_consistent_value() {
+        let h1 = simple_hash("hello");
+        let h2 = simple_hash("hello");
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn simple_hash_differs_for_different_input() {
+        let h1 = simple_hash("hello");
+        let h2 = simple_hash("world");
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn report_stores_state() {
+        let resp = Handler::report(99, "status", Some("running"));
+        assert!(resp.ok);
+        assert_eq!(resp.target, Some(99));
+
+        let store = STATE_STORE.lock().unwrap();
+        let state = store.get(&99).unwrap();
+        assert_eq!(state.status.as_deref(), Some("running"));
+    }
+
+    #[test]
+    fn report_done_sets_progress_100() {
+        let resp = Handler::report(98, "done", None);
+        assert!(resp.ok);
+
+        let store = STATE_STORE.lock().unwrap();
+        let state = store.get(&98).unwrap();
+        assert_eq!(state.status.as_deref(), Some("done"));
+        assert_eq!(state.progress, Some(100));
+    }
+
+    #[test]
+    fn report_blocked_sets_status_and_reason() {
+        let resp = Handler::report(97, "blocked", Some("need permission"));
+        assert!(resp.ok);
+
+        let store = STATE_STORE.lock().unwrap();
+        let state = store.get(&97).unwrap();
+        assert_eq!(state.status.as_deref(), Some("blocked"));
+        assert_eq!(state.blocked_reason.as_deref(), Some("need permission"));
+    }
+
+    #[test]
+    fn report_unknown_key_returns_error() {
+        let resp = Handler::report(96, "unknown_key", None);
+        assert!(!resp.ok);
     }
 }

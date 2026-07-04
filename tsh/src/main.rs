@@ -21,8 +21,20 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// 列出团队成员（编号、名字、状态）
-    List,
+    /// 查看团队状态看板
+    Status,
+    /// 报告当前工位的状态信息
+    Report {
+        /// 状态键（task | progress | status | blocked | done）
+        key: String,
+        /// 状态值
+        value: Option<String>,
+    },
+    /// 查询指定工位的状态
+    Query {
+        /// 目标工位编号
+        id: usize,
+    },
     /// 在指定工位的终端上打字
     Type {
         /// 目标工位编号
@@ -99,7 +111,9 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::List => commands::cmd_list(),
+        Commands::Status => commands::cmd_status(),
+        Commands::Report { key, value } => commands::cmd_report(&key, value.as_deref()),
+        Commands::Query { id } => commands::cmd_query(id),
         Commands::Type { id, message, no_enter, key } => {
             commands::cmd_type(id, message.as_deref(), !no_enter, key.as_deref())
         }

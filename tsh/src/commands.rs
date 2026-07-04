@@ -15,11 +15,106 @@ fn format_response(response: &Response) -> Output {
         ));
     }
 
-    if let Some(tabs) = &response.tabs {
+    if let Some(states) = &response.states {
         let mut text = String::new();
-        for tab in tabs {
-            text.push_str(&format!("{} {}\n", tab.index, tab.name));
+        for s in states {
+            let activity_icon = if !s.process_alive {
+                "⚫"
+            } else if s.last_output_ago_secs > 120 {
+                "🔴"
+            } else if s.last_output_ago_secs > 10 {
+                "🟡"
+            } else {
+                "🟢"
+            };
+
+            let activity_label = if !s.process_alive {
+                "离线".to_string()
+            } else if s.last_output_ago_secs > 120 {
+                "静默".to_string()
+            } else if s.last_output_ago_secs > 10 {
+                "缓慢".to_string()
+            } else {
+                "活跃".to_string()
+            };
+
+            let ago = if !s.process_alive {
+                "进程已退出".to_string()
+            } else if s.last_output_ago_secs == 0 {
+                "刚刚".to_string()
+            } else if s.last_output_ago_secs < 60 {
+                format!("{}秒前", s.last_output_ago_secs)
+            } else {
+                format!("{}分钟前", s.last_output_ago_secs / 60)
+            };
+
+            text.push_str(&format!(
+                "{}号({}) {} {} 最后活动: {}",
+                s.tab_index, s.name, activity_icon, activity_label, ago
+            ));
+
+            if let Some(task) = &s.task {
+                text.push_str(&format!(" 任务: {}", task));
+            }
+            if let Some(progress) = s.progress {
+                text.push_str(&format!(" 进度: {}%", progress));
+            }
+            if let Some(status) = &s.status {
+                match status.as_str() {
+                    "blocked" => {
+                        if let Some(reason) = &s.blocked_reason {
+                            text.push_str(&format!(" ⚠️阻塞: {}", reason));
+                        } else {
+                            text.push_str(" ⚠️阻塞");
+                        }
+                    }
+                    "done" => text.push_str(" ✅完成"),
+                    _ => {}
+                }
+            }
+
+            text.push('\n');
         }
+        return Output::Stdout(text);
+    }
+
+    if let Some(state) = &response.state {
+        let mut text = String::new();
+
+        let status_str = match state.status.as_deref() {
+            Some("running") => "运行中",
+            Some("idle") => "空闲",
+            Some("blocked") => "阻塞",
+            Some("done") => "完成",
+            Some("error") => "错误",
+            other => other.unwrap_or("未知"),
+        };
+
+        text.push_str(&format!(
+            "{}号({}) 状态: {}",
+            state.tab_index, state.name, status_str
+        ));
+
+        if let Some(progress) = state.progress {
+            text.push_str(&format!(" | 进度: {}%", progress));
+        }
+        if let Some(task) = &state.task {
+            text.push_str(&format!(" | 任务: {}", task));
+        }
+        if let Some(reason) = &state.blocked_reason {
+            text.push_str(&format!(" | 原因: {}", reason));
+        }
+
+        let ago = if state.last_output_ago_secs == 0 {
+            "刚刚".to_string()
+        } else if state.last_output_ago_secs < 60 {
+            format!("{}秒前", state.last_output_ago_secs)
+        } else {
+            format!("{}分钟前", state.last_output_ago_secs / 60)
+        };
+        text.push_str(&format!(" | 最后活动: {}", ago));
+
+        text.push('\n');
         return Output::Stdout(text);
     }
 
@@ -42,6 +137,7 @@ fn format_response(response: &Response) -> Output {
             (Some(target), _) => format!("Tab {target} renamed\n"),
             _ => "Renamed\n".to_string(),
         },
+        Some("reported") => "✅ 已记录\n".to_string(),
         Some(status) => format!("{status}\n"),
         None => response.text.clone().unwrap_or_else(|| "OK\n".to_string()),
     };
@@ -149,12 +245,49 @@ pub fn cmd_view(id: usize, lines: usize) {
 }
 
 // ============================================================
-// list — 列出团队成员
+// status — 查看团队状态看板
 // ============================================================
 
-/// tsh list
-pub fn cmd_list() {
-    let request = Request::List;
+pub fn cmd_status() {
+    let request = Request::Status;
+    match ipc::send_request(&request) {
+        Ok(resp) => output(&resp),
+        Err(e) => output(&crate::protocol::error_response(&e)),
+    }
+}
+
+// ============================================================
+// report — 报告当前工位状态
+// ============================================================
+
+pub fn cmd_report(key: &str, value: Option<&str>) {
+    let tab_index = match sender_tab_id() {
+        Some(id) => id,
+        None => {
+            eprintln!("错误：无法获取当前工位编号（TEAMSH_TAB_ID 未设置）");
+            std::process::exit(1);
+        }
+    };
+
+    let request = Request::Report {
+        tab_index,
+        key: key.to_string(),
+        value: value.map(|s| s.to_string()),
+    };
+    match ipc::send_request(&request) {
+        Ok(resp) => output(&resp),
+        Err(e) => output(&crate::protocol::error_response(&e)),
+    }
+}
+
+// ============================================================
+// query — 查询指定工位状态
+// ============================================================
+
+pub fn cmd_query(id: usize) {
+    let request = Request::Query {
+        tab_index: id,
+    };
     match ipc::send_request(&request) {
         Ok(resp) => output(&resp),
         Err(e) => output(&crate::protocol::error_response(&e)),
@@ -591,7 +724,7 @@ fn confirm_overwrite(file_name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::TabInfo;
+    use crate::protocol::TabState;
 
     fn ok_response() -> Response {
         Response {
@@ -602,7 +735,8 @@ mod tests {
             tab: None,
             lines: None,
             text: None,
-            tabs: None,
+            states: None,
+            state: None,
         }
     }
 
@@ -621,25 +755,71 @@ mod tests {
     }
 
     #[test]
-    fn format_list_as_lines() {
+    fn format_status_as_lines() {
         let response = Response {
-            tabs: Some(vec![
-                TabInfo {
-                    index: 1,
+            states: Some(vec![
+                TabState {
+                    tab_index: 1,
                     name: "Alice".to_string(),
+                    process_alive: true,
+                    last_output_ago_secs: 5,
+                    status: None,
+                    progress: None,
+                    task: None,
+                    blocked_reason: None,
+                    last_report: None,
                 },
-                TabInfo {
-                    index: 2,
+                TabState {
+                    tab_index: 2,
                     name: "Bob".to_string(),
+                    process_alive: false,
+                    last_output_ago_secs: 300,
+                    status: Some("done".to_string()),
+                    progress: Some(100),
+                    task: Some("重构模块".to_string()),
+                    blocked_reason: None,
+                    last_report: None,
                 },
             ]),
             ..ok_response()
         };
 
-        assert_eq!(
-            format_response(&response),
-            Output::Stdout("1 Alice\n2 Bob\n".to_string())
-        );
+        let result = format_response(&response);
+        if let Output::Stdout(text) = result {
+            assert!(text.contains("1号(Alice) 🟢 活跃"));
+            assert!(text.contains("2号(Bob) ⚫ 离线"));
+            assert!(text.contains("✅完成"));
+        } else {
+            panic!("Expected Stdout");
+        }
+    }
+
+    #[test]
+    fn format_query_detail() {
+        let response = Response {
+            state: Some(TabState {
+                tab_index: 1,
+                name: "Alice".to_string(),
+                process_alive: true,
+                last_output_ago_secs: 30,
+                status: Some("running".to_string()),
+                progress: Some(50),
+                task: Some("写测试".to_string()),
+                blocked_reason: None,
+                last_report: None,
+            }),
+            ..ok_response()
+        };
+
+        let result = format_response(&response);
+        if let Output::Stdout(text) = result {
+            assert!(text.contains("1号(Alice) 状态: 运行中"));
+            assert!(text.contains("进度: 50%"));
+            assert!(text.contains("任务: 写测试"));
+            assert!(text.contains("30秒前"));
+        } else {
+            panic!("Expected Stdout");
+        }
     }
 
     #[test]
