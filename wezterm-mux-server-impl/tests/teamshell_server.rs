@@ -13,11 +13,11 @@ async fn handle_stream_reads_one_json_line_and_writes_handler_response() {
 
     let server_task = tokio::spawn(async move { handle_stream(server).await });
 
-    client.write_all(b"{\"cmd\":\"list\"}\n").await.unwrap();
+    client.write_all(b"{\"cmd\":\"status\"}\n").await.unwrap();
 
     let mut response = String::new();
     client.read_line(&mut response).await.unwrap();
 
     server_task.await.unwrap().unwrap();
-    assert_eq!(response, "{\"ok\":true,\"tabs\":[]}\n");
+    assert_eq!(response, "{\"ok\":true,\"states\":[]}\n");
 }
