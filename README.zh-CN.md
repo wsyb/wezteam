@@ -25,29 +25,103 @@
 
 ## 快速开始
 
-### 启动第一个 Agent（推荐方式）
+### 前置条件
+
+在开始之前，请确保你已经安装：
+
+- **Rust**（最新稳定版）— [安装 Rust](https://www.rust-lang.org/tools/install)
+- **Git** — 用于克隆仓库
+- **Windows**: Visual Studio Build Tools
+- **macOS**: Xcode Command Line Tools（运行 `xcode-select --install`）
+- **Linux**: 参见 [上游构建文档](README.upstream.md)
+
+### 第一步：从源码构建
 
 ```bash
+# 克隆仓库
+git clone https://github.com/wsyb/wezteam.git
+cd wezteam
+
+# 构建（首次运行可能需要 5-10 分钟）
+cargo build --release --package wezterm-gui
+```
+
+**预期输出**:
+```
+Finished release [optimized] target(s) in 5m 23s
+```
+
+看到这个输出说明构建成功！🎉
+
+### 第二步：启动 WezTerm
+
+```bash
+# 运行 WezTeam
+cargo run --release --package wezterm-gui
+```
+
+或直接使用编译好的二进制文件：
+
+```bash
+./target/release/wezterm-gui.exe    # Windows
+./target/release/wezterm-gui        # macOS/Linux
+```
+
+你应该会看到 WezTerm 窗口打开，左侧显示**垂直标签栏**。
+
+### 第三步：创建你的第一个 Agent
+
+在 WezTerm 窗口中，打开一个新的标签页（Ctrl+Shift+T 或 Cmd+Shift+T）并运行：
+
+```bash
+# 安装 tsh CLI（如果尚未安装）
+cargo install --path tsh
+
+# 启动你的第一个 AI Agent
 tsh open "我的助手" -- claude
 ```
 
-后端会自动注入 `TEAMSH_TAB_ID`、`TEAMSH_NAME`、`TEAMSH_PLATFORM` 环境变量。
+**发生了什么**:
+1. 自动创建一个新标签页
+2. Claude 在该标签页中启动
+3. 后端自动注入 `TEAMSH_TAB_ID`、`TEAMSH_NAME`、`TEAMSH_PLATFORM` 环境变量
+4. Claude 读取 TeamShell 协议，成为**团队成员**
 
-### 初始化项目协议
-
-```bash
-tsh init                      # 交互式：将协议写入检测到的 Agent 配置文件
-tsh init --dry-run            # 预览变更，不写入
-tsh init -y                   # 强制覆盖，不询问
-tsh init --show               # 输出协议内容到 stdout
-```
-
-### 验证团队状态
+### 第四步：验证是否成功
 
 ```bash
-tsh status    # 查看团队状态看板
-tsh list      # 列出所有在职工位
+# 检查团队状态（在任意标签页运行）
+tsh status
 ```
+
+**预期输出**:
+```
+1号(我的助手)  🟢 活跃  最后活动: 刚刚   任务: 待分配  进度: 0%
+```
+
+如果你看到你的 Agent 显示为 🟢 活跃状态，**恭喜你**！🎉
+
+你现在已经在终端中拥有了一个可用的 AI 团队。
+
+### 第五步：尝试团队协作
+
+```bash
+# 给你的 Agent 发送消息
+tsh type 1 "你好！你能做什么？"
+
+# 查看他们在做什么
+tsh view 1
+
+# 给他们分配任务
+tsh type 1 "请帮我分析这个代码库"
+```
+
+### 接下来做什么？
+
+- 📖 阅读完整的 [TeamShell 协议](TeamShellProtocol.md) 了解协作规则
+- 🛠️ 探索 [tsh 命令](#tsh-命令手册) 了解更多团队管理功能
+- ⚙️ 自定义 [垂直标签栏](#垂直标签栏--信息面板) 和 [信息面板](#垂直标签栏--信息面板)
+- 👥 招募更多 Agent：`tsh open "前端专家" -- claude`
 
 ---
 

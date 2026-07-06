@@ -25,29 +25,103 @@
 
 ## Quick Start
 
-### Start Your First Agent (Recommended)
+### Prerequisites
+
+Before you begin, ensure you have:
+
+- **Rust** (latest stable) — [Install Rust](https://www.rust-lang.org/tools/install)
+- **Git** — For cloning the repository
+- **Windows**: Visual Studio Build Tools
+- **macOS**: Xcode Command Line Tools (`xcode-select --install`)
+- **Linux**: See [upstream build docs](README.upstream.md)
+
+### Step 1: Build from Source
 
 ```bash
+# Clone the repository
+git clone https://github.com/wsyb/wezteam.git
+cd wezteam
+
+# Build (this may take 5-10 minutes on first run)
+cargo build --release --package wezterm-gui
+```
+
+**Expected output**:
+```
+Finished release [optimized] target(s) in 5m 23s
+```
+
+If you see this, the build succeeded! 🎉
+
+### Step 2: Launch WezTerm
+
+```bash
+# Run WezTeam
+cargo run --release --package wezterm-gui
+```
+
+Or use the built binary directly:
+
+```bash
+./target/release/wezterm-gui.exe    # Windows
+./target/release/wezterm-gui        # macOS/Linux
+```
+
+You should see the WezTerm window open with the **vertical tab bar** on the left side.
+
+### Step 3: Create Your First Agent
+
+In the WezTerm window, open a new tab (Ctrl+Shift+T or Cmd+Shift+T) and run:
+
+```bash
+# Install tsh CLI (if not already installed)
+cargo install --path tsh
+
+# Start your first AI Agent
 tsh open "My Assistant" -- claude
 ```
 
-The backend automatically injects `TEAMSH_TAB_ID`, `TEAMSH_NAME`, and `TEAMSH_PLATFORM` environment variables.
+**What happens**:
+1. A new tab is created automatically
+2. Claude starts in that tab
+3. The backend injects `TEAMSH_TAB_ID`, `TEAMSH_NAME`, `TEAMSH_PLATFORM` environment variables
+4. Claude reads the TeamShell protocol and becomes a **team member**
 
-### Initialize Project Protocol
-
-```bash
-tsh init              # Interactive: writes protocol to detected Agent config files
-tsh init --dry-run    # Preview changes without writing
-tsh init -y           # Force overwrite without prompting
-tsh init --show       # Output protocol content to stdout
-```
-
-### Verify Team Status
+### Step 4: Verify It Works
 
 ```bash
-tsh status    # View team overview
-tsh list      # List all active workstations
+# Check team status (run in any tab)
+tsh status
 ```
+
+**Expected output**:
+```
+1号(My Assistant)  🟢 活跃  最后活动: 刚刚   任务: 待分配  进度: 0%
+```
+
+If you see your Agent listed with 🟢 active status, **congratulations**! 🎉
+
+You now have a working AI team in your terminal.
+
+### Step 5: Try Team Collaboration
+
+```bash
+# Send a message to your Agent
+tsh type 1 "Hello! What can you do?"
+
+# Check what they're working on
+tsh view 1
+
+# Update their task
+tsh type 1 "Please help me analyze this codebase"
+```
+
+### What's Next?
+
+- 📖 Read the full [TeamShell Protocol](TeamShellProtocol.md) to understand collaboration rules
+- 🛠️ Explore [tsh Commands](#tsh-commands) for more team management features
+- ⚙️ Customize the [Vertical Tab Bar](#vertical-tab-bar) and [Info Panel](#vertical-tab-bar)
+- 👥 Recruit more Agents: `tsh open "Frontend Expert" -- claude`
 
 ---
 
