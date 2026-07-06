@@ -4,7 +4,7 @@ set -e
 
 TARGET_DIR=${1:-target}
 
-TAG_NAME=${TAG_NAME:-$(git -c "core.abbrev=8" show -s "--format=%cd-%h" "--date=format:%Y%m%d-%H%M%S")}
+TAG_NAME=${TAG_NAME:-$(git describe --tags --exact-match 2>/dev/null || git -c "core.abbrev=8" show -s "--format=%cd-%h" "--date=format:%Y%m%d-%H%M%S")}
 
 HERE=$(pwd)
 
