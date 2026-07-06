@@ -85,3 +85,4 @@
 # Flatpak / Nix
 # =====================
 /assets/flatpak/generated-sources.json
+logs.zip

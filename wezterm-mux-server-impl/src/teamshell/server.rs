@@ -48,6 +48,7 @@ pub async fn start_server() -> anyhow::Result<()> {
 
 #[cfg(unix)]
 pub async fn start_server() -> anyhow::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
     use tokio::net::UnixListener;
 
     match std::fs::remove_file(SOCKET_PATH) {
@@ -58,6 +59,9 @@ pub async fn start_server() -> anyhow::Result<()> {
 
     let listener = UnixListener::bind(SOCKET_PATH)
         .with_context(|| format!("failed to bind TeamShell socket {SOCKET_PATH}"))?;
+
+    std::fs::set_permissions(SOCKET_PATH, std::fs::Permissions::from_mode(0o600))
+        .with_context(|| format!("failed to set permissions on {SOCKET_PATH}"))?;
 
     loop {
         let (stream, _) = listener

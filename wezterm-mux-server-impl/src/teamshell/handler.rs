@@ -169,7 +169,19 @@ impl Handler {
         match key {
             "progress" => {
                 if let Some(v) = value {
-                    entry.progress = v.parse::<u8>().ok();
+                    match v.parse::<u8>() {
+                        Ok(n) if n <= 100 => entry.progress = Some(n),
+                        Ok(n) => {
+                            return IpcResponse::error(format!(
+                                "progress out of range: {n} (must be 0-100)"
+                            ))
+                        }
+                        Err(_) => {
+                            return IpcResponse::error(format!(
+                                "invalid progress value: {v}"
+                            ))
+                        }
+                    }
                 }
             }
             "task" => {
@@ -513,5 +525,29 @@ mod tests {
     fn report_unknown_key_returns_error() {
         let resp = Handler::report(96, "unknown_key", None);
         assert!(!resp.ok);
+    }
+
+    #[test]
+    fn report_progress_out_of_range_returns_error() {
+        let resp = Handler::report(95, "progress", Some("150"));
+        assert!(!resp.ok);
+        assert!(resp.error.unwrap().contains("out of range"));
+    }
+
+    #[test]
+    fn report_progress_invalid_value_returns_error() {
+        let resp = Handler::report(94, "progress", Some("abc"));
+        assert!(!resp.ok);
+        assert!(resp.error.unwrap().contains("invalid"));
+    }
+
+    #[test]
+    fn report_progress_boundary_values() {
+        let resp0 = Handler::report(93, "progress", Some("0"));
+        assert!(resp0.ok);
+        let resp100 = Handler::report(92, "progress", Some("100"));
+        assert!(resp100.ok);
+        let resp101 = Handler::report(91, "progress", Some("101"));
+        assert!(!resp101.ok);
     }
 }
