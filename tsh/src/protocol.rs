@@ -35,9 +35,7 @@ pub enum IpcRequest {
         value: Option<String>,
     },
     #[serde(rename = "query")]
-    Query {
-        tab_index: usize,
-    },
+    Query { tab_index: usize },
     #[serde(rename = "open")]
     Open {
         name: String,

@@ -128,11 +128,7 @@ impl Handler {
                         }
                     };
 
-                    let reported = STATE_STORE
-                        .lock()
-                        .unwrap()
-                        .get(&external_id)
-                        .cloned();
+                    let reported = STATE_STORE.lock().unwrap().get(&external_id).cloned();
 
                     result.push(TabState {
                         tab_index: external_id,
@@ -177,9 +173,7 @@ impl Handler {
                             ))
                         }
                         Err(_) => {
-                            return IpcResponse::error(format!(
-                                "invalid progress value: {v}"
-                            ))
+                            return IpcResponse::error(format!("invalid progress value: {v}"))
                         }
                     }
                 }
@@ -252,11 +246,7 @@ impl Handler {
             }
         };
 
-        let reported = STATE_STORE
-            .lock()
-            .unwrap()
-            .get(&tab_index)
-            .cloned();
+        let reported = STATE_STORE.lock().unwrap().get(&tab_index).cloned();
 
         IpcResponse::queried(TabState {
             tab_index,

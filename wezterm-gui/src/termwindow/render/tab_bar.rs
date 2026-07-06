@@ -22,8 +22,8 @@ impl crate::TermWindow {
             if self.config.tab_bar_vertical {
                 let tab_bar_width = self.tab_bar_pixel_width();
                 let handle_width = crate::termwindow::RESIZE_HANDLE_WIDTH;
-                let on_right = self.config.tab_bar_vertical_position
-                    == config::VerticalTabBarPosition::Right;
+                let on_right =
+                    self.config.tab_bar_vertical_position == config::VerticalTabBarPosition::Right;
                 let handle_x = if on_right {
                     let bar_x = self.dimensions.pixel_width - tab_bar_width as usize;
                     bar_x.saturating_sub(handle_width / 2)
@@ -171,5 +171,4 @@ impl crate::TermWindow {
             0.
         }
     }
-
 }

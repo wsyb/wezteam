@@ -27,7 +27,9 @@ impl crate::TermWindow {
 
         let vertical_tab_bar_width = self.tab_bar_left_offset();
         let pos_y = split.top as f32 * cell_height + first_row_offset + padding_top;
-        let pos_x = split.left as f32 * cell_width + padding_left + border.left.get() as f32
+        let pos_x = split.left as f32 * cell_width
+            + padding_left
+            + border.left.get() as f32
             + vertical_tab_bar_width;
 
         if split.direction == SplitDirection::Horizontal {

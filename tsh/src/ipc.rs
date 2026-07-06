@@ -63,7 +63,13 @@ pub fn send_request(request: &Request) -> Result<Response, String> {
                 break;
             }
             Err(e) if attempt < max_retries - 1 => {
-                eprintln!("连接失败，{}ms 后重试 ({}/{}): {}", delay.as_millis(), attempt + 1, max_retries, e);
+                eprintln!(
+                    "连接失败，{}ms 后重试 ({}/{}): {}",
+                    delay.as_millis(),
+                    attempt + 1,
+                    max_retries,
+                    e
+                );
                 std::thread::sleep(delay);
                 delay *= 2;
             }

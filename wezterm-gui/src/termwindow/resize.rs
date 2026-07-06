@@ -517,8 +517,7 @@ impl super::TermWindow {
         let padding_top = config.window_padding.top.evaluate_as_pixels(v_context) as usize;
         let padding_bottom = config.window_padding.bottom.evaluate_as_pixels(v_context) as usize;
 
-        let vertical_tab_bar_width =
-            Self::tab_bar_pixel_width_impl(&config, show_tab_bar) as usize;
+        let vertical_tab_bar_width = Self::tab_bar_pixel_width_impl(&config, show_tab_bar) as usize;
         let dimensions = Dimensions {
             pixel_width: ((terminal_size.cols as usize * render_metrics.cell_size.width as usize)
                 + padding_left
@@ -606,8 +605,7 @@ impl super::TermWindow {
         };
         let padding_left = config.window_padding.left.evaluate_as_pixels(h_context) as usize;
         let padding_top = config.window_padding.top.evaluate_as_pixels(v_context) as usize;
-        let padding_bottom =
-            config.window_padding.bottom.evaluate_as_pixels(v_context) as usize;
+        let padding_bottom = config.window_padding.bottom.evaluate_as_pixels(v_context) as usize;
         let padding_right = effective_right_padding(&config, h_context);
 
         let vertical_tab_bar_width = self.tab_bar_pixel_width() as usize;

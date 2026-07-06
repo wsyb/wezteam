@@ -114,18 +114,40 @@ fn main() {
         Commands::Status => commands::cmd_status(),
         Commands::Report { key, value } => commands::cmd_report(&key, value.as_deref()),
         Commands::Query { id } => commands::cmd_query(id),
-        Commands::Type { id, message, no_enter, key } => {
-            commands::cmd_type(id, message.as_deref(), !no_enter, key.as_deref())
-        }
+        Commands::Type {
+            id,
+            message,
+            no_enter,
+            key,
+        } => commands::cmd_type(id, message.as_deref(), !no_enter, key.as_deref()),
         Commands::View { id, lines } => commands::cmd_view(id, lines),
-        Commands::Open { name, command, args, cwd, env, auto_shell, init_prompt } => {
+        Commands::Open {
+            name,
+            command,
+            args,
+            cwd,
+            env,
+            auto_shell,
+            init_prompt,
+        } => {
             let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-            commands::cmd_open(&name, Some(&command), &args_refs, cwd.as_deref(), &env, auto_shell, init_prompt.as_deref())
+            commands::cmd_open(
+                &name,
+                Some(&command),
+                &args_refs,
+                cwd.as_deref(),
+                &env,
+                auto_shell,
+                init_prompt.as_deref(),
+            )
         }
         Commands::Close { id } => commands::cmd_close(id),
         Commands::Name { id, new_name } => commands::cmd_name(id, &new_name),
-        Commands::Init { yes, dry_run, show, include } => {
-            commands::cmd_init(yes, dry_run, show, &include)
-        }
+        Commands::Init {
+            yes,
+            dry_run,
+            show,
+            include,
+        } => commands::cmd_init(yes, dry_run, show, &include),
     }
 }

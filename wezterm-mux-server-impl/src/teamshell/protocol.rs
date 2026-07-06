@@ -35,9 +35,7 @@ pub enum IpcRequest {
         value: Option<String>,
     },
     #[serde(rename = "query")]
-    Query {
-        tab_index: usize,
-    },
+    Query { tab_index: usize },
     #[serde(rename = "open")]
     Open {
         name: String,
@@ -355,12 +353,7 @@ mod tests {
                 },
                 "report",
             ),
-            (
-                IpcRequest::Query {
-                    tab_index: 1,
-                },
-                "query",
-            ),
+            (IpcRequest::Query { tab_index: 1 }, "query"),
             (
                 IpcRequest::Open {
                     name: String::new(),

@@ -433,9 +433,10 @@ impl super::TermWindow {
         event: MouseEvent,
         context: &dyn WindowOps,
     ) {
-        let on_right = self.config.tab_bar_vertical_position
-            == config::VerticalTabBarPosition::Right;
-        let max_width = self.dimensions.pixel_width as f32 * super::MAX_VERTICAL_TAB_BAR_WIDTH_RATIO;
+        let on_right =
+            self.config.tab_bar_vertical_position == config::VerticalTabBarPosition::Right;
+        let max_width =
+            self.dimensions.pixel_width as f32 * super::MAX_VERTICAL_TAB_BAR_WIDTH_RATIO;
         let new_width = if on_right {
             (self.dimensions.pixel_width as f32 - event.coords.x as f32)
                 .max(super::MIN_VERTICAL_TAB_BAR_WIDTH)

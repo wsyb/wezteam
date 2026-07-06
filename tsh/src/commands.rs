@@ -285,9 +285,7 @@ pub fn cmd_report(key: &str, value: Option<&str>) {
 // ============================================================
 
 pub fn cmd_query(id: usize) {
-    let request = Request::Query {
-        tab_index: id,
-    };
+    let request = Request::Query { tab_index: id };
     match ipc::send_request(&request) {
         Ok(resp) => output(&resp),
         Err(e) => output(&crate::protocol::error_response(&e)),
@@ -541,10 +539,7 @@ fn detect_shell() -> String {
         "powershell.exe".to_string()
     } else {
         for shell in &["fish", "zsh", "bash"] {
-            if let Ok(output) = std::process::Command::new("which")
-                .arg(shell)
-                .output()
-            {
+            if let Ok(output) = std::process::Command::new("which").arg(shell).output() {
                 if output.status.success() {
                     return shell.to_string();
                 }
@@ -562,10 +557,7 @@ fn wrap_with_shell(shell: &str, command: &str) -> (String, Vec<String>) {
                 vec!["-Command".to_string(), command.to_string()],
             )
         } else {
-            let parts: Vec<String> = command
-                .split_whitespace()
-                .map(|s| s.to_string())
-                .collect();
+            let parts: Vec<String> = command.split_whitespace().map(|s| s.to_string()).collect();
             let mut args = vec!["/c".to_string()];
             args.extend(parts);
             (shell.to_string(), args)

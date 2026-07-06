@@ -538,64 +538,66 @@ impl crate::TermWindow {
 
                     if active {
                         // Active tab: highlighted with a left border accent
-                        elem = elem.border_corners(Some(Corners {
-                            top_left: SizedPoly {
-                                width: Dimension::Cells(0.3),
-                                height: Dimension::Cells(0.3),
-                                poly: TOP_LEFT_ROUNDED_CORNER,
-                            },
-                            top_right: SizedPoly::none(),
-                            bottom_left: SizedPoly {
-                                width: Dimension::Cells(0.3),
-                                height: Dimension::Cells(0.3),
-                                poly: BOTTOM_LEFT_ROUNDED_CORNER,
-                            },
-                            bottom_right: SizedPoly::none(),
-                        }))
-                        .colors(ElementColors {
-                            border: BorderColor::new(
-                                bg_color
+                        elem = elem
+                            .border_corners(Some(Corners {
+                                top_left: SizedPoly {
+                                    width: Dimension::Cells(0.3),
+                                    height: Dimension::Cells(0.3),
+                                    poly: TOP_LEFT_ROUNDED_CORNER,
+                                },
+                                top_right: SizedPoly::none(),
+                                bottom_left: SizedPoly {
+                                    width: Dimension::Cells(0.3),
+                                    height: Dimension::Cells(0.3),
+                                    poly: BOTTOM_LEFT_ROUNDED_CORNER,
+                                },
+                                bottom_right: SizedPoly::none(),
+                            }))
+                            .colors(ElementColors {
+                                border: BorderColor::new(
+                                    bg_color
+                                        .unwrap_or_else(|| active_tab_colors.bg_color.into())
+                                        .to_linear(),
+                                ),
+                                bg: bg_color
                                     .unwrap_or_else(|| active_tab_colors.bg_color.into())
-                                    .to_linear(),
-                            ),
-                            bg: bg_color
-                                .unwrap_or_else(|| active_tab_colors.bg_color.into())
-                                .to_linear()
-                                .into(),
-                            text: fg_color
-                                .unwrap_or_else(|| active_tab_colors.fg_color.into())
-                                .to_linear()
-                                .into(),
-                        });
+                                    .to_linear()
+                                    .into(),
+                                text: fg_color
+                                    .unwrap_or_else(|| active_tab_colors.fg_color.into())
+                                    .to_linear()
+                                    .into(),
+                            });
                     } else {
                         let inactive_tab = colors.inactive_tab();
                         let inactive_tab_hover = colors.inactive_tab_hover();
                         let bg = bg_color
                             .unwrap_or_else(|| inactive_tab.bg_color.into())
                             .to_linear();
-                        elem = elem.colors(ElementColors {
-                            border: BorderColor::new(bg),
-                            bg: bg.into(),
-                            text: fg_color
-                                .unwrap_or_else(|| inactive_tab.fg_color.into())
-                                .to_linear()
-                                .into(),
-                        })
-                        .hover_colors(Some(ElementColors {
-                            border: BorderColor::new(
-                                bg_color
+                        elem = elem
+                            .colors(ElementColors {
+                                border: BorderColor::new(bg),
+                                bg: bg.into(),
+                                text: fg_color
+                                    .unwrap_or_else(|| inactive_tab.fg_color.into())
+                                    .to_linear()
+                                    .into(),
+                            })
+                            .hover_colors(Some(ElementColors {
+                                border: BorderColor::new(
+                                    bg_color
+                                        .unwrap_or_else(|| inactive_tab_hover.bg_color.into())
+                                        .to_linear(),
+                                ),
+                                bg: bg_color
                                     .unwrap_or_else(|| inactive_tab_hover.bg_color.into())
-                                    .to_linear(),
-                            ),
-                            bg: bg_color
-                                .unwrap_or_else(|| inactive_tab_hover.bg_color.into())
-                                .to_linear()
-                                .into(),
-                            text: fg_color
-                                .unwrap_or_else(|| inactive_tab_hover.fg_color.into())
-                                .to_linear()
-                                .into(),
-                        }));
+                                    .to_linear()
+                                    .into(),
+                                text: fg_color
+                                    .unwrap_or_else(|| inactive_tab_hover.fg_color.into())
+                                    .to_linear()
+                                    .into(),
+                            }));
                     }
 
                     // Add close button (hidden by default, visible on hover)
@@ -611,8 +613,13 @@ impl crate::TermWindow {
 
                     // Extra info panel
                     let extra_lines = build_extra_info(
-                        &extra_info_style, tab_idx, &tabs_info, &item.title,
-                        &font, palette, tab_bg_linear,
+                        &extra_info_style,
+                        tab_idx,
+                        &tabs_info,
+                        &item.title,
+                        &font,
+                        palette,
+                        tab_bg_linear,
                     );
 
                     elem.content = match elem.content {
@@ -620,13 +627,17 @@ impl crate::TermWindow {
                             kids.extend(extra_lines);
                             if self.config.show_close_tab_button_in_tabs {
                                 kids.push(make_vertical_x_button(
-                                    &font, &metrics, &colors, tab_idx, active,
+                                    &font,
+                                    &metrics,
+                                    &colors,
+                                    tab_idx,
+                                    active,
                                     tab_bg_linear,
                                 ));
                             }
                             ElementContent::Children(kids)
                         }
-                        other => other
+                        other => other,
                     };
 
                     tab_children.push(elem);
@@ -639,50 +650,39 @@ impl crate::TermWindow {
                             line_width: metrics.underline_height.max(2),
                             poly: SizedPoly {
                                 poly: PLUS_BUTTON,
-                                width: Dimension::Pixels(
-                                    metrics.cell_size.height as f32 / 2.,
-                                ),
-                                height: Dimension::Pixels(
-                                    metrics.cell_size.height as f32 / 2.,
-                                ),
+                                width: Dimension::Pixels(metrics.cell_size.height as f32 / 2.),
+                                height: Dimension::Pixels(metrics.cell_size.height as f32 / 2.),
                             },
                         },
                     )
                     .vertical_align(VerticalAlign::Middle);
 
-                    let elem = Element::new(
-                        &font,
-                        ElementContent::Children(vec![icon]),
-                    )
-                    .display(DisplayType::Block)
-                    .item_type(UIItemType::TabBar(item.item.clone()))
-                    .margin(BoxDimension {
-                        left: Dimension::Pixels(0.),
-                        right: Dimension::Pixels(0.),
-                        top: Dimension::Pixels(4.),
-                        bottom: Dimension::Pixels(0.),
-                    })
-                    .padding(BoxDimension {
-                        left: Dimension::Cells(0.5),
-                        right: Dimension::Cells(0.5),
-                        top: Dimension::Cells(0.2),
-                        bottom: Dimension::Cells(0.25),
-                    })
-                    .border(BoxDimension::new(Dimension::Pixels(1.)))
-                    .colors(ElementColors {
-                        border: BorderColor::new(
-                            new_tab_colors.bg_color.to_linear(),
-                        ),
-                        bg: new_tab_colors.bg_color.to_linear().into(),
-                        text: new_tab_colors.fg_color.to_linear().into(),
-                    })
-                    .hover_colors(Some(ElementColors {
-                        border: BorderColor::new(
-                            new_tab_hover_colors.bg_color.to_linear(),
-                        ),
-                        bg: new_tab_hover_colors.bg_color.to_linear().into(),
-                        text: new_tab_hover_colors.fg_color.to_linear().into(),
-                    }));
+                    let elem = Element::new(&font, ElementContent::Children(vec![icon]))
+                        .display(DisplayType::Block)
+                        .item_type(UIItemType::TabBar(item.item.clone()))
+                        .margin(BoxDimension {
+                            left: Dimension::Pixels(0.),
+                            right: Dimension::Pixels(0.),
+                            top: Dimension::Pixels(4.),
+                            bottom: Dimension::Pixels(0.),
+                        })
+                        .padding(BoxDimension {
+                            left: Dimension::Cells(0.5),
+                            right: Dimension::Cells(0.5),
+                            top: Dimension::Cells(0.2),
+                            bottom: Dimension::Cells(0.25),
+                        })
+                        .border(BoxDimension::new(Dimension::Pixels(1.)))
+                        .colors(ElementColors {
+                            border: BorderColor::new(new_tab_colors.bg_color.to_linear()),
+                            bg: new_tab_colors.bg_color.to_linear().into(),
+                            text: new_tab_colors.fg_color.to_linear().into(),
+                        })
+                        .hover_colors(Some(ElementColors {
+                            border: BorderColor::new(new_tab_hover_colors.bg_color.to_linear()),
+                            bg: new_tab_hover_colors.bg_color.to_linear().into(),
+                            text: new_tab_hover_colors.fg_color.to_linear().into(),
+                        }));
                     tab_children.push(elem);
                 }
                 // Skip status items and window buttons in vertical mode
@@ -696,8 +696,8 @@ impl crate::TermWindow {
         let separator_color = colors.inactive_tab_edge().to_linear();
         let bg_linear = self.titlebar_bg_linear();
 
-        let on_right = self.config.tab_bar_vertical_position
-            == config::VerticalTabBarPosition::Right;
+        let on_right =
+            self.config.tab_bar_vertical_position == config::VerticalTabBarPosition::Right;
 
         // Work around box_model bug (box_model.rs:1236): right border rendering
         // uses border.left width, so both sides must be 1px. The separator side
@@ -723,9 +723,7 @@ impl crate::TermWindow {
             .item_type(UIItemType::TabBar(TabBarItem::None))
             .min_width(Some(Dimension::Pixels(tab_bar_width)))
             .max_width(Some(Dimension::Pixels(tab_bar_width)))
-            .min_height(Some(Dimension::Pixels(
-                self.dimensions.pixel_height as f32,
-            )))
+            .min_height(Some(Dimension::Pixels(self.dimensions.pixel_height as f32)))
             .colors(ElementColors {
                 border: border_colors,
                 bg: bar_colors.bg,
@@ -764,8 +762,7 @@ impl crate::TermWindow {
                     border.left.get() as f32,
                     border.top.get() as f32,
                     tab_bar_width,
-                    self.dimensions.pixel_height as f32
-                        - (border.top + border.bottom).get() as f32,
+                    self.dimensions.pixel_height as f32 - (border.top + border.bottom).get() as f32,
                 ),
                 metrics: &metrics,
                 gl_state: self.render_state.as_ref().unwrap(),
@@ -926,7 +923,6 @@ fn make_vertical_x_button(
     })
 }
 
-
 // ============================================================
 // Extra info panel rendering (UI layer, separated from data layer tab_extra_info)
 // ============================================================
@@ -968,17 +964,38 @@ fn build_extra_info(
 
     if path_style.show {
         if let Some(path) = &info.reversed_path {
-            elements.push(make_info_line(font, path, palette, tab_bg, AnsiColor::Blue, &path_style));
+            elements.push(make_info_line(
+                font,
+                path,
+                palette,
+                tab_bg,
+                AnsiColor::Blue,
+                &path_style,
+            ));
         }
     }
     if git_style.show {
         if let Some(git) = &info.git_branch {
-            elements.push(make_info_line(font, &format!("git:{}", git), palette, tab_bg, AnsiColor::Green, &git_style));
+            elements.push(make_info_line(
+                font,
+                &format!("git:{}", git),
+                palette,
+                tab_bg,
+                AnsiColor::Green,
+                &git_style,
+            ));
         }
     }
     if cmd_style.show {
         if let Some(cmd) = &info.current_command {
-            elements.push(make_info_line(font, cmd, palette, tab_bg, AnsiColor::Grey, &cmd_style));
+            elements.push(make_info_line(
+                font,
+                cmd,
+                palette,
+                tab_bg,
+                AnsiColor::Grey,
+                &cmd_style,
+            ));
         }
     }
 

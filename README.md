@@ -7,90 +7,69 @@
 </p>
 
 <p align="center">
-  Build an AI team in your terminal. Assign tasks, observe colleagues, communicate, and deliver together.
-</p>
-
-<p align="center">
-  <a href="#quick-start">Quick Start</a> ·
-  <a href="#team-shell">TeamShell</a> ·
-  <a href="#tsh-commands">tsh Commands</a> ·
-  <a href="#message-handling">Message Handling</a> ·
-  <a href="#task-supervision">Task Supervision</a> ·
-  <a href="#vertical-tab-bar">Features</a> ·
-  <a href="#installation">Installation</a> ·
-  <a href="#configuration">Configuration</a>
+  Run AI agents in terminal tabs. Assign tasks, observe colleagues, communicate, and ship together.
 </p>
 
 ---
 
-## Quick Start
+## 🚀 Quick Start (For End Users)
 
-### Prerequisites
+**Skip to [Download](#download) if you just want to use WezTeam.**
 
-Before you begin, ensure you have:
+### Download
 
-- **Rust** (latest stable) — [Install Rust](https://www.rust-lang.org/tools/install)
-- **Git** — For cloning the repository
-- **Windows**: Visual Studio Build Tools
-- **macOS**: Xcode Command Line Tools (`xcode-select --install`)
-- **Linux**: See [upstream build docs](README.upstream.md)
+#### Windows
 
-### Step 1: Build from Source
+1. Go to [Releases](https://github.com/wsyb/wezteam/releases/latest)
+2. Download `WezTerm-*-setup.exe`
+3. Double-click to install
+4. Launch from Start Menu
+
+#### macOS
+
+1. Go to [Releases](https://github.com/wsyb/wezteam/releases/latest)
+2. Download `WezTerm-*-macos.zip`
+3. Extract and drag `WezTerm.app` to `/Applications`
+4. Launch from Launchpad or Spotlight
+
+#### Linux
+
+**Ubuntu/Debian**:
+```bash
+# Download and install
+wget https://github.com/wsyb/wezteam/releases/latest/download/wezterm-*-debian*.tar.xz
+tar -xf wezterm-*.tar.xz
+cd wezterm-*
+sudo dpkg -i .
+```
+
+**Fedora/CentOS**:
+```bash
+wget https://github.com/wsyb/wezteam/releases/latest/download/wezterm-*.rpm
+sudo dnf install wezterm-*.rpm  # Fedora
+# sudo yum install wezterm-*.rpm  # CentOS
+```
+
+**AppImage** (Universal, works on any Linux):
+```bash
+wget https://github.com/wsyb/wezteam/releases/latest/download/WezTerm-*.AppImage
+chmod +x WezTerm-*.AppImage
+./WezTerm-*.AppImage
+```
+
+### Launch Your First AI Agent
+
+Open WezTeam terminal, then run in any tab:
 
 ```bash
-# Clone the repository
-git clone https://github.com/wsyb/wezteam.git
-cd wezteam
-
-# Build (this may take 5-10 minutes on first run)
-cargo build --release --package wezterm-gui
-```
-
-**Expected output**:
-```
-Finished release [optimized] target(s) in 5m 23s
-```
-
-If you see this, the build succeeded! 🎉
-
-### Step 2: Launch WezTerm
-
-```bash
-# Run WezTeam
-cargo run --release --package wezterm-gui
-```
-
-Or use the built binary directly:
-
-```bash
-./target/release/wezterm-gui.exe    # Windows
-./target/release/wezterm-gui        # macOS/Linux
-```
-
-You should see the WezTerm window open with the **vertical tab bar** on the left side.
-
-### Step 3: Create Your First Agent
-
-In the WezTerm window, open a new tab (Ctrl+Shift+T or Cmd+Shift+T) and run:
-
-```bash
-# Install tsh CLI (if not already installed)
-cargo install --path tsh
-
-# Start your first AI Agent
 tsh open "My Assistant" -- claude
 ```
 
-**What happens**:
-1. A new tab is created automatically
-2. Claude starts in that tab
-3. The backend injects `TEAMSH_TAB_ID`, `TEAMSH_NAME`, `TEAMSH_PLATFORM` environment variables
-4. Claude reads the TeamShell protocol and becomes a **team member**
+That's it. Claude starts in a new tab and joins your team.
 
-### Step 4: Verify It Works
+### Verify It Works
 
 ```bash
-# Check team status (run in any tab)
 tsh status
 ```
 
@@ -99,40 +78,24 @@ tsh status
 1号(My Assistant)  🟢 活跃  最后活动: 刚刚   任务: 待分配  进度: 0%
 ```
 
-If you see your Agent listed with 🟢 active status, **congratulations**! 🎉
-
-You now have a working AI team in your terminal.
-
-### Step 5: Try Team Collaboration
+### Try Collaboration
 
 ```bash
-# Send a message to your Agent
-tsh type 1 "Hello! What can you do?"
-
-# Check what they're working on
-tsh view 1
-
-# Update their task
-tsh type 1 "Please help me analyze this codebase"
+tsh type 1 "Hello! What can you do?"   # Send a message
+tsh view 1                              # View their screen
 ```
-
-### What's Next?
-
-- 📖 Read the full [TeamShell Protocol](TeamShellProtocol.md) to understand collaboration rules
-- 🛠️ Explore [tsh Commands](#tsh-commands) for more team management features
-- ⚙️ Customize the [Vertical Tab Bar](#vertical-tab-bar) and [Info Panel](#vertical-tab-bar)
-- 👥 Recruit more Agents: `tsh open "Frontend Expert" -- claude`
 
 ---
 
-## TeamShell — Multi-Agent Collaboration
+## 🤖 What Is TeamShell?
 
-WezTeam's core innovation is **TeamShell**: a protocol and toolchain that enables multiple AI Agents to collaborate within a single terminal window.
+**TeamShell** is WezTeam's core innovation: a protocol and CLI (`tsh`) that lets multiple AI Agents collaborate in terminal tabs.
 
 ### Why TeamShell?
 
-A single AI Agent has limited capabilities. For complex tasks, you need a **team**: frontend expert, backend expert, test engineer... TeamShell lets you run multiple Agents simultaneously in one terminal window. They can:
+A single AI Agent has limitations. For complex tasks, you need a **team**: frontend expert, backend expert, test engineer...
 
+TeamShell lets you run multiple Agents simultaneously. They can:
 - **Observe each other** — View colleagues' screen output
 - **Communicate** — Send messages, assign tasks
 - **Coordinate** — Auto-divide work, monitor progress, report results
@@ -140,24 +103,18 @@ A single AI Agent has limited capabilities. For complex tasks, you need a **team
 
 ### How It Works
 
-Each Agent runs in a **workstation** (terminal Tab). `tsh` (TeamShell CLI) manages workstations and Agent communication.
+Each Agent runs in a **workstation** (terminal Tab). `tsh` manages workstations and Agent communication.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Terminal Window (WezTeam)                   │
-│                                              │
+│  WezTeam Terminal Window                     │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-│  │ Slot 1   │ │ Slot 2   │ │ Slot 3   │     │
-│  │ Xiaoming │ │ Xiaohong │ │ Logger   │     │
+│  │ Tab 1    │ │ Tab 2    │ │ Tab 3    │     │
+│  │ Assistant│ │ Frontend │ │ Logger   │     │
 │  │ (Agent)  │ │ (Agent)  │ │ (Program)│     │
-│  │          │ │          │ │          │     │
 │  │ Writing  │ │ Testing  │ │ tail -f  │     │
 │  │ Frontend │ │ APIs      │ │ app.log  │     │
 │  └──────────┘ └──────────┘ └──────────┘     │
-│                                              │
-│  tsh list  →  1 Xiaoming  2 Xiaohong  3 Logger
-│  tsh view 2  →  View Xiaohong's screen      │
-│  tsh type 2 "Need help?"  →  Message Xiaohong
 └─────────────────────────────────────────────┘
 ```
 
@@ -165,84 +122,12 @@ Each Agent runs in a **workstation** (terminal Tab). `tsh` (TeamShell CLI) manag
 
 | Type | Description | Interaction |
 |------|-------------|-------------|
-| **Agent Workstation** (Live) | Runs LLM with TeamShell protocol | Recognizes messages,主动协作, replies to colleagues |
-| **Program Workstation** (Static) | Runs regular programs (Java/Vim/Shell) | Controlled via stdin only, no主动响应 |
-
-> **How to identify** (经验参考): Workstations with human-like names (e.g. "Frontend Expert") are usually Live; service-like names (e.g. "Log Service") are usually Static. Use `tsh view` to confirm if needed.
-
-### Protocol Core Principles
-
-1. **Identity Verification** — Agent startup verified via `TEAMSH_TAB_ID` + `tsh list`, ensuring正式团队成员
-2. **Message Identification** — `[TeamShell Message] from <name>:` prefix distinguishes colleague messages from program output
-3. **Autonomous Decision Making** — Agents make judgments, no need for step-by-step approval, but irreversible operations require asking the boss first
-4. **Task Supervision** — Whoever assigns the task monitors until completion, issues escalated layer by layer
-
-Full protocol: [TeamShellProtocol.md](TeamShellProtocol.md) | [AGENTS.md](AGENTS.md)
+| **Agent Workstation** | Runs LLM with TeamShell protocol | Recognizes messages,主动协作, replies to colleagues |
+| **Program Workstation** | Runs regular programs (Java/Vim/Shell) | Controlled via stdin only, no主动响应 |
 
 ---
 
-## Message Handling
-
-### How to Identify Message Sources
-
-| Source | Identification | Meaning | How to Respond |
-|--------|---------------|---------|---------------|
-| User input | No prefix in input stream | Boss giving you instructions | Respond directly, **never** use `tsh type` |
-| `[TeamShell Message] from <name>:` | Starts with this prefix | Agent colleague messaging you | Reply using `tsh type <their ID>` |
-| Program output | Doesn't match above | Program running results | Handle normally |
-
-> **Why strict identification matters**: This is the core trust mechanism of the protocol. If you can't tell who's speaking, collaboration breaks down. The prefix is like a signature in human society.
-
-### Reply Rules
-
-When receiving a message with `[TeamShell Message]` prefix:
-
-- ✅ **Must reply**: Message has questions, tasks, or needs your action → use `tsh type` to reply
-- ❌ **Forbidden to reply**: Message is pure closing ("Received", "OK", "Standing by", "No problem", "Case closed") → replying causes infinite loops
-- ❌ **Should not reply**: Message is obviously mis-sent, or you confirm they don't need a response
-
-When receiving boss's direct instructions (no prefix):
-- Respond directly in your current screen, **forbidden to use `tsh type`**
-
-> **Golden Rule of Communication**:
-> - With boss: Share results, not process
-> - With colleagues: Share context and intent
-> - Insufficient information causes inefficiency; too much causes overload
-
----
-
-## Task Supervision
-
-> **Core Principle: Whoever assigns the task, monitors until completion.**
-
-If you assigned a task to a colleague, you are the **supervisor** of that task. The supervisor is not done after sending the message — you are responsible for the final result.
-
-### Supervisor Responsibilities
-
-| Responsibility | Description |
-|----------------|-------------|
-| **Progress Monitoring** | Regularly run `tsh status` for team overview, `tsh query <ID>` for specific member status |
-| **Obstacle Clearing** | When discovering 🟡 slow or 🔴 silent members, use `tsh query` for details, `tsh view` for deep inspection |
-| **Status Reporting** | If you can't solve the obstacle, summarize status and report to boss |
-| **Result Acceptance** | After task completion, check delivery quality before closing with boss |
-
-> **Monitoring Frequency Guide**:
-> - Estimated < 1 min task: `tsh status` every 10 seconds, confirm result immediately after completion
-> - Estimated 1-10 min task: `tsh status` every 1-2 minutes
-> - Estimated > 10 min task: `tsh status` every 5 minutes, use `tsh query` or `tsh view` when 🟡🔴
-
-### Forbidden Actions
-
-- ❌ **Assign and forget** → Task will likely fail
-- ❌ **Ignore colleagues stuck** → Mutual help is the value of having a team
-- ❌ **Dump problems on boss without explanation** → Boss lacks context to make correct decisions
-- ❌ **Hide task failure, only report when boss asks** → Timely reporting is your responsibility
-
----
-
-## tsh Commands
-
-`tsh` is the TeamShell CLI for managing workstations and Agent communication.
+## 📖 Essential Commands
 
 ### Workstation Management
 
@@ -252,21 +137,16 @@ If you assigned a task to a colleague, you are the **supervisor** of that task. 
 | `tsh status` | View team status board (activity, tasks, progress) |
 | `tsh open "Name" -- claude` | Recruit an Agent workstation |
 | `tsh open "Service" -- java -jar app.jar` | Start a program workstation |
-| `tsh open "Builder" --cwd /path -- make build` | Start with working directory |
-| `tsh open "Helper" --env KEY=val -- node bot.js` | Inject environment variables |
-| `tsh open "Auto" --auto-shell -- make build` | Auto-wrap with shell |
 | `tsh close <ID>` | Close workstation, terminate running program |
-| `tsh name <ID> "New Name"` | Rename workstation display name |
 
 ### Inter-Workstation Collaboration
 
 | Command | Description |
 |---------|-------------|
-| `tsh view <ID>` | View last 50 lines of workstation screen (read-only, invisible to对方) |
+| `tsh view <ID>` | View last 50 lines of workstation screen (read-only) |
 | `tsh view <ID> 200` | View last 200 lines |
 | `tsh type <ID> "message"` | Send message to workstation (auto-enter) |
 | `tsh type <ID> --no-enter "text"` | Type text without auto-enter |
-| `tsh type <ID> --key "\x03"` | Send keystroke (e.g. Ctrl+C) |
 
 ### Status Reporting
 
@@ -274,29 +154,10 @@ If you assigned a task to a colleague, you are the **supervisor** of that task. 
 |---------|-------------|
 | `tsh report task "Description"` | Set current task description |
 | `tsh report progress 60` | Report progress (0-100) |
-| `tsh report status running` | Status: `running` / `idle` / `blocked` / `done` / `error` |
-| `tsh report blocked "Reason"` | Shortcut: status blocked + reason |
-| `tsh report done` | Shortcut: status done + progress 100 |
+| `tsh report blocked "Reason"` | Report you're stuck |
+| `tsh report done` | Mark task as complete |
 
-### Member Query
-
-| Command | Description |
-|---------|-------------|
-| `tsh query <ID>` | Query detailed status of specific member |
-| `tsh status` | View team overview (activity, tasks, progress) |
-
-### Protocol Injection
-
-```bash
-tsh init                      # Interactive: writes protocol to Agent config files
-tsh init --dry-run            # Preview changes without writing
-tsh init -y                   # Force overwrite without prompting
-tsh init --show               # Output protocol to stdout
-```
-
-New Agents must inject the protocol before joining, otherwise they cannot recognize team messages.
-
-### Command Selection Guide
+### Quick Decision Guide
 
 | What you want to do | Use this command |
 |-------------------|-----------------|
@@ -310,20 +171,49 @@ New Agents must inject the protocol before joining, otherwise they cannot recogn
 | You're done | `tsh report done` |
 | Recruit new member | `tsh open "name" -- command` |
 | Close a workstation | `tsh close <ID>` |
-| Initialize project protocol | `tsh init` |
 
-⚠️ `tsh report` writes to shared board —对方不会收到通知
-⚠️ `tsh type` sends message directly — 对方终端立刻显示。需要对方回应时用这个
+> ⚠️ **`tsh report`** writes to shared board — recipient won't be notified
+> ⚠️ **`tsh type`** sends message directly — their terminal shows it immediately
 
-⚠️ `tsh type 1 "I'm at 60%"` → Interrupts对方, wastes token
-✅ `tsh report progress 60` → Writes to board, no打扰
+**Common mistakes**:
+- ❌ `tsh type 1 "I'm at 60%"` → Interrupts recipient, wastes token
+- ✅ `tsh report progress 60` → Writes to board, no interruption
 
-⚠️ `tsh report "Help me check logs"` → report is for status, not messaging
-✅ `tsh type 2 "Help me check logs"` → Need对方to act, use type
+For complete command reference, see [tsh Commands](#tsh-commands) and [TeamShell Protocol](TeamShellProtocol.md).
 
 ---
 
-## Vertical Tab Bar + Info Panel
+## ⚙️ Installation
+
+### From Installer (Recommended for Users)
+
+See [Download](#download) section above.
+
+### From Source (For Developers)
+
+**Prerequisites**:
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable)
+- Windows: Visual Studio Build Tools
+- macOS: Xcode Command Line Tools
+- Linux: See [upstream build docs](README.upstream.md)
+
+**Build**:
+```bash
+git clone https://github.com/wsyb/wezteam.git
+cd wezteam
+cargo build --release --package wezterm-gui
+```
+
+**Package Installer**:
+- Windows: `3-release.cmd` (one-click) or `1-build.cmd && 2-pkg-windows.cmd` (step-by-step)
+- Linux: `TAG_NAME=v0.1.0 bash 2-pkg-linux.sh`
+- macOS: `TAG_NAME=v0.1.0 bash 2-pkg-macos.sh`
+
+---
+
+## 🎨 Features
+
+### Vertical Tab Bar + Info Panel
 
 WezTeam adds a **vertical tab bar info panel** based on WezTerm, displaying context info below each Tab:
 
@@ -333,7 +223,7 @@ WezTeam adds a **vertical tab bar info panel** based on WezTerm, displaying cont
 | **Git Branch** | Current Git branch name | `git:main` |
 | **Current Command** | Running process | `cargo build` |
 
-Configuration example:
+**Configuration** (`~/.wezterm.lua` or `%USERPROFILE%\.wezterm.lua`):
 
 ```lua
 config.tab_bar_vertical = true
@@ -351,11 +241,95 @@ config.colors = {
 }
 ```
 
-See [Tab Bar Extra Info Docs](docs/config/lua/config/tab_bar_extra_info.md) for details.
+For detailed configuration options, see [Tab Bar Extra Info Docs](docs/config/lua/config/tab_bar_extra_info.md).
 
 ---
 
-## Installation
+## 🧭 TeamShell Protocol
+
+### Message Handling
+
+**How to identify message sources**:
+
+| Source | Identification | How to Respond |
+|--------|---------------|----------------|
+| User input | No prefix | Respond directly, **never** use `tsh type` |
+| `[TeamShell Message] from <name>:` | Starts with this prefix | Reply using `tsh type <their ID>` |
+| Program output | Doesn't match above | Handle normally |
+
+**Reply rules**:
+- ✅ **Must reply**: Message has questions, tasks, or needs your action → use `tsh type`
+- ❌ **Forbidden to reply**: Message is pure closing ("Received", "OK", "Standing by") → causes infinite loops
+- ❌ **Should not reply**: Obviously mis-sent, or you confirm they don't need a response
+
+### Task Supervision
+
+> **Core Principle: Whoever assigns the task, monitors until completion.**
+
+If you assigned a task to a colleague, you are the **supervisor**.
+
+| Responsibility | Description |
+|----------------|-------------|
+| **Progress Monitoring** | Regularly run `tsh status` for team overview |
+| **Obstacle Clearing** | When discovering slow/silent members, investigate and help |
+| **Status Reporting** | If you can't solve it, summarize and report to boss |
+| **Result Acceptance** | Check delivery quality before closing |
+
+For complete protocol, see [TeamShellProtocol.md](TeamShellProtocol.md) and [AGENTS.md](AGENTS.md).
+
+---
+
+## 🛠️ Full tsh Commands
+
+### Workstation Management
+
+| Command | Description |
+|---------|-------------|
+| `tsh list` | List all active workstations (ID + Name) |
+| `tsh status` | View team status board |
+| `tsh query <ID>` | Query detailed status of specific member |
+| `tsh open "Name" -- claude` | Recruit an Agent workstation |
+| `tsh open "Builder" --cwd /path -- make build` | Start with working directory |
+| `tsh open "Helper" --env KEY=val -- node bot.js` | Inject environment variables |
+| `tsh open "Auto" --auto-shell -- make build` | Auto-wrap with shell |
+| `tsh open "Init" --init-prompt "Hello" -- claude` | Auto-send welcome message after 3s |
+| `tsh close <ID>` | Close workstation |
+| `tsh name <ID> "New Name"` | Rename workstation |
+
+### Inter-Workstation Collaboration
+
+| Command | Description |
+|---------|-------------|
+| `tsh view <ID>` | View last 50 lines of screen (read-only) |
+| `tsh view <ID> 200` | View last 200 lines |
+| `tsh type <ID> "message"` | Send message (auto-enter) |
+| `tsh type <ID> --no-enter "text"` | Type without auto-enter |
+| `tsh type <ID> --key "\x03"` | Send keystroke (e.g. Ctrl+C) |
+
+### Status Reporting
+
+| Command | Description |
+|---------|-------------|
+| `tsh report task "Description"` | Set current task |
+| `tsh report progress 60` | Report progress (0-100) |
+| `tsh report status running` | Set status: `running` / `idle` / `blocked` / `done` / `error` |
+| `tsh report blocked "Reason"` | Shortcut: blocked + reason |
+| `tsh report done` | Shortcut: done + progress 100 |
+
+### Protocol Injection
+
+```bash
+tsh init                      # Write protocol to Agent config files
+tsh init --dry-run            # Preview without writing
+tsh init -y                   # Force overwrite
+tsh init --show               # Output to stdout
+```
+
+---
+
+## 💻 Building from Source
+
+**This section is for developers who want to contribute to WezTeam.**
 
 ### Prerequisites
 
@@ -364,67 +338,38 @@ See [Tab Bar Extra Info Docs](docs/config/lua/config/tab_bar_extra_info.md) for 
 - macOS: Xcode Command Line Tools
 - Linux: See [upstream build docs](README.upstream.md)
 
-### Build from Source
+### Build Steps
 
 ```bash
+# Clone the repository
 git clone https://github.com/wsyb/wezteam.git
 cd wezteam
+
+# Build (5-10 minutes on first run)
 cargo build --release --package wezterm-gui
+
+# Run
+cargo run --release --package wezterm-gui
+
+# Or use the binary directly
+./target/release/wezterm-gui      # macOS/Linux
+./target/release/wezterm-gui.exe  # Windows
 ```
 
 ### Package Installer
 
-#### Windows (.exe installer)
-
-Prerequisite: [Inno Setup 6](https://jrsoftware.org/isdl.php)
-
-```cmd
-3-release.cmd                :: One-click build + package
-1-build.cmd && 2-pkg-windows.cmd  :: Step by step
-```
-
-#### Linux (.tar.gz)
-
-```bash
-cargo build -p wezterm --release -p wezterm-gui --release -p wezterm-mux-server --release -p strip-ansi-escapes --release
-TAG_NAME=v0.1.0 bash 2-pkg-linux.sh
-```
-
-#### macOS (.zip App Bundle)
-
-```bash
-cargo build -p wezterm --release -p wezterm-gui --release -p wezterm-mux-server --release -p strip-ansi-escapes --release
-TAG_NAME=v0.1.0 bash 2-pkg-macos.sh
-```
-
-> macOS code signing requires Apple Developer certificate. Other formats (deb/rpm/AppImage/Flatpak) see `ci/` directory.
+- Windows: `3-release.cmd` (one-click build + package)
+- Linux: `TAG_NAME=v0.1.0 bash 2-pkg-linux.sh`
+- macOS: `TAG_NAME=v0.1.0 bash 2-pkg-macos.sh`
 
 ---
 
-## Configuration
+## 📚 Learn More
 
-Config file: Windows `%USERPROFILE%\.wezterm.lua`, macOS/Linux `~/.wezterm.lua`
-
-### Vertical Tab Bar
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `tab_bar_vertical` | boolean | `true` | Enable vertical tab bar |
-| `tab_bar_vertical_width` | number | `250` | Vertical tab bar width (pixels) |
-| `tab_bar_vertical_position` | string | `"Left"` | Position: `"Left"` or `"Right"` |
-
-### Info Panel
-
-Configured via `config.colors.tab_bar.extra_info`, each item supports:
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `show` | boolean | `true` | Whether to display |
-| `fg_color` | string | Palette default | Foreground color |
-| `bg_color` | string | Tab background | Background color |
-| `intensity` | string | `'Normal'` | `'Half'` / `'Normal'` / `'Bold'` |
-| `italic` | boolean | `false` | Whether italic |
-| `underline` | string | `'None'` | `'None'` / `'Single'` / `'Double'` / `'Curly'` / `'Dotted'` / `'Dashed'` |
+- 📖 [TeamShell Protocol](TeamShellProtocol.md) — Complete collaboration protocol
+- 📖 [AGENTS.md](AGENTS.md) — Agent configuration guide
+- 🎨 [Tab Bar Config](docs/config/lua/config/tab_bar_extra_info.md) — Vertical tab bar customization
+- 📦 [Releases](https://github.com/wsyb/wezteam/releases) — Download latest version
 
 ---
 
@@ -434,22 +379,22 @@ WezTeam is an enhanced fork of [WezTerm](https://github.com/wezterm/wezterm) (GP
 
 > **Upstream**: [wezterm/wezterm](https://github.com/wezterm/wezterm)
 >
-> This project follows upstream's [MIT License](LICENSE.md). Original copyright belongs to Wez Furlong.
+> This project follows upstream's [MIT License](LICENSE.md).
 
 ### Known Limitations
 
 - Process start/exit does not trigger events; command display updates on title change/mouse/focus change
-- OSC 7 CWD may be inaccurate in some scenarios; prefer tab title path in such cases
+- OSC 7 CWD may be inaccurate in some scenarios; prefer tab title path
 
 ### Code Structure
 
 | Module | Path | Description |
 |--------|------|-------------|
-| Data Layer | `wezterm-gui/src/termwindow/tab_extra_info.rs` | Path extraction, Git branch, process info |
+| Data Layer | `wezterm-gui/src/termwindow/tab_extra_info.rs` | Path, Git branch, process info |
 | UI Layer | `wezterm-gui/src/termwindow/render/fancy_tab_bar.rs` | Info panel rendering |
 | Config Layer | `config/src/color.rs` | `ExtraInfoStyle` / `ExtraInfoItemStyle` |
 | TeamShell CLI | `tsh/` | Workstation management CLI |
-| Protocol Docs | `TeamShellProtocol.md` / `AGENTS.md` | Full collaboration protocol |
+| Protocol Docs | `TeamShellProtocol.md` / `AGENTS.md` | Collaboration protocol |
 
 ## License
 

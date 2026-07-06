@@ -272,7 +272,10 @@ impl RemoteSshDomain {
             let predicted = crate::tab::next_tab_id() + 1;
             env.insert("TEAMSH_TAB_ID".to_string(), predicted.to_string());
             env.insert("TEAMSH_NAME".to_string(), format!("tab_{predicted}"));
-            env.insert("TEAMSH_PLATFORM".to_string(), std::env::consts::OS.to_string());
+            env.insert(
+                "TEAMSH_PLATFORM".to_string(),
+                std::env::consts::OS.to_string(),
+            );
         }
 
         fn build_env_command(
