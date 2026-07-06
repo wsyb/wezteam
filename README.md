@@ -1,410 +1,280 @@
-# WezTeam - AI Agent 团队协作终端
+# WezTeam - AI Agent Team Collaboration Terminal
 
-[English Documentation →](README.md)
+[中文文档 →](README.zh-CN.md)
 
 <p align="center">
   <strong>WezTerm + TeamShell</strong>
 </p>
 
 <p align="center">
-  在终端标签页中运行 AI Agent。分配任务、观察同事、沟通协作、共同交付。
+  Run AI agents in terminal tabs. Assign tasks, observe colleagues, communicate, and ship together.
 </p>
 
 ---
 
-## 🚀 快速开始（面向最终用户）
+## What Is It?
 
-**如果你只是想使用 WezTeam，请直接跳到 [下载安装](#下载安装)。**
+A terminal emulator built on WezTerm with **heterogeneous AI Agent team collaboration** capabilities.
 
-### 下载安装
-
-#### Windows
-
-1. 访问 [Releases](https://github.com/wsyb/wezteam/releases/latest)
-2. 下载 `WezTerm-*-setup.exe`
-3. 双击安装
-4. 从开始菜单启动
-
-#### macOS
-
-1. 访问 [Releases](https://github.com/wsyb/wezteam/releases/latest)
-2. 下载 `WezTerm-*-macos.zip`
-3. 解压并将 `WezTerm.app` 拖到 `/Applications`
-4. 从 Launchpad 或 Spotlight 启动
-
-#### Linux
-
-**Ubuntu/Debian**:
-```bash
-# 下载并安装
-wget https://github.com/wsyb/wezteam/releases/latest/download/wezterm-*-debian*.tar.xz
-tar -xf wezterm-*.tar.xz
-cd wezterm-*
-sudo dpkg -i .
-```
-
-**Fedora/CentOS**:
-```bash
-wget https://github.com/wsyb/wezteam/releases/latest/download/wezterm-*.rpm
-sudo dnf install wezterm-*.rpm  # Fedora
-# sudo yum install wezterm-*.rpm  # CentOS
-```
-
-**AppImage**（通用版，适用于所有 Linux）:
-```bash
-wget https://github.com/wsyb/wezteam/releases/latest/download/WezTerm-*.AppImage
-chmod +x WezTerm-*.AppImage
-./WezTerm-*.AppImage
-```
-
-### 启动你的第一个 AI Agent
-
-打开 WezTeam 终端，在任意标签页运行：
-
-```bash
-tsh open "我的助手" -- claude
-```
-
-就这么简单。Claude 会在新标签页中启动并加入你的团队。
-
-### 验证是否成功
-
-```bash
-tsh status
-```
-
-**预期输出**:
-```
-1号(我的助手)  🟢 活跃  最后活动: 刚刚   任务: 待分配  进度: 0%
-```
-
-### 尝试团队协作
-
-```bash
-tsh type 1 "你好！你能做什么？"   # 发送消息
-tsh view 1                         # 查看屏幕
-```
+**You don't need to learn any new commands.** Just chat with your Agent like you normally would.
 
 ---
 
-## 🤖 什么是 TeamShell？
+## Why Do I Need This?
 
-**TeamShell** 是 WezTeam 的核心创新：一套协议和 CLI 工具（`tsh`），让多个 AI Agent 在终端标签页中协作。
+### The Problem with Single Agents
 
-### 为什么需要 TeamShell？
+You have Claude. It can write code, fix bugs, analyze your project.
 
-单个 AI Agent 能力有限。复杂任务需要**团队**：前端专家、后端专家、测试工程师……
+But when tasks get complex, a single Agent has inherent limitations:
+- **Reviewing its own code** → blind spots
+- **One perspective on requirements** → missed edge cases
+- **Handing you the result directly** → quality out of your control
 
-TeamShell 让你同时运行多个 Agent，它们可以：
-- **互相观察** — 查看同事的屏幕输出
-- **互相通信** — 发送消息、分配任务
-- **互相协调** — 自动分工、监管进度、汇报结果
-- **动态扩编** — 按需招募新 Agent，任务完成后解散
+### How WezTeam Solves It
 
-### 工作原理
+Run multiple **different models** in the same terminal and let them collaborate:
+- Claude writes the spec → Qwen + Codex review → multiple rounds of iteration
+- Claude develops → Codex reviews → Qwen tests → quality gate closed
 
-每个 Agent 运行在**工位**（终端 Tab）中。`tsh` 管理工位和 Agent 通信。
+**One Agent catches 2 issues. A committee of different Agents catches 7.**
+
+You don't need to know how it works internally. You just need to say one sentence.
+
+---
+
+## Who Is This For?
+
+| Audience | Fit | Why |
+|----------|-----|-----|
+| Developer wanting better code quality | ✅ **Perfect fit** | Multi-Agent review = fewer bugs |
+| PM / Architect needing rigorous specs | ✅ **Perfect fit** | Multi-Agent committee = more thorough docs |
+| AI-assisted developer | ✅ **Great fit** | Works with a single Agent too |
+| Researcher studying AI collaboration | ✅ **Perfect fit** | Transparent process = observable experiment |
+| Complete beginner with AI tools | ⚠️ **Try it** | Start with a single Agent first |
+
+**You can use WezTeam even with just one Claude.**
+
+---
+
+## How It Works
+
+Think of it like running a company:
+
+- **WezTeam** = Your office (the terminal)
+- **Agent** = Your employees (Claude, Codex, Gemini, Qwen, etc.)
+- **TeamShell** = Company rules (the collaboration protocol)
+- **tsh** = Internal management tools (Agents handle this themselves)
+
+**Core concept: Heterogeneous Agent collaboration**
+
+Run multiple Agents with **different models** in the same terminal. Let them do what a **single Agent cannot**.
+
+Each Agent runs in an **independent tab**. You see the **entire process in real time**.
+
+---
+
+### Scenario 1: Multi-Agent Committee Review
+
+**Single Agent**: writes and reviews its own work → finds 2 issues
+
+**WezTeam**: multiple Agents review each other's work → finds 7 issues
 
 ```
-┌─────────────────────────────────────────────┐
-│  WezTeam 终端窗口                            │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-│  │ 标签页 1 │ │ 标签页 2 │ │ 标签页 3 │     │
-│  │ 我的助手 │ │ 前端专家 │ │ 日志服务 │     │
-│  │ (Agent)  │ │ (Agent)  │ │ (程序)   │     │
-│  │ 正在写   │ │ 正在测试 │ │ tail -f  │     │
-│  │ 前端代码 │ │ API      │ │ app.log  │     │
-│  └──────────┘ └──────────┘ ┌──────────┘     │
-└─────────────────────────────────────────────┘
+You: "Help me design a user authentication system"
+
+  ↓ Claude in Tab 1 produces the first draft
+
+[Tab 2 - Qwen] [Tab 3 - Codex]
+      ↓              ↓
+   Start review   Start review
+
+[Tab 2 - Qwen]
+"Spec v1, please review"
+→ "Passwords use MD5 hashing, should use bcrypt + salt, Score: 6/10"
+
+[Tab 3 - Codex]
+"Spec v1, please review"
+→ "Login endpoint missing rate limiting, should add Redis brute-force protection, Score: 5/10"
+
+[Tab 1 - Claude]
+→ "Noted, I'll update to v2"
+
+[Tab 2 - Qwen]
+→ "v2 fixes password security, but concurrency has race conditions, should add distributed lock, Score: 7/10"
+
+[Tab 3 - Codex]
+→ "Architecture is solid, but error code conventions are inconsistent, Score: 7/10"
+
+  ↓ [After several rounds]
+
+[Tab 1 - Claude]
+→ "Spec v3 is complete"
+→ Reports to you: Overall score 8.5/10, 7 issues fixed total
 ```
 
-### 两种工位类型
-
-| 类型 | 说明 | 交互方式 |
-|------|------|---------|
-| **Agent 工位** | 运行带 TeamShell 协议的 LLM | 能识别消息、主动协作、回复同事 |
-| **程序工位** | 运行普通程序（Java/Vim/Shell） | 只能通过标准输入控制，不会主动响应 |
+**Key value**:
+- **Different models, different perspectives**: Claude's architectural thinking + Qwen's engineering rigor + Codex's practical experience
+- **Mutual challenge, mutual review**: Not one-sided output, but multi-round discussion
+- **Transparent process**: You **see the entire review** in real time, tab by tab
 
 ---
 
-## 📖 核心命令
+### Scenario 2: Develop → Review → Test Pipeline
 
-### 工位管理
+**Single Agent**: writes code → hands it to you → you find issues manually
 
-| 命令 | 说明 |
-|------|------|
-| `tsh list` | 列出所有在职工位（工号 + 名字） |
-| `tsh status` | 查看团队状态看板（活跃程度、任务、进度） |
-| `tsh open "名字" -- claude` | 招募一个 Agent 工位 |
-| `tsh open "服务" -- java -jar app.jar` | 启动一个程序工位 |
-| `tsh close <工号>` | 关闭工位，终止上面运行的程序 |
+**WezTeam**: write → review → fix → test → fix → pass → deliver
 
-### 工位间协作
+```
+You: "Help me implement the login feature"
 
-| 命令 | 说明 |
-|------|------|
-| `tsh view <工号>` | 查看工位屏幕最后 50 行（只读，对方无感知） |
-| `tsh view <工号> 200` | 查看最后 200 行 |
-| `tsh type <工号> "消息"` | 发送消息（自动回车） |
-| `tsh type <工号> --no-enter "文本"` | 敲入文本，不自动回车 |
+  ↓ Claude in Tab 1 handles development
 
-### 状态汇报
+Claude → finishes code → writes to file
 
-| 命令 | 说明 |
-|------|------|
-| `tsh report task "任务描述"` | 设置当前任务 |
-| `tsh report progress 60` | 报告进度（0-100） |
-| `tsh report blocked "原因"` | 汇报遇到阻塞 |
-| `tsh report done` | 标记任务完成 |
+  ↓ Codex in Tab 2 handles review
 
-### 快速决策指南
+Codex → reads code → finds 3 issues:
+  - Missing input validation
+  - Incomplete error handling
+  - Performance can be optimized
 
-| 你想做什么 | 使用命令 |
-|-----------|---------|
-| 了解团队整体情况 | `tsh status` |
-| 了解某人的详细状态 | `tsh query <工号>` |
-| 看某人具体在干什么 | `tsh view <工号>` |
-| 跟某人说话/讨论/派活 | `tsh type <工号> "内容"` |
-| 更新自己的进展 | `tsh report progress <数字>` |
-| 开始新任务 | `tsh report task "任务描述"` |
-| 自己卡住了 | `tsh report blocked "原因"` |
-| 自己做完了 | `tsh report done` |
-| 招募新成员 | `tsh open "名字" -- 命令` |
-| 关闭某个工位 | `tsh close <工号>` |
+Codex → [Tab 1] tells Claude: "Please fix the above issues"
+Claude → fixes → Codex → second review → passed
 
-> ⚠️ **`tsh report`** 写到共享看板，对方不会收到通知
-> ⚠️ **`tsh type`** 直接发消息给对方，对方终端立刻显示
+  ↓ Qwen in Tab 3 handles testing
 
-**常见错误**：
-- ❌ `tsh type 1 "我做到60%了"` → 打断对方，浪费 token
-- ✅ `tsh report progress 60` → 写到看板，不打扰任何人
+Qwen → runs tests → finds edge case failures
+Qwen → [Tab 1] tells Claude: "Tests failing, please fix"
+Claude → fixes → Qwen → re-runs tests → passed
 
-完整命令参考见 [tsh 命令手册](#tsh-命令手册) 和 [TeamShell 协议](TeamShellProtocol.md)。
+  ↓ Claude reports to you
 
----
-
-## ⚙️ 安装
-
-### 从安装包安装（推荐用户使用）
-
-见上方 [下载安装](#下载安装) 章节。
-
-### 从源码构建（面向开发者）
-
-**前置条件**：
-- [Rust](https://www.rust-lang.org/tools/install)（最新稳定版）
-- Windows: Visual Studio Build Tools
-- macOS: Xcode Command Line Tools
-- Linux: 参见 [上游构建文档](README.upstream.md)
-
-**构建**：
-```bash
-git clone https://github.com/wsyb/wezteam.git
-cd wezteam
-cargo build --release --package wezterm-gui
+Claude: "Login feature complete, passed Codex review and Qwen testing, ready to merge"
 ```
 
-**打包安装程序**：
-- Windows: `3-release.cmd`（一键构建+打包）或 `1-build.cmd && 2-pkg-windows.cmd`（分步执行）
-- Linux: `TAG_NAME=v0.1.0 bash 2-pkg-linux.sh`
-- macOS: `TAG_NAME=v0.1.0 bash 2-pkg-macos.sh`
+**Key value**:
+- **Specialized roles**: Development, review, and testing each handled by the right Agent
+- **Quality gate**: Review + test double-check, not just "done when written"
+- **Single direction flow**: Each Agent stays in its lane
+- **Transparent process**: Three tabs, real-time view of the full development and validation cycle
 
 ---
 
-## 🎨 功能特性
+### What Both Scenarios Have in Common
 
-### 垂直标签栏 + 信息面板
+| Characteristic | Description |
+|---------------|-------------|
+| **Heterogeneous Agents** | Claude + Qwen + Codex — different models, different strengths |
+| **Mutual review** | Agents don't just execute — they challenge, audit, and score |
+| **Multi-round iteration** | Not one pass, but converging toward rigor |
+| **Quality first** | Rigorous, reliable, deliverable — not fast |
+| **Transparent process** | Every tab visible, fully traceable |
+| **Zero burden on you** | You assign the task, the process runs itself |
 
-WezTeam 在 WezTerm 基础上增加了**垂直标签栏信息面板**，每个 Tab 下方显示上下文信息：
+**You don't need to know `tsh` commands. You don't manage Agents. You don't manually coordinate.**
 
-| 信息项 | 说明 | 示例 |
-|--------|------|------|
-| **路径** | 当前工作目录（倒序显示） | `wezteam\work\D:` |
-| **Git 分支** | 当前 Git 分支名 | `git:main` |
-| **当前命令** | 正在运行的进程 | `cargo build` |
+You just say: **"Help me build a login feature"**
 
-**配置示例**（`~/.wezterm.lua` 或 `%USERPROFILE%\.wezterm.lua`）：
-
-```lua
-config.tab_bar_vertical = true
-config.tab_bar_vertical_width = 250
-config.tab_bar_vertical_position = "Left"
-
-config.colors = {
-  tab_bar = {
-    extra_info = {
-      path = { show = true, fg_color = '#6699ff', intensity = 'Bold' },
-      git_branch = { show = true, fg_color = '#50fa7b', italic = true },
-      current_command = { show = true, fg_color = '#bd93f9' },
-    },
-  },
-}
-```
-
-详细配置见 [Tab Bar Extra Info 文档](docs/config/lua/config/tab_bar_extra_info.md)。
+The rest is up to the Agents.
 
 ---
 
-## 🧭 TeamShell 协议
+## Quick Start
 
-### 消息处理
+### Download & Install
 
-**怎么识别消息来源**：
+**Windows**: Download `WezTerm-*-setup.exe` → Double-click to install
 
-| 来源 | 判定方法 | 响应方式 |
-|------|---------|---------|
-| 用户直接输入 | 无任何前缀 | 直接在本屏幕响应，**禁止用** `tsh type` |
-| `[TeamShell 消息] 来自 <名字>:` | 以此前缀开头 | 用 `tsh type <对方的工号>` 回复 |
-| 程序输出 | 不属于上述两种 | 正常处理 |
+**macOS**: Download `WezTerm-*-macos.zip` → Extract and drag to `/Applications`
 
-**回复规则**：
-- ✅ **必须回复**：消息有问题、任务、需要行动 → 用 `tsh type`
-- ❌ **禁止回复**：纯粹结束语（"收到"、"好的"）→ 导致无限循环
-- ❌ **不应回复**：明显错误发送或确认不需要回应
-
-### 任务监管
-
-> **核心经验：谁派的活，谁负责盯到底。**
-
-如果你给同事派了任务，你就是这个任务的**监管人**。
-
-| 职责 | 说明 |
-|------|------|
-| **进度监控** | 定期 `tsh status` 了解团队整体情况 |
-| **障碍清除** | 发现缓慢/静默成员，用 `tsh query` 了解详情 |
-| **状态上报** | 障碍无法解决时，汇总状态向老板汇报 |
-| **结果验收** | 检查交付质量，合格后再闭环 |
-
-完整协议见 [TeamShellProtocol.md](TeamShellProtocol.md) 和 [AGENTS.md](AGENTS.md)。
+**Linux**:
+- Ubuntu/Debian: `wget ... && tar -xf ... && sudo dpkg -i .`
+- Fedora/CentOS: `wget ... && sudo dnf install ...`
+- Universal: Download AppImage, `chmod +x`, then run
 
 ---
 
-## 🛠️ tsh 命令手册
-
-### 工位管理
-
-| 命令 | 说明 |
-|------|------|
-| `tsh list` | 列出所有在职工位（工号 + 名字） |
-| `tsh status` | 查看团队状态看板 |
-| `tsh query <工号>` | 查询指定工位详细状态 |
-| `tsh open "名字" -- claude` | 招募一个 Agent 工位 |
-| `tsh open "构建" --cwd /path -- make build` | 指定工作目录启动 |
-| `tsh open "助手" --env API_KEY=xxx -- node bot.js` | 注入环境变量 |
-| `tsh open "构建" --auto-shell -- make build` | 自动用 shell 包装命令 |
-| `tsh open "助手" --init-prompt "你好" -- claude` | 创建后 3 秒自动发送入职消息 |
-| `tsh close <工号>` | 关闭工位，终止上面运行的程序 |
-| `tsh name <工号> "新名字"` | 修改工位显示名称 |
-
-### 工位间协作
-
-| 命令 | 说明 |
-|------|------|
-| `tsh view <工号>` | 查看指定工位屏幕最后 50 行（只读） |
-| `tsh view <工号> 200` | 查看最后 200 行 |
-| `tsh type <工号> "消息"` | 给指定工位发消息（自动回车） |
-| `tsh type <工号> --no-enter "文本"` | 敲入文本，不自动回车 |
-| `tsh type <工号> --key "\x03"` | 发送按键（如 Ctrl+C） |
-
-### 状态汇报
-
-| 命令 | 说明 |
-|------|------|
-| `tsh report task "重构登录模块"` | 设置当前任务描述 |
-| `tsh report progress 60` | 报告进度，整数，范围 0-100 |
-| `tsh report status running` | 状态：`running` / `idle` / `blocked` / `done` / `error` |
-| `tsh report blocked "需要权限"` | 快捷方式 = status blocked + reason |
-| `tsh report done` | 快捷方式 = status done + progress 100 |
-
-### 协议注入
-
-新 Agent 入职前必须先注入协议：
+### Configure (One-Time Setup)
 
 ```bash
-tsh init                      # 交互式写入协议到 Agent 配置文件
-tsh init --dry-run            # 预览变更，不写入
-tsh init -y                   # 强制覆盖，不询问
-tsh init --show               # 输出协议内容到 stdout
+tsh init
 ```
 
-### 命令选择规则
+This automatically writes the collaboration protocol into your Agent's configuration files.
 
-| 你想做什么 | 使用命令 |
-|-----------|---------|
-| 了解团队整体情况 | `tsh status` |
-| 了解某人的详细状态 | `tsh query <工号>` |
-| 看某人具体在干什么 | `tsh view <工号>` |
-| 跟某人说话/讨论/派活 | `tsh type <工号> "内容"` |
-| 更新自己的进展 | `tsh report progress <数字>` |
-| 开始新任务 | `tsh report task "任务描述"` |
-| 自己卡住了 | `tsh report blocked "原因"` |
-| 自己做完了 | `tsh report done` |
-| 招募新成员 | `tsh open "名字" -- 命令` |
-| 关闭某个工位 | `tsh close <工号>` |
-| 初始化项目协议 | `tsh init` |
+**Having trouble?** Open WezTeam, launch your Agent in a new tab, and simply say:
 
-⚠️ **`tsh report` 写到共享看板，对方不会收到通知**
-⚠️ **`tsh type` 直接发消息给对方，对方终端立刻显示。需要对方回应时用这个**
+```
+Please read @TeamShellProtocol.md
+```
 
-⚠️ `tsh type 1 "我做到60%了"` → 打断对方，浪费 token
-✅ `tsh report progress 60` → 写到看板，不打扰任何人
-
-⚠️ `tsh report "帮我查日志"` → report 是写状态，不是发消息
-✅ `tsh type 2 "帮我查日志"` → 需要对方行动，用 type
-
-⚠️ `tsh name 2 "前端专家-做60%"` → 名字不是状态栏
-✅ `tsh report progress 60` → 状态用 report
+The Agent will load the protocol — same effect as `tsh init`.
 
 ---
 
-## 💻 For Developers (Building from Source)
+### Start Using
 
-If you want to **contribute code** or **modify WezTeam**, see [BUILD.md](BUILD.md) for detailed build instructions, prerequisites, and troubleshooting.
-
-**Quick summary**:
+**Launch a single Agent**:
 
 ```bash
-git clone https://github.com/wsyb/wezteam.git
-cd wezteam
-cargo build --release --package wezterm-gui
+claude    # Claude
+# codex   # Codex
+# gemini  # Gemini
+# qwen    # Qwen
 ```
 
+**Launch multiple different Agents** for team collaboration:
+
+```bash
+# Tab 1: Claude handles architecture design
+claude
+
+# Tab 2: Qwen handles frontend development
+qwen
+
+# Tab 3: Codex handles backend development
+codex
+```
+
+When an Agent reads the protocol for the first time, it will **automatically complete onboarding** and report to you.
+
+Then just chat like you would with any Agent:
+
+```
+"Help me build a login feature"
+```
+
+The Agent will:
+- Understand your needs
+- Use the TeamShell protocol to communicate and coordinate with other Agents
+- Report results back to you
+
+**You don't need to know any internal details.**
+
 ---
 
-## 📚 Learn More
+## For Developers
 
-- 📖 [TeamShell 协议](TeamShellProtocol.md) — 完整协作协议
-- 📖 [AGENTS.md](AGENTS.md) — Agent 配置指南
-- 🎨 [标签栏配置](docs/config/lua/config/tab_bar_extra_info.md) — 垂直标签栏自定义
-- 📦 [Releases](https://github.com/wsyb/wezteam/releases) — 下载最新版本
+If you want to **build from source** or **contribute**, see:
+
+📖 **[BUILD.md](BUILD.md)** (English, standalone)
 
 ---
 
-## 关于本项目
+## Learn More
 
-WezTeam 是基于 [WezTerm](https://github.com/wezterm/wezterm)（由 [@wez](https://github.com/wez) 开发的 GPU 加速跨平台终端模拟器）的增强分支。
+- 📖 **[TeamShellProtocol.md](TeamShellProtocol.md)** — Full collaboration protocol (for Agents)
+- 📖 **[AGENTS.md](AGENTS.md)** — Agent configuration guide
+- 🎨 **[Tab Bar Config](docs/config/lua/config/tab_bar_extra_info.md)** — Customize the vertical tab bar
+- 📦 **[Releases](https://github.com/wsyb/wezteam/releases)** — Download the latest version
 
-> **上游项目**：[wezterm/wezterm](https://github.com/wezterm/wezterm)
->
-> 本项目遵循上游的 [MIT 许可证](LICENSE.md)。
+---
 
-### 已知限制
+## About This Project
 
-- 进程启动/退出不触发事件，命令显示在标题变化/鼠标/焦点变化时更新
-- OSC 7 CWD 某些场景可能不准确，此时优先使用 tab 标题路径
+WezTeam is an enhanced fork of [WezTerm](https://github.com/wezterm/wezterm) by [@wez](https://github.com/wez).
 
-### 代码结构
-
-| 模块 | 路径 | 说明 |
-|------|------|------|
-| 数据层 | `wezterm-gui/src/termwindow/tab_extra_info.rs` | 路径、Git 分支、进程信息 |
-| UI 层 | `wezterm-gui/src/termwindow/render/fancy_tab_bar.rs` | 信息面板渲染 |
-| 配置层 | `config/src/color.rs` | `ExtraInfoStyle` / `ExtraInfoItemStyle` |
-| TeamShell CLI | `tsh/` | 工位管理命令行工具 |
-| 协议文档 | `TeamShellProtocol.md` / `AGENTS.md` | 协作协议全文 |
-
-## 许可证
-
-[MIT License](LICENSE.md)
-
-原始项目版权 (c) 2018-Present Wez Furlong
+- **Upstream**: https://github.com/wezterm/wezterm
+- **License**: [MIT](LICENSE.md)
