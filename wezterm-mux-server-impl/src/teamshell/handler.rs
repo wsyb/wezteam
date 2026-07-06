@@ -5,8 +5,7 @@ use std::sync::{LazyLock, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use mux::pane::Pane;
-use mux::tab;
-use mux::Mux;
+use mux::{tab, Mux};
 use portable_pty::CommandBuilder;
 use wezterm_term::TerminalSize;
 
