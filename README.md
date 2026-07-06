@@ -2,14 +2,6 @@
 
 [中文文档 →](README.zh-CN.md)
 
-<p align="center">
-  <strong>WezTerm + TeamShell</strong>
-</p>
-
-<p align="center">
-  Run AI agents in terminal tabs. Assign tasks, observe colleagues, communicate, and ship together.
-</p>
-
 ---
 
 ## What Is It?
@@ -20,40 +12,40 @@ A terminal emulator built on WezTerm with **heterogeneous AI Agent team collabor
 
 ---
 
-## Why Do I Need This?
+## Why Do You Need It?
 
-### The Problem with Single Agents
+### The Limits of a Single Agent
 
-You have Claude. It can write code, fix bugs, analyze your project.
+You have Claude. It can write code, fix bugs, and analyze your project.
 
-But when tasks get complex, a single Agent has inherent limitations:
-- **Reviewing its own code** → blind spots
-- **One perspective on requirements** → missed edge cases
-- **Handing you the result directly** → quality out of your control
+But as tasks grow more complex, a single Agent has inherent limits:
+- **Reviewing its own code** → easy to miss blind spots
+- **Analyzing requirements from one perspective** → boundary cases slip through
+- **Handing you the finished product** → quality is out of your control
 
-### How WezTeam Solves It
+### How WezTeam Solves This
 
-Run multiple **different models** in the same terminal and let them collaborate:
-- Claude writes the spec → Qwen + Codex review → multiple rounds of iteration
-- Claude develops → Codex reviews → Qwen tests → quality gate closed
+Let **different models** collaborate in the same terminal:
+- Claude writes the spec → Qwen + Codex review → iterate together
+- Claude develops → Codex reviews → Qwen tests → quality gate
 
-**One Agent catches 2 issues. A committee of different Agents catches 7.**
+**A single Agent finds 2 issues. A multi-Agent committee finds 7.**
 
-You don't need to know how it works internally. You just need to say one sentence.
+You don't need to know how the internals work. Just say one sentence.
 
 ---
 
 ## Who Is This For?
 
-| Audience | Fit | Why |
-|----------|-----|-----|
-| Developer wanting better code quality | ✅ **Perfect fit** | Multi-Agent review = fewer bugs |
-| PM / Architect needing rigorous specs | ✅ **Perfect fit** | Multi-Agent committee = more thorough docs |
-| AI-assisted developer | ✅ **Great fit** | Works with a single Agent too |
-| Researcher studying AI collaboration | ✅ **Perfect fit** | Transparent process = observable experiment |
-| Complete beginner with AI tools | ⚠️ **Try it** | Start with a single Agent first |
+| Who | Fit | Why |
+|-----|-----|-----|
+| Developer wanting better code quality | ✅ **Excellent** | Multi-Agent review = fewer bugs |
+| PM / Architect needing rigorous specs | ✅ **Excellent** | Multi-Agent committee = more thorough docs |
+| AI-assisted programmer | ✅ **Good** | Works great even with a single Agent |
+| AI collaboration researcher | ✅ **Excellent** | Transparent process = observable experiment |
+| Complete AI tool beginner | ⚠️ **Try it** | Start with a single Agent first |
 
-**You can use WezTeam even with just one Claude.**
+**Even if you only have Claude, WezTeam works for you.**
 
 ---
 
@@ -61,156 +53,156 @@ You don't need to know how it works internally. You just need to say one sentenc
 
 Think of it like running a company:
 
-- **WezTeam** = Your office (the terminal)
-- **Agent** = Your employees (Claude, Codex, Gemini, Qwen, etc.)
-- **TeamShell** = Company rules (the collaboration protocol)
-- **tsh** = Internal management tools (Agents handle this themselves)
+- **WezTeam** = your office (the terminal)
+- **Agent** = your employees (Claude, Codex, Gemini, Qwen, etc.)
+- **TeamShell** = company rules (the collaboration protocol)
+- **tsh** = internal management tool (Agents use this themselves)
 
-**Core concept: Heterogeneous Agent collaboration**
+**Core idea: heterogeneous Agent collaboration**
 
-Run multiple Agents with **different models** in the same terminal. Let them do what a **single Agent cannot**.
+Run multiple Agents with **different models** in the same terminal — doing things a single Agent cannot.
 
-Each Agent runs in an **independent tab**. You see the **entire process in real time**.
+Each Agent runs in its own tab. **You see everything in real time.**
 
 ---
 
 ### Scenario 1: Multi-Agent Committee Review
 
-**Single Agent**: writes and reviews its own work → finds 2 issues
+**Single Agent** → writes and reviews its own work → finds 2 issues
 
-**WezTeam**: multiple Agents review each other's work → finds 7 issues
+**WezTeam** → multiple Agents review each other's work → finds 7 issues
 
 ```
-You: "Help me design a user authentication system"
+You: "Help me design a user login system"
 
-  ↓ Claude in Tab 1 produces the first draft
+  ↓ Claude produces v1 of the requirements doc (tab 1)
 
-[Tab 2 - Qwen] [Tab 3 - Codex]
-      ↓              ↓
-   Start review   Start review
-
-[Tab 2 - Qwen]
-"Spec v1, please review"
-→ "Passwords use MD5 hashing, should use bcrypt + salt, Score: 6/10"
-
-[Tab 3 - Codex]
-"Spec v1, please review"
-→ "Login endpoint missing rate limiting, should add Redis brute-force protection, Score: 5/10"
-
-[Tab 1 - Claude]
-→ "Noted, I'll update to v2"
+[Tab 2 - Qwen]              [Tab 3 - Codex]
+       ↓                          ↓
+    Start review               Start review
 
 [Tab 2 - Qwen]
-→ "v2 fixes password security, but concurrency has race conditions, should add distributed lock, Score: 7/10"
+"Requirements doc v1, please review"
+→ "Passwords use MD5 hashing, should use bcrypt + salt. Score: 6/10"
 
 [Tab 3 - Codex]
-→ "Architecture is solid, but error code conventions are inconsistent, Score: 7/10"
-
-  ↓ [After several rounds]
+"Requirements doc v1, please review"
+→ "Login endpoint lacks rate limiting, needs Redis brute-force protection. Score: 5/10"
 
 [Tab 1 - Claude]
-→ "Spec v3 is complete"
-→ Reports to you: Overall score 8.5/10, 7 issues fixed total
+→ "Got it, I'll update to v2"
+
+[Tab 2 - Qwen]
+→ "v2 fixes password security, but concurrent access has race conditions. Needs distributed lock. Score: 7/10"
+
+[Tab 3 - Codex]
+→ "Architecture is solid, but error code conventions are inconsistent. Score: 7/10"
+
+  ↓ [After several rounds of discussion]
+
+[Tab 1 - Claude]
+→ "Requirements doc v3 is complete"
+→ Reports to you: Overall score 8.5/10, 7 issues resolved total
 ```
 
 **Key value**:
-- **Different models, different perspectives**: Claude's architectural thinking + Qwen's engineering rigor + Codex's practical experience
-- **Mutual challenge, mutual review**: Not one-sided output, but multi-round discussion
-- **Transparent process**: You **see the entire review** in real time, tab by tab
+- **Different models, different perspectives**: Claude's architecture thinking + Qwen's engineering rigor + Codex's practical experience
+- **Mutual critique and review**: Not one-sided output, but iterative discussion
+- **Fully transparent**: You see the entire review process **in real time** on your terminal tabs
 
 ---
 
 ### Scenario 2: Develop → Review → Test Pipeline
 
-**Single Agent**: writes code → hands it to you → you find issues manually
+**Single Agent** → hands you finished code → you manually find issues
 
-**WezTeam**: write → review → fix → test → fix → pass → deliver
+**WezTeam** → write → review → fix → test → fix → pass → deliver
 
 ```
-You: "Help me implement the login feature"
+You: "Help me implement a login feature"
 
-  ↓ Claude in Tab 1 handles development
+  ↓ Claude develops (tab 1)
 
 Claude → finishes code → writes to file
 
-  ↓ Codex in Tab 2 handles review
+  ↓ Codex reviews (tab 2)
 
 Codex → reads code → finds 3 issues:
-  - Missing input validation
-  - Incomplete error handling
-  - Performance can be optimized
+  - missing input validation
+  - incomplete error handling
+  - performance can be optimized
 
-Codex → [Tab 1] tells Claude: "Please fix the above issues"
+Codex → [tab 1] tells Claude: "Please fix the above"
 Claude → fixes → Codex → second review → passed
 
-  ↓ Qwen in Tab 3 handles testing
+  ↓ Qwen tests (tab 3)
 
-Qwen → runs tests → finds edge case failures
-Qwen → [Tab 1] tells Claude: "Tests failing, please fix"
-Claude → fixes → Qwen → re-runs tests → passed
+Qwen → runs tests → finds edge case failure
+Qwen → [tab 1] tells Claude: "Tests failed, please fix"
+Claude → fixes → Qwen → re-runs → passed
 
   ↓ Claude reports to you
 
-Claude: "Login feature complete, passed Codex review and Qwen testing, ready to merge"
+Claude: "Login feature complete, Codex review passed, Qwen tests passed, ready to merge"
 ```
 
 **Key value**:
-- **Specialized roles**: Development, review, and testing each handled by the right Agent
-- **Quality gate**: Review + test double-check, not just "done when written"
-- **Single direction flow**: Each Agent stays in its lane
-- **Transparent process**: Three tabs, real-time view of the full development and validation cycle
+- **Specialized roles**: development, review, and testing each have their lane
+- **Quality closed-loop**: review + test double-gate, not just "done when written"
+- **One-way flow**: each Agent focuses on their role, no cross-interference
+- **Fully transparent**: three tabs, real-time view of the entire development and validation process
 
 ---
 
 ### What Both Scenarios Have in Common
 
-| Characteristic | Description |
-|---------------|-------------|
+| Trait | Description |
+|-------|-------------|
 | **Heterogeneous Agents** | Claude + Qwen + Codex — different models, different strengths |
 | **Mutual review** | Agents don't just execute — they challenge, audit, and score |
-| **Multi-round iteration** | Not one pass, but converging toward rigor |
-| **Quality first** | Rigorous, reliable, deliverable — not fast |
-| **Transparent process** | Every tab visible, fully traceable |
-| **Zero burden on you** | You assign the task, the process runs itself |
+| **Iterative refinement** | Not a one-shot pass, but converging toward rigor |
+| **Quality-first** | Prioritize thoroughness, reliability, and deliverability |
+| **Transparent process** | every tab visible in real time, fully traceable |
+| **Zero user burden** | You just assign the task; the process runs itself |
 
-**You don't need to know `tsh` commands. You don't manage Agents. You don't manually coordinate.**
+**You don't need to know `tsh` commands, don't need to manage Agents, don't need to manually coordinate.**
 
-You just say: **"Help me build a login feature"**
+Just say: **"Help me build a login feature"**
 
-The rest is up to the Agents.
+The Agents handle the rest.
 
 ---
 
 ## Quick Start
 
-### Download & Install
+### Download
 
-**Windows**: Download `WezTerm-*-setup.exe` → Double-click to install
+**Windows**: Download `WezTerm-*-setup.exe` → double-click to install
 
-**macOS**: Download `WezTerm-*-macos.zip` → Extract and drag to `/Applications`
+**macOS**: Download `WezTerm-*-macos.zip` → extract and drag to `/Applications`
 
 **Linux**:
 - Ubuntu/Debian: `wget ... && tar -xf ... && sudo dpkg -i .`
 - Fedora/CentOS: `wget ... && sudo dnf install ...`
-- Universal: Download AppImage, `chmod +x`, then run
+- Universal: Download AppImage, `chmod +x` and run
 
 ---
 
-### Configure (One-Time Setup)
+### Configure (One-Time)
 
 ```bash
 tsh init
 ```
 
-This automatically writes the collaboration protocol into your Agent's configuration files.
+This automatically writes the collaboration protocol to your Agent configuration files.
 
-**Having trouble?** Open WezTeam, launch your Agent in a new tab, and simply say:
+**If you run into issues?** Open WezTeam, start an Agent in a new tab, and simply say in the conversation:
 
 ```
 Please read @TeamShellProtocol.md
 ```
 
-The Agent will load the protocol — same effect as `tsh init`.
+The Agent will read the protocol directly. Same effect as `tsh init`.
 
 ---
 
@@ -225,45 +217,45 @@ claude    # Claude
 # qwen    # Qwen
 ```
 
-**Launch multiple different Agents** for team collaboration:
+**Launch multiple different Agents** to collaborate:
 
 ```bash
-# Tab 1: Claude handles architecture design
+# Tab 1: Claude handles architecture
 claude
 
-# Tab 2: Qwen handles frontend development
+# Tab 2: Qwen handles frontend
 qwen
 
-# Tab 3: Codex handles backend development
+# Tab 3: Codex handles backend
 codex
 ```
 
-When an Agent reads the protocol for the first time, it will **automatically complete onboarding** and report to you.
+When an Agent sees the protocol for the first time, it will **automatically complete onboarding** and report to you.
 
-Then just chat like you would with any Agent:
+After that, just chat like you normally would:
 
 ```
 "Help me build a login feature"
 ```
 
 The Agent will:
-- Understand your needs
+- Understand your request
 - Use the TeamShell protocol to communicate and coordinate with other Agents
-- Report results back to you
+- Report the results back to you
 
 **You don't need to know any internal details.**
 
 ---
 
-## For Developers
+## Developer Documentation
 
 If you want to **build from source** or **contribute**, see:
 
-📖 **[BUILD.md](BUILD.md)** (English, standalone)
+📖 **[BUILD.md](BUILD.md)** (English, standalone document)
 
 ---
 
-## Learn More
+## More Resources
 
 - 📖 **[TeamShellProtocol.md](TeamShellProtocol.md)** — Full collaboration protocol (for Agents)
 - 📖 **[AGENTS.md](AGENTS.md)** — Agent configuration guide
@@ -274,7 +266,7 @@ If you want to **build from source** or **contribute**, see:
 
 ## About This Project
 
-WezTeam is an enhanced fork of [WezTerm](https://github.com/wezterm/wezterm) by [@wez](https://github.com/wez).
+An enhanced fork of [WezTerm](https://github.com/wezterm/wezterm).
 
-- **Upstream**: https://github.com/wezterm/wezterm
+- **Upstream**: [wezterm/wezterm](https://github.com/wezterm/wezterm)
 - **License**: [MIT](LICENSE.md)
