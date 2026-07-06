@@ -357,44 +357,21 @@ tsh init --show               # 输出协议内容到 stdout
 
 ---
 
-## 💻 从源码构建（面向开发者）
+## 💻 For Developers (Building from Source)
 
-**此章节仅适用于需要修改 WezTeam 代码的开发者。**
+If you want to **contribute code** or **modify WezTeam**, see [BUILD.md](BUILD.md) for detailed build instructions, prerequisites, and troubleshooting.
 
-### 前置条件
-
-- [Rust](https://www.rust-lang.org/tools/install)（最新稳定版）
-- Windows: Visual Studio Build Tools
-- macOS: Xcode Command Line Tools
-- Linux: 参见 [上游构建文档](README.upstream.md)
-
-### 构建步骤
+**Quick summary**:
 
 ```bash
-# 克隆仓库
 git clone https://github.com/wsyb/wezteam.git
 cd wezteam
-
-# 构建（首次运行需要 5-10 分钟）
 cargo build --release --package wezterm-gui
-
-# 运行
-cargo run --release --package wezterm-gui
-
-# 或直接使用二进制文件
-./target/release/wezterm-gui      # macOS/Linux
-./target/release/wezterm-gui.exe  # Windows
 ```
-
-### 打包安装程序
-
-- Windows: `3-release.cmd`（一键构建+打包）或 `1-build.cmd && 2-pkg-windows.cmd`（分步执行）
-- Linux: `TAG_NAME=v0.1.0 bash 2-pkg-linux.sh`
-- macOS: `TAG_NAME=v0.1.0 bash 2-pkg-macos.sh`
 
 ---
 
-## 📚 更多资料
+## 📚 Learn More
 
 - 📖 [TeamShell 协议](TeamShellProtocol.md) — 完整协作协议
 - 📖 [AGENTS.md](AGENTS.md) — Agent 配置指南
