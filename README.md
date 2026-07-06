@@ -1,123 +1,125 @@
-# WezTeam
+# WezTeam - AI Agent Team Collaboration Terminal
+
+[中文文档 →](README.zh-CN.md)
 
 <p align="center">
-  <strong>AI Agent 团队协作终端</strong>
+  <strong>WezTerm + TeamShell</strong>
 </p>
 
 <p align="center">
-  基于 WezTerm · 内置 TeamShell 协作协议 · 多 Agent 工位管理
+  Build an AI team in your terminal. Assign tasks, observe colleagues, communicate, and deliver together.
 </p>
 
 <p align="center">
-  <a href="#teamshell--多-agent-协作">TeamShell</a> ·
-  <a href="#tsh-命令手册">tsh 命令</a> ·
-  <a href="#垂直标签栏--信息面板">功能特性</a> ·
-  <a href="#安装构建">安装构建</a> ·
-  <a href="#配置说明">配置</a>
+  <a href="#team-shell-multi-agent-collaboration">TeamShell</a> ·
+  <a href="#tsh-command-reference">tsh Commands</a> ·
+  <a href="#vertical-tab-bar-info-panel">Features</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#configuration">Configuration</a>
 </p>
 
 ---
 
-## TeamShell — 多 Agent 协作
+## TeamShell — Multi-Agent Collaboration
 
-WezTeam 的核心创新是 **TeamShell**：一套让多个 AI Agent 在同一终端中协作工作的协议和工具链。
+WezTeam's core innovation is **TeamShell**: a protocol and toolchain that enables multiple AI Agents to collaborate within a single terminal window.
 
-### 为什么需要 TeamShell？
+### Why TeamShell?
 
-单个 AI Agent 能力有限。当任务复杂时，你需要一个**团队**：前端专家、后端专家、测试工程师……TeamShell 让你在一个终端窗口中同时运行多个 Agent，它们可以：
+A single AI Agent has limited capabilities. For complex tasks, you need a **team**: frontend expert, backend expert, test engineer... TeamShell lets you run multiple Agents simultaneously in one terminal window. They can:
 
-- **互相观察** — 查看同事的屏幕输出
-- **互相通信** — 给同事发消息、派任务
-- **互相协调** — 自动分工、监管进度、汇报结果
-- **动态扩编** — 随时招募新 Agent，任务完成后关闭
+- **Observe each other** — View colleagues' screen output
+- **Communicate** — Send messages, assign tasks
+- **Coordinate** — Auto-divide work, monitor progress, report results
+- **Scale dynamically** — Recruit new Agents as needed, dismiss when done
 
-### 工作原理
+### How It Works
 
-每个 Agent 运行在一个**工位**（终端 Tab）中。`tsh`（TeamShell CLI）是管理工位的命令行工具：
+Each Agent runs in a **workstation** (terminal Tab). `tsh` (TeamShell CLI) manages workstations and Agent communication.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  终端窗口 (WezTeam)                          │
+│  Terminal Window (WezTeam)                   │
 │                                              │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-│  │ 工位 1   │ │ 工位 2   │ │ 工位 3   │     │
-│  │ 小明     │ │ 小红     │ │ 日志服务 │     │
-│  │ (Agent)  │ │ (Agent)  │ │ (程序)   │     │
+│  │ Slot 1   │ │ Slot 2   │ │ Slot 3   │     │
+│  │ Xiaoming │ │ Xiaohong │ │ Logger   │     │
+│  │ (Agent)  │ │ (Agent)  │ │ (Program)│     │
 │  │          │ │          │ │          │     │
-│  │ 正在写   │ │ 正在测   │ │ tail -f  │     │
-│  │ 前端代码 │ │ 试接口   │ │ app.log  │     │
+│  │ Writing  │ │ Testing  │ │ tail -f  │     │
+│  │ Frontend │ │ APIs      │ │ app.log  │     │
 │  └──────────┘ └──────────┘ └──────────┘     │
 │                                              │
-│  tsh list  →  1 小明  2 小红  3 日志服务     │
-│  tsh view 2  →  查看小红的屏幕               │
-│  tsh type 2 "需要帮忙吗？"  →  给小红发消息  │
+│  tsh list  →  1 Xiaoming  2 Xiaohong  3 Logger
+│  tsh view 2  →  View Xiaohong's screen      │
+│  tsh type 2 "Need help?"  →  Message Xiaohong
 └─────────────────────────────────────────────┘
 ```
 
-### 两种工位
+### Two Types of Workstations
 
-| 类型 | 说明 | 交互方式 |
-|------|------|---------|
-| **Agent 工位**（活工位） | 运行带 TeamShell 协议的 LLM | 能识别消息、主动协作、回复同事 |
-| **程序工位**（死工位） | 运行普通程序（Java/Vim/Shell） | 只能通过标准输入控制，不会主动响应 |
+| Type | Description | Interaction |
+|------|-------------|-------------|
+| **Agent Workstation** (Live) | Runs LLM with TeamShell protocol | Recognizes messages,主动协作, replies to colleagues |
+| **Program Workstation** (Static) | Runs regular programs (Java/Vim/Shell) | Controlled via stdin only, no主动响应 |
 
-### 协议核心原则
+### Protocol Core Principles
 
-1. **身份验证** — Agent 启动时通过 `TEAMSH_TAB_ID` + `tsh list` 双重验证，确保是正式团队成员
-2. **消息识别** — `[TeamShell 消息] 来自 <名字>:` 前缀区分同事消息和程序输出
-3. **自主决策** — Agent 有判断力，不需要每步请示，但不可逆操作需先问老板
-4. **任务监管** — 谁派的活谁盯到底，问题逐层上报
+1. **Identity Verification** — Agent startup verified via `TEAMSH_TAB_ID` + `tsh list`, ensuring正式团队成员
+2. **Message Identification** — `[TeamShell Message] from <name>:` prefix distinguishes colleague messages from program output
+3. **Autonomous Decision Making** — Agents make judgments, no need for step-by-step approval, but irreversible operations require asking the boss first
+4. **Task Supervision** — Whoever assigns the task monitors until completion, issues escalated layer by layer
 
-协议全文见 [TeamShellProtocol.md](TeamShellProtocol.md) 和 [AGENTS.md](AGENTS.md)。
+Full protocol: [TeamShellProtocol.md](TeamShellProtocol.md) | [AGENTS.md](AGENTS.md)
 
 ---
 
-## tsh 命令手册
+## tsh Command Reference
 
-`tsh` 是 TeamShell 的命令行工具，用于管理工位和 Agent 间通信。
+`tsh` is the TeamShell CLI for managing workstations and Agent communication.
 
-### 工位管理
+### Workstation Management
 
-| 命令 | 说明 |
-|------|------|
-| `tsh list` | 列出所有在职工位（工号 + 名字） |
-| `tsh open "名字" -- claude` | 招募一个 Agent 工位 |
-| `tsh open "服务" -- java -jar app.jar` | 启动一个程序工位 |
-| `tsh close <工号>` | 关闭工位，终止上面运行的程序 |
-| `tsh name <工号> "新名字"` | 修改工位显示名称 |
+| Command | Description |
+|---------|-------------|
+| `tsh list` | List all active workstations (ID + Name) |
+| `tsh open "Name" -- claude` | Recruit an Agent workstation |
+| `tsh open "Service" -- java -jar app.jar` | Start a program workstation |
+| `tsh close <ID>` | Close workstation, terminate running program |
+| `tsh name <ID> "New Name"` | Rename workstation display name |
 
-### 工位间协作
+### Inter-Workstation Collaboration
 
-| 命令 | 说明 |
-|------|------|
-| `tsh view <工号>` | 查看指定工位屏幕的最后 50 行（只读，对方无感知） |
-| `tsh view <工号> 200` | 查看最后 200 行 |
-| `tsh type <工号> "消息"` | 给指定工位发消息（自动回车） |
-| `tsh type <工号> --no-enter "文本"` | 敲入文本，不自动回车 |
-| `tsh type <工号> --key "\x03"` | 发送按键（如 Ctrl+C） |
+| Command | Description |
+|---------|-------------|
+| `tsh view <ID>` | View last 50 lines of workstation screen (read-only) |
+| `tsh view <ID> 200` | View last 200 lines |
+| `tsh type <ID> "message"` | Send message to workstation (auto-enter) |
+| `tsh type <ID> --no-enter "text"` | Type text without auto-enter |
+| `tsh type <ID> --key "\x03"` | Send keystroke (e.g. Ctrl+C) |
 
-### 协议注入
+### Protocol Injection
 
-新 Agent 入职前必须先注入协议，否则无法识别团队消息：
+New Agents must inject the protocol before joining, otherwise they cannot recognize team messages:
 
 ```bash
-tsh init AGENTS.md        # 注入协议
-tsh open "小明" -- claude  # 然后启动
+tsh init AGENTS.md        # Inject protocol
+tsh open "Xiaoming" -- claude  # Then start
 ```
 
 ---
 
-## 垂直标签栏 + 信息面板
+## Vertical Tab Bar + Info Panel
 
-WezTeam 在 WezTerm 基础上增加了**垂直标签栏信息面板**，每个 Tab 下方显示上下文信息：
+WezTeam adds a **vertical tab bar info panel** based on WezTerm, displaying context info below each Tab:
 
-| 信息项 | 说明 | 示例 |
-|--------|------|------|
-| **路径** | 当前工作目录（倒序显示） | `wezteam\work\D:` |
-| **Git 分支** | 当前 Git 分支名 | `git:main` |
-| **当前命令** | 正在运行的进程 | `cargo build` |
+| Info Type | Description | Example |
+|-----------|-------------|---------|
+| **Path** | Current working directory (reversed) | `wezteam\work\D:` |
+| **Git Branch** | Current Git branch name | `git:main` |
+| **Current Command** | Running process | `cargo build` |
 
-配置示例：
+Configuration example:
 
 ```lua
 config.tab_bar_vertical = true
@@ -135,20 +137,20 @@ config.colors = {
 }
 ```
 
-详细配置见 [Tab Bar Extra Info 文档](docs/config/lua/config/tab_bar_extra_info.md)。
+See [Tab Bar Extra Info Docs](docs/config/lua/config/tab_bar_extra_info.md) for details.
 
 ---
 
-## 安装构建
+## Installation
 
-### 前置依赖
+### Prerequisites
 
-- [Rust](https://www.rust-lang.org/tools/install)（最新稳定版）
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable)
 - Windows: Visual Studio Build Tools
 - macOS: Xcode Command Line Tools
-- Linux: 参见 [上游构建文档](README.upstream.md)
+- Linux: See [upstream build docs](README.upstream.md)
 
-### 从源码构建
+### Build from Source
 
 ```bash
 git clone https://github.com/wsyb/wezteam.git
@@ -156,15 +158,15 @@ cd wezteam
 cargo build --release --package wezterm-gui
 ```
 
-### 打包安装程序
+### Package Installer
 
-#### Windows (.exe 安装包)
+#### Windows (.exe installer)
 
-前置依赖：[Inno Setup 6](https://jrsoftware.org/isdl.php)
+Prerequisite: [Inno Setup 6](https://jrsoftware.org/isdl.php)
 
 ```cmd
-3-release.cmd                :: 一键构建+打包
-1-build.cmd && 2-pkg-windows.cmd  :: 分步执行
+3-release.cmd                :: One-click build + package
+1-build.cmd && 2-pkg-windows.cmd  :: Step by step
 ```
 
 #### Linux (.tar.gz)
@@ -181,62 +183,62 @@ cargo build -p wezterm --release -p wezterm-gui --release -p wezterm-mux-server 
 TAG_NAME=v0.1.0 bash 2-pkg-macos.sh
 ```
 
-> macOS 代码签名需配置 Apple Developer 证书。其他格式（deb/rpm/AppImage/Flatpak）见 `ci/` 目录。
+> macOS code signing requires Apple Developer certificate. Other formats (deb/rpm/AppImage/Flatpak) see `ci/` directory.
 
 ---
 
-## 配置说明
+## Configuration
 
-配置文件：Windows `%USERPROFILE%\.wezterm.lua`，macOS/Linux `~/.wezterm.lua`
+Config file: Windows `%USERPROFILE%\.wezterm.lua`, macOS/Linux `~/.wezterm.lua`
 
-### 垂直标签栏
+### Vertical Tab Bar
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `tab_bar_vertical` | boolean | `true` | 是否使用垂直标签栏 |
-| `tab_bar_vertical_width` | number | `250` | 垂直标签栏宽度（像素） |
-| `tab_bar_vertical_position` | string | `"Left"` | 位置：`"Left"` 或 `"Right"` |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `tab_bar_vertical` | boolean | `true` | Enable vertical tab bar |
+| `tab_bar_vertical_width` | number | `250` | Vertical tab bar width (pixels) |
+| `tab_bar_vertical_position` | string | `"Left"` | Position: `"Left"` or `"Right"` |
 
-### 信息面板
+### Info Panel
 
-通过 `config.colors.tab_bar.extra_info` 配置，每项支持：
+Configured via `config.colors.tab_bar.extra_info`, each item supports:
 
-| 字段 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `show` | boolean | `true` | 是否显示 |
-| `fg_color` | string | 调色板默认色 | 前景色 |
-| `bg_color` | string | tab 背景 | 背景色 |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `show` | boolean | `true` | Whether to display |
+| `fg_color` | string | Palette default | Foreground color |
+| `bg_color` | string | Tab background | Background color |
 | `intensity` | string | `'Normal'` | `'Half'` / `'Normal'` / `'Bold'` |
-| `italic` | boolean | `false` | 是否斜体 |
+| `italic` | boolean | `false` | Whether italic |
 | `underline` | string | `'None'` | `'None'` / `'Single'` / `'Double'` / `'Curly'` / `'Dotted'` / `'Dashed'` |
 
 ---
 
-## 关于本项目
+## About This Project
 
-WezTeam 是基于 [WezTerm](https://github.com/wezterm/wezterm)（由 [@wez](https://github.com/wez) 开发的 GPU 加速跨平台终端模拟器）的增强分支。
+WezTeam is an enhanced fork of [WezTerm](https://github.com/wezterm/wezterm) (GPU-accelerated cross-platform terminal emulator by [@wez](https://github.com/wez)).
 
-> **上游项目**：[wezterm/wezterm](https://github.com/wezterm/wezterm)
+> **Upstream**: [wezterm/wezterm](https://github.com/wezterm/wezterm)
 >
-> 本项目遵循上游的 [MIT 许可证](LICENSE.md)，原始版权归属 Wez Furlong。
+> This project follows upstream's [MIT License](LICENSE.md). Original copyright belongs to Wez Furlong.
 
-### 已知限制
+### Known Limitations
 
-- 进程启动/退出不触发事件，命令显示在标题变化/鼠标/焦点变化时更新
-- OSC 7 CWD 某些场景可能不准确，此时优先使用 tab 标题路径
+- Process start/exit does not trigger events; command display updates on title change/mouse/focus change
+- OSC 7 CWD may be inaccurate in some scenarios; prefer tab title path in such cases
 
-### 代码结构
+### Code Structure
 
-| 模块 | 路径 | 说明 |
-|------|------|------|
-| 数据层 | `wezterm-gui/src/termwindow/tab_extra_info.rs` | 路径提取、Git 分支、进程信息 |
-| UI 层 | `wezterm-gui/src/termwindow/render/fancy_tab_bar.rs` | 信息面板渲染 |
-| 配置层 | `config/src/color.rs` | `ExtraInfoStyle` / `ExtraInfoItemStyle` |
-| TeamShell CLI | `tsh/` | 工位管理命令行工具 |
-| 协议文档 | `TeamShellProtocol.md` / `AGENTS.md` | 协作协议全文 |
+| Module | Path | Description |
+|--------|------|-------------|
+| Data Layer | `wezterm-gui/src/termwindow/tab_extra_info.rs` | Path extraction, Git branch, process info |
+| UI Layer | `wezterm-gui/src/termwindow/render/fancy_tab_bar.rs` | Info panel rendering |
+| Config Layer | `config/src/color.rs` | `ExtraInfoStyle` / `ExtraInfoItemStyle` |
+| TeamShell CLI | `tsh/` | Workstation management CLI |
+| Protocol Docs | `TeamShellProtocol.md` / `AGENTS.md` | Full collaboration protocol |
 
-## 许可证
+## License
 
 [MIT License](LICENSE.md)
 
-原始项目版权 (c) 2018-Present Wez Furlong
+Original project copyright (c) 2018-Present Wez Furlong
