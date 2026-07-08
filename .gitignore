@@ -51,6 +51,8 @@
 /wezterm*.tar.xz
 /wezterm*-src.tar.gz
 /wezteam-Setup.exe
+/WezTerm*.tar.gz
+/WezTerm*-dev-test/
 /PKGBUILD
 /wezterm-linuxbrew.rb
 /wezterm.rb
