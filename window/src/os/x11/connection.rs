@@ -1,4 +1,4 @@
-use super::keyboard::{Keyboard, KeyboardWithFallback};
+use crate::os::keyboard::{Keyboard, KeyboardWithFallback};
 use crate::connection::ConnectionOps;
 use crate::os::x11::window::XWindowInner;
 use crate::os::x11::xsettings::*;

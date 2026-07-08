@@ -4,22 +4,20 @@ on:
   push:
     tags:
       - "20*"
-      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build:
-    runs-on: "windows-latest"
+    runs-on: "windows-2025"
     
     env:
       CARGO_INCREMENTAL: "0"
       SCCACHE_GHA_ENABLED: "true"
       RUSTC_WRAPPER: "sccache"
       RUSTUP_WINDOWS_PATH_ADD_BIN: "1"
-      OPENSSL_NO_VENDOR: "true"
 
     steps:
       - name: "checkout repo"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: "recursive"
       - name: "Install Rust"
@@ -35,17 +33,11 @@ jobs:
           path: |
             vendor
             .cargo/config
-          key: "cargo-deps-${{ hashFiles('**/Cargo.toml') }}"
+          key: "cargo-deps-${{ hashFiles('**/Cargo.lock') }}"
       - name: "Vendor dependecies"
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
-        run: "cargo vendor --versioned-dirs >> .cargo/config"
-      - name: "Install OpenSSL via vcpkg"
-        shell: powershell
-        run: |
-          vcpkg install openssl:x64-windows
-          $env:OPENSSL_DIR = "C:\vcpkg\installed\x64-windows"
-          echo "OPENSSL_DIR=$env:OPENSSL_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        run: "cargo vendor --locked --versioned-dirs >> .cargo/config"
       - name: "Build wezterm (Release mode)"
         shell: cmd
         run: |
@@ -66,11 +58,6 @@ jobs:
         run: |
           PATH C:\Strawberry\perl\bin;%PATH%
           cargo build -p strip-ansi-escapes --release
-      - name: "Build tsh (Release mode)"
-        shell: cmd
-        run: |
-          PATH C:\Strawberry\perl\bin;%PATH%
-          cargo build -p teamshell-cli --release
       - name: "Install cargo-nextest from Cargo"
         uses: baptiste0928/cargo-install@v3
         with:
@@ -85,7 +72,7 @@ jobs:
         shell: bash
         run: "bash ci/deploy.sh"
       - name: "Upload artifact"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "windows"
           path: |
@@ -95,7 +82,7 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: build
-    if: github.repository == 'wsyb/wezteam'
+    if: github.repository == 'wezterm/wezterm'
     permissions:
       contents: write
       pages: write
@@ -103,9 +90,9 @@ jobs:
 
     steps:
       - name: "checkout repo"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: "Download artifact"
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: "windows"
       - name: "Checksum"
@@ -121,3 +108,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: "bash ci/retry.sh gh release upload --clobber $(ci/tag-name.sh) WezTerm-*.zip WezTerm-*.exe *.sha256"
+      - name: "Checkout winget-pkgs"
+        uses: actions/checkout@v5
+        with:
+          repository: "wez/winget-pkgs"
+          path: "winget-pkgs"
+          token: "${{ secrets.GH_PAT }}"
+      - name: "Setup email for winget repo"
+        shell: bash
+        run: "cd winget-pkgs && git config user.email wez@wezfurlong.org"
+      - name: "Setup name for winget repo"
+        shell: bash
+        run: "cd winget-pkgs && git config user.name 'Wez Furlong'"
+      - name: "Create winget manifest and push to fork"
+        shell: bash
+        run: "bash ci/make-winget-pr.sh winget-pkgs WezTerm-*.exe"
+      - name: "Submit PR"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        shell: bash
+        run: 'cd winget-pkgs && gh pr create --fill --body "PR automatically created by release automation in the wezterm repo"'

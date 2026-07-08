@@ -1,11 +1,16 @@
 #![cfg(all(unix, not(target_os = "macos")))]
 
+#[cfg(not(any(feature = "x11", feature = "wayland")))]
+compile_error!("At least one of 'x11' or 'wayland' features must be enabled");
+
 use crate::connection::ConnectionOps;
 #[cfg(feature = "wayland")]
 use crate::os::wayland::connection::WaylandConnection;
 #[cfg(feature = "wayland")]
 use crate::os::wayland::window::WaylandWindow;
+#[cfg(feature = "x11")]
 use crate::os::x11::connection::XConnection;
+#[cfg(feature = "x11")]
 use crate::os::x11::window::XWindow;
 use crate::screen::Screens;
 use crate::{
@@ -23,6 +28,7 @@ use std::rc::Rc;
 use wezterm_font::FontConfiguration;
 
 pub enum Connection {
+    #[cfg(feature = "x11")]
     X11(Rc<XConnection>),
     #[cfg(feature = "wayland")]
     Wayland(Rc<WaylandConnection>),
@@ -30,6 +36,7 @@ pub enum Connection {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum Window {
+    #[cfg(feature = "x11")]
     X11(XWindow),
     #[cfg(feature = "wayland")]
     Wayland(WaylandWindow),
@@ -49,7 +56,14 @@ impl Connection {
                 }
             }
         }
-        Ok(Connection::X11(XConnection::create_new()?))
+        #[cfg(feature = "x11")]
+        {
+            Ok(Connection::X11(XConnection::create_new()?))
+        }
+        #[cfg(not(feature = "x11"))]
+        {
+            anyhow::bail!("No display connection available: Wayland failed and X11 is not compiled in")
+        }
     }
 
     pub async fn new_window<F>(
@@ -65,6 +79,7 @@ impl Connection {
         F: 'static + FnMut(WindowEvent, &Window),
     {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(_) => {
                 XWindow::new_window(
                     class_name,
@@ -91,8 +106,10 @@ impl Connection {
         }
     }
 
+    #[cfg(feature = "x11")]
     pub(crate) fn x11(&self) -> Rc<XConnection> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => Rc::clone(x),
             #[cfg(feature = "wayland")]
             _ => panic!("attempted to get x11 reference on non-x11 connection"),
@@ -110,6 +127,7 @@ impl Connection {
     pub(crate) fn advise_of_appearance_change(&self, appearance: Appearance) {
         log::trace!("Appearance changed to {appearance:?}");
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.advise_of_appearance_change(appearance),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.advise_of_appearance_change(appearance),
@@ -120,6 +138,7 @@ impl Connection {
 impl ConnectionOps for Connection {
     fn name(&self) -> String {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.name(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.name(),
@@ -128,6 +147,7 @@ impl ConnectionOps for Connection {
 
     fn terminate_message_loop(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.terminate_message_loop(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.terminate_message_loop(),
@@ -136,6 +156,7 @@ impl ConnectionOps for Connection {
 
     fn default_dpi(&self) -> f64 {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.default_dpi(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.default_dpi(),
@@ -145,6 +166,7 @@ impl ConnectionOps for Connection {
     fn run_message_loop(&self) -> anyhow::Result<()> {
         crate::os::xdg_desktop_portal::subscribe();
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.run_message_loop(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.run_message_loop(),
@@ -153,6 +175,7 @@ impl ConnectionOps for Connection {
 
     fn get_appearance(&self) -> Appearance {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.get_appearance(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.get_appearance(),
@@ -161,6 +184,7 @@ impl ConnectionOps for Connection {
 
     fn beep(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.beep(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.beep(),
@@ -169,6 +193,7 @@ impl ConnectionOps for Connection {
 
     fn screens(&self) -> anyhow::Result<Screens> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.screens(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.screens(),
@@ -205,6 +230,7 @@ impl Window {
 impl HasDisplayHandle for Window {
     fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.display_handle(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.display_handle(),
@@ -215,6 +241,7 @@ impl HasDisplayHandle for Window {
 impl HasWindowHandle for Window {
     fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.window_handle(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.window_handle(),
@@ -226,6 +253,7 @@ impl HasWindowHandle for Window {
 impl WindowOps for Window {
     async fn enable_opengl(&self) -> anyhow::Result<Rc<glium::backend::Context>> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.enable_opengl().await,
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.enable_opengl().await,
@@ -234,6 +262,7 @@ impl WindowOps for Window {
 
     fn finish_frame(&self, frame: glium::Frame) -> anyhow::Result<()> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.finish_frame(frame),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.finish_frame(frame),
@@ -242,6 +271,7 @@ impl WindowOps for Window {
 
     fn close(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.close(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.close(),
@@ -252,6 +282,7 @@ impl WindowOps for Window {
         Self: Sized,
     {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.notify(t),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.notify(t),
@@ -260,6 +291,7 @@ impl WindowOps for Window {
 
     fn hide(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.hide(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.hide(),
@@ -268,6 +300,7 @@ impl WindowOps for Window {
 
     fn focus(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.focus(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.focus(),
@@ -276,6 +309,7 @@ impl WindowOps for Window {
 
     fn toggle_fullscreen(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.toggle_fullscreen(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.toggle_fullscreen(),
@@ -284,6 +318,7 @@ impl WindowOps for Window {
 
     fn config_did_change(&self, config: &ConfigHandle) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.config_did_change(config),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.config_did_change(config),
@@ -292,6 +327,7 @@ impl WindowOps for Window {
 
     fn show(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.show(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.show(),
@@ -300,6 +336,7 @@ impl WindowOps for Window {
 
     fn set_cursor(&self, cursor: Option<MouseCursor>) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_cursor(cursor),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_cursor(cursor),
@@ -308,6 +345,7 @@ impl WindowOps for Window {
 
     fn invalidate(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.invalidate(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.invalidate(),
@@ -316,6 +354,7 @@ impl WindowOps for Window {
 
     fn set_resize_increments(&self, incr: ResizeIncrement) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x11) => x11.set_resize_increments(incr),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_resize_increments(incr),
@@ -324,6 +363,7 @@ impl WindowOps for Window {
 
     fn set_title(&self, title: &str) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_title(title),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_title(title),
@@ -332,6 +372,7 @@ impl WindowOps for Window {
 
     fn set_icon(&self, image: crate::bitmaps::Image) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_icon(image),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_icon(image),
@@ -340,6 +381,7 @@ impl WindowOps for Window {
 
     fn maximize(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.maximize(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.maximize(),
@@ -348,6 +390,7 @@ impl WindowOps for Window {
 
     fn restore(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.restore(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.restore(),
@@ -356,6 +399,7 @@ impl WindowOps for Window {
 
     fn set_inner_size(&self, width: usize, height: usize) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_inner_size(width, height),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_inner_size(width, height),
@@ -364,6 +408,7 @@ impl WindowOps for Window {
 
     fn request_drag_move(&self) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.request_drag_move(),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.request_drag_move(),
@@ -372,6 +417,7 @@ impl WindowOps for Window {
 
     fn set_window_drag_position(&self, coords: ScreenPoint) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_window_drag_position(coords),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_window_drag_position(coords),
@@ -380,6 +426,7 @@ impl WindowOps for Window {
 
     fn set_window_position(&self, coords: ScreenPoint) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_window_position(coords),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_window_position(coords),
@@ -388,6 +435,7 @@ impl WindowOps for Window {
 
     fn set_text_cursor_position(&self, cursor: Rect) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_text_cursor_position(cursor),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_text_cursor_position(cursor),
@@ -396,6 +444,7 @@ impl WindowOps for Window {
 
     fn get_clipboard(&self, clipboard: Clipboard) -> Future<String> {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.get_clipboard(clipboard),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.get_clipboard(clipboard),
@@ -403,6 +452,7 @@ impl WindowOps for Window {
     }
     fn set_clipboard(&self, clipboard: Clipboard, text: String) {
         match self {
+            #[cfg(feature = "x11")]
             Self::X11(x) => x.set_clipboard(clipboard, text),
             #[cfg(feature = "wayland")]
             Self::Wayland(w) => w.set_clipboard(clipboard, text),

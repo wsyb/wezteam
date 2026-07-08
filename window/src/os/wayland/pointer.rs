@@ -13,6 +13,7 @@ use wayland_client::protocol::wl_seat::WlSeat;
 use wayland_client::{Connection, Proxy, QueueHandle};
 use wezterm_input_types::MousePress;
 
+use crate::connection::ConnectionOps;
 use crate::wayland::SurfaceUserData;
 
 use super::copy_and_paste::CopyAndPaste;
@@ -203,6 +204,14 @@ fn event_serial(event: &PointerEvent) -> Option<u32> {
 impl WaylandState {
     fn pointer_window_frame(&mut self, pointer: &WlPointer, events: &[PointerEvent]) {
         let windows = self.windows.borrow();
+        let themed_pointer = match &self.pointer {
+            Some(p) => p,
+            None => return,
+        };
+        let wayland_conn = match <crate::os::Connection as ConnectionOps>::get() {
+            Some(c) => c.wayland(),
+            None => return,
+        };
 
         for evt in events {
             let surface = &evt.surface;
@@ -221,23 +230,27 @@ impl WaylandState {
 
                 match evt.kind {
                     PointerEventKind::Enter { .. } => {
-                        inner.window_frame.click_point_moved(
+                        if let Some(cursor) = inner.window_frame.click_point_moved(
                             Duration::ZERO,
                             &evt.surface.id(),
                             x,
                             y,
-                        );
+                        ) {
+                            inner.set_frame_cursor(themed_pointer, &wayland_conn.connection, cursor);
+                        }
                     }
                     PointerEventKind::Leave { .. } => {
                         inner.window_frame.click_point_left();
                     }
                     PointerEventKind::Motion { .. } => {
-                        inner.window_frame.click_point_moved(
+                        if let Some(cursor) = inner.window_frame.click_point_moved(
                             Duration::ZERO,
                             &evt.surface.id(),
                             x,
                             y,
-                        );
+                        ) {
+                            inner.set_frame_cursor(themed_pointer, &wayland_conn.connection, cursor);
+                        }
                     }
                     PointerEventKind::Press { button, serial, .. }
                     | PointerEventKind::Release { button, serial, .. } => {

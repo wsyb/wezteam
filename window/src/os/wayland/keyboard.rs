@@ -5,7 +5,7 @@ use wayland_client::{Dispatch, Proxy};
 use xkbcommon::xkb;
 use xkbcommon::xkb::CONTEXT_NO_FLAGS;
 
-use crate::x11::KeyboardWithFallback;
+use crate::os::keyboard::KeyboardWithFallback;
 
 use super::state::WaylandState;
 use super::SurfaceUserData;

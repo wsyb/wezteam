@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "20*"
-      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build:
@@ -18,7 +17,7 @@ jobs:
 
     steps:
       - name: "checkout repo"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: "recursive"
       - name: "Install Rust (ARM)"
@@ -36,11 +35,11 @@ jobs:
           path: |
             vendor
             .cargo/config
-          key: "cargo-deps-${{ hashFiles('**/Cargo.toml') }}"
+          key: "cargo-deps-${{ hashFiles('**/Cargo.lock') }}"
       - name: "Vendor dependecies"
         if: steps.cache-cargo-vendor.outputs.cache-hit != 'true'
         shell: bash
-        run: "cargo vendor --versioned-dirs >> .cargo/config"
+        run: "cargo vendor --locked --versioned-dirs >> .cargo/config"
       - name: "Install System Deps"
         shell: bash
         run: "env CI=yes PATH=$PATH ./get-deps"
@@ -75,7 +74,7 @@ jobs:
           cache-key: "macos"
       - name: "Test"
         shell: bash
-        run: "OPENSSL_DIR=$(brew --prefix openssl@3) cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin -E 'not (test(symlink_should_create_symlink_pointing_to_directory) | test(symlink_should_create_symlink_pointing_to_file) | test(symlink_should_succeed_even_if_path_missing))'"
+        run: "cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin"
       - name: "Package"
         env:
           MACOS_APPLEID: ${{ secrets.MACOS_APPLEID }}
@@ -86,7 +85,7 @@ jobs:
         shell: bash
         run: "bash ci/deploy.sh"
       - name: "Upload artifact"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "macos"
           path: "WezTerm-*.zip"
@@ -94,7 +93,7 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: build
-    if: github.repository == 'wsyb/wezteam'
+    if: github.repository == 'wezterm/wezterm'
     permissions:
       contents: write
       pages: write
@@ -102,9 +101,23 @@ jobs:
 
     steps:
       - name: "checkout repo"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+      - name: "Checkout homebrew tap"
+        uses: actions/checkout@v5
+        with:
+          repository: "wez/homebrew-wezterm"
+          path: "homebrew-wezterm"
+          token: "${{ secrets.GH_PAT }}"
+      - name: "Update homebrew tap formula"
+        shell: bash
+        run: "cp wezterm.rb homebrew-wezterm/Casks/wezterm.rb"
+      - name: "Commit homebrew tap changes"
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Automated update to match latest tag"
+          repository: "homebrew-wezterm"
       - name: "Download artifact"
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: "macos"
       - name: "Checksum"

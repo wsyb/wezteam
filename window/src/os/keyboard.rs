@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::ffi::{CStr, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use wezterm_input_types::{KeyboardLedStatus, PhysKeyCode};
+#[cfg(feature = "x11")]
 use xcb::x::KeyButMask;
 use xkb::compose::Status as ComposeStatus;
 use xkbcommon::xkb;
@@ -18,16 +19,19 @@ use xkbcommon::xkb::{LayoutIndex, ModMask};
 pub struct Keyboard {
     context: xkb::Context,
     keymap: RefCell<xkb::Keymap>,
+    #[cfg(feature = "x11")]
     device_id: i32,
 
     state: RefCell<xkb::State>,
     compose_state: RefCell<Compose>,
     phys_code_map: RefCell<HashMap<xkb::Keycode, PhysKeyCode>>,
     mods_leds: RefCell<(Modifiers, KeyboardLedStatus)>,
+    #[cfg(feature = "x11")]
     last_xcb_state: RefCell<StateFromXcbStateNotify>,
     label: &'static str,
 }
 
+#[cfg(feature = "x11")]
 #[derive(Default, Debug, Clone, Copy)]
 struct StateFromXcbStateNotify {
     depressed_mods: ModMask,
@@ -199,6 +203,7 @@ impl KeyboardWithFallback {
 
     /// Compute the Modifier mask equivalent from the button mask
     /// provided in an XCB keyboard event
+    #[cfg(feature = "x11")]
     fn modifiers_from_btn_mask(mask: xcb::x::KeyButMask) -> Modifiers {
         let mut res = Modifiers::default();
         if mask.contains(xcb::x::KeyButMask::SHIFT) {
@@ -216,6 +221,7 @@ impl KeyboardWithFallback {
         res
     }
 
+    #[cfg(feature = "x11")]
     pub fn process_key_press_event(
         &self,
         xcb_ev: &xcb::x::KeyPressEvent,
@@ -225,6 +231,7 @@ impl KeyboardWithFallback {
         self.process_xcb_key_event_impl(xcode, xcb_ev.state(), true, events);
     }
 
+    #[cfg(feature = "x11")]
     pub fn process_key_release_event(
         &self,
         xcb_ev: &xcb::x::KeyReleaseEvent,
@@ -245,6 +252,7 @@ impl KeyboardWithFallback {
     // known modifiers in order for automation scenarios to work out:
     // <https://github.com/fcitx/fcitx5/issues/893>
     // <https://github.com/wezterm/wezterm/issues/4615>
+    #[cfg(feature = "x11")]
     fn process_xcb_key_event_impl(
         &self,
         xcode: xkb::Keycode,
@@ -501,6 +509,7 @@ impl KeyboardWithFallback {
         res
     }
 
+    #[cfg(feature = "x11")]
     pub fn process_xkb_event(
         &self,
         connection: &xcb::Connection,
@@ -542,21 +551,25 @@ impl KeyboardWithFallback {
             .update_modifier_state(mods_depressed, mods_latched, mods_locked, group);
     }
 
+    #[cfg(feature = "x11")]
     pub fn update_state(&self, ev: &xcb::xkb::StateNotifyEvent) {
         self.selected.update_state(ev);
         self.fallback.update_state(ev);
     }
 
+    #[cfg(feature = "x11")]
     pub fn reapply_last_xcb_state(&self) {
         self.selected.reapply_last_xcb_state();
         self.fallback.reapply_last_xcb_state();
     }
 
+    #[cfg(feature = "x11")]
     pub fn merge_current_xcb_modifiers(&self, mods: ModMask) {
         self.selected.merge_current_xcb_modifiers(mods);
         self.fallback.merge_current_xcb_modifiers(mods);
     }
 
+    #[cfg(feature = "x11")]
     pub fn update_keymap(&self, connection: &xcb::Connection) -> anyhow::Result<()> {
         self.selected.update_keymap(connection)
     }
@@ -581,6 +594,7 @@ impl Keyboard {
 
         Ok(Self {
             context,
+            #[cfg(feature = "x11")]
             device_id: -1,
             keymap: RefCell::new(keymap),
             state: RefCell::new(state),
@@ -591,6 +605,7 @@ impl Keyboard {
             }),
             phys_code_map: RefCell::new(phys_code_map),
             mods_leds: RefCell::new(Default::default()),
+            #[cfg(feature = "x11")]
             last_xcb_state: RefCell::new(Default::default()),
             label,
         })
@@ -619,6 +634,7 @@ impl Keyboard {
 
         Ok(Self {
             context,
+            #[cfg(feature = "x11")]
             device_id: -1,
             keymap: RefCell::new(keymap),
             state: RefCell::new(state),
@@ -629,11 +645,13 @@ impl Keyboard {
             }),
             phys_code_map: RefCell::new(phys_code_map),
             mods_leds: RefCell::new(Default::default()),
+            #[cfg(feature = "x11")]
             last_xcb_state: RefCell::new(Default::default()),
             label,
         })
     }
 
+    #[cfg(feature = "x11")]
     pub fn new(connection: &xcb::Connection) -> anyhow::Result<(Keyboard, u8)> {
         let first_ev = xcb::xkb::get_extension_data(connection)
             .ok_or_else(|| anyhow!("could not get xkb extension data"))?
@@ -713,6 +731,7 @@ impl Keyboard {
             .key_repeats(xkb::Keycode::new(code + 8))
     }
 
+    #[cfg(feature = "x11")]
     pub fn get_device_id(&self) -> i32 {
         self.device_id
     }
@@ -744,6 +763,7 @@ impl Keyboard {
         );
     }
 
+    #[cfg(feature = "x11")]
     pub fn update_state(&self, ev: &xcb::xkb::StateNotifyEvent) {
         let state = StateFromXcbStateNotify {
             depressed_mods: xkb::ModMask::from(ev.base_mods().bits()),
@@ -767,6 +787,7 @@ impl Keyboard {
         *self.last_xcb_state.borrow_mut() = state;
     }
 
+    #[cfg(feature = "x11")]
     pub fn merge_current_xcb_modifiers(&self, mods: ModMask) {
         let state = self.last_xcb_state.borrow().clone();
         log::trace!(
@@ -783,6 +804,7 @@ impl Keyboard {
         );
     }
 
+    #[cfg(feature = "x11")]
     pub fn reapply_last_xcb_state(&self) {
         let state = self.last_xcb_state.borrow().clone();
         self.state.borrow_mut().update_mask(
@@ -795,6 +817,7 @@ impl Keyboard {
         );
     }
 
+    #[cfg(feature = "x11")]
     pub fn update_keymap(&self, connection: &xcb::Connection) -> anyhow::Result<()> {
         log::debug!("update_keymap({}) was called", self.label);
 

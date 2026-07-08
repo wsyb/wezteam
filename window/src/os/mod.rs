@@ -5,10 +5,13 @@ pub use self::windows::*;
 
 #[cfg(feature = "wayland")]
 pub mod wayland;
+#[cfg(feature = "x11")]
 pub mod x11;
 pub mod x_and_wayland;
 pub mod xdg_desktop_portal;
 pub mod xkeysyms;
+#[cfg(all(unix, not(target_os = "macos")))]
+pub mod keyboard;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 pub use x_and_wayland::*;

@@ -51,7 +51,7 @@ use wezterm_input_types::{
 };
 
 use crate::wayland::WaylandConnection;
-use crate::x11::KeyboardWithFallback;
+use crate::os::keyboard::KeyboardWithFallback;
 use crate::{
     Appearance, Clipboard, Connection, ConnectionOps, Dimensions, MouseCursor, Point, Rect,
     RequestedWindowGeometry, ResizeIncrement, ResolvedGeometry, Window, WindowEvent,
@@ -263,9 +263,13 @@ impl WaylandWindow {
             FallbackFrame::new(&window, shm, subcompositor, qh.clone())
                 .expect("failed to create csd frame")
         };
-        let hidden = match decor_mode {
-            Some(DecorationMode::Client) => false,
-            _ => true,
+        let hidden = if decorations == WindowDecorations::NONE {
+            true
+        } else {
+            match decor_mode {
+                Some(DecorationMode::Client) => false,
+                _ => true,
+            }
         };
         window_frame.set_hidden(hidden);
         if !hidden {
@@ -841,6 +845,33 @@ impl WaylandWindowInner {
             self.window_frame.update_state(window_config.state);
             self.window_frame
                 .update_wm_capabilities(window_config.capabilities);
+
+            let decorations = self.config.window_decorations;
+            if decorations != WindowDecorations::NONE {
+                let should_show_csd = match window_config.decoration_mode {
+                    DecorationMode::Client => true,
+                    DecorationMode::Server => false,
+                };
+                if self.window_frame.is_hidden() && should_show_csd {
+                    log::debug!(
+                        "Compositor selected CSD, showing client-side decorations"
+                    );
+                    self.window_frame.set_hidden(false);
+                    let w = NonZeroU32::new(
+                        self.pixels_to_surface(self.dimensions.pixel_width as i32) as u32
+                    ).unwrap_or(NonZeroU32::new(1).unwrap());
+                    let h = NonZeroU32::new(
+                        self.pixels_to_surface(self.dimensions.pixel_height as i32) as u32
+                    ).unwrap_or(NonZeroU32::new(1).unwrap());
+                    self.window_frame.resize(w, h);
+                    pending.refresh_decorations = true;
+                } else if !self.window_frame.is_hidden() && !should_show_csd {
+                    log::debug!(
+                        "Compositor selected SSD, hiding client-side decorations"
+                    );
+                    self.window_frame.set_hidden(true);
+                }
+            }
         }
 
         if let Some((mut w, mut h)) = pending.configure.take() {
@@ -990,9 +1021,22 @@ impl WaylandWindowInner {
             }
             None => {
                 if let Err(err) = pointer.hide_cursor() {
-                    log::error!("hide_cursor: {}", err)
+                    log::error!("hide_cursor: {}", err);
                 }
             }
+        }
+    }
+
+    pub(crate) fn set_frame_cursor(
+        &mut self,
+        pointer: &smithay_client_toolkit::seat::pointer::ThemedPointer<
+            super::pointer::PointerUserData,
+        >,
+        connection: &wayland_client::Connection,
+        cursor: CursorIcon,
+    ) {
+        if let Err(err) = pointer.set_cursor(connection, cursor) {
+            log::error!("set_frame_cursor: {}", err);
         }
     }
 

@@ -1,4 +1,4 @@
-name: fedora41_continuous
+name: ubuntu26.04_continuous
 
 on:
   schedule:
@@ -11,7 +11,7 @@ on:
       - "**/Cargo.lock"
       - "**/Cargo.toml"
       - ".cargo/config.toml"
-      - ".github/workflows/gen_fedora41_continuous.yml"
+      - ".github/workflows/gen_ubuntu26.04_continuous.yml"
       - "assets/fonts/**/*"
       - "assets/icon/*"
       - "assets/open-wezterm-here"
@@ -28,7 +28,7 @@ on:
 jobs:
   build:
     runs-on: "ubuntu-latest"
-    container: "fedora:41"
+    container: "ubuntu:26.04"
     env:
       BUILD_REASON: "Schedule"
       CARGO_INCREMENTAL: "0"
@@ -36,21 +36,27 @@ jobs:
       RUSTC_WRAPPER: "sccache"
 
     steps:
-      - name: "Install config manager"
+      - name: "set APT to non-interactive"
         shell: bash
-        run: "dnf install -y 'dnf-command(config-manager)'"
+        run: "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections"
+      - name: "Update APT"
+        shell: bash
+        run: "apt update"
       - name: "Install git"
         shell: bash
-        run: "yum install -y git"
+        run: "apt-get install -y git"
       - name: "Install curl"
         shell: bash
-        run: "yum install -y curl"
+        run: "apt-get install -y curl"
+      - name: "Update APT"
+        shell: bash
+        run: "apt update"
       - name: "Ensure /run/sshd exists"
         shell: bash
         run: "mkdir -p /run/sshd"
       - name: "Install openssh-server"
         shell: bash
-        run: "yum install -y openssh-server"
+        run: "apt-get install -y openssh-server"
       - name: "Workaround git permissions issue"
         shell: bash
         run: "git config --global --add safe.directory /__w/wezterm/wezterm"
@@ -93,25 +99,20 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: "cargo-nextest"
-          cache-key: "fedora41"
+          cache-key: "ubuntu26.04"
       - name: "Test"
         shell: bash
         run: "cargo nextest run --all --no-fail-fast"
       - name: "Package"
         shell: bash
         run: "bash ci/deploy.sh"
-      - name: "Move RPM"
-        shell: bash
-        run: |
-          mv ~/rpmbuild/RPMS/*/wezterm-common-*.rpm wezterm-common-nightly-fedora41.rpm
-          mv ~/rpmbuild/RPMS/*/wezterm-gui-*.rpm wezterm-gui-nightly-fedora41.rpm
-          mv ~/rpmbuild/RPMS/*/wezterm-mux-server-*.rpm wezterm-mux-server-nightly-fedora41.rpm
-          mv ~/rpmbuild/RPMS/*/wezterm-*.rpm wezterm-nightly-fedora41.rpm
       - name: "Upload artifact"
         uses: actions/upload-artifact@v7
         with:
-          name: "fedora41"
-          path: "wezterm-*.rpm"
+          name: "ubuntu26.04"
+          path: |
+            wezterm-*.deb
+            wezterm-*.xz
           retention-days: 5
 
   upload:
@@ -132,12 +133,12 @@ jobs:
       - name: "Download artifact"
         uses: actions/download-artifact@v8
         with:
-          name: "fedora41"
+          name: "ubuntu26.04"
       - name: "Checksum"
         shell: bash
-        run: "for f in wezterm-*.rpm ; do sha256sum $f > $f.sha256 ; done"
+        run: "for f in wezterm-*.deb wezterm-*.xz ; do sha256sum $f > $f.sha256 ; done"
       - name: "Upload to Nightly Release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
-        run: "bash ci/retry.sh gh release upload --clobber nightly wezterm-*.rpm *.sha256"
+        run: "bash ci/retry.sh gh release upload --clobber nightly wezterm-*.deb wezterm-*.xz *.sha256"

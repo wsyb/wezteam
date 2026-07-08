@@ -2,6 +2,7 @@
 
 use crate::{KeyCode, Modifiers};
 
+#[cfg(feature = "x11")]
 pub fn modifiers_from_state(state: u32) -> Modifiers {
     let mut mods = Modifiers::default();
 

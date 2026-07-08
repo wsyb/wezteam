@@ -97,7 +97,7 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: build
-    if: github.repository == 'wsyb/wezteam'
+    if: github.repository == 'wezterm/wezterm'
     permissions:
       contents: write
       pages: write
