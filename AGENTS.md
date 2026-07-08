@@ -1,3 +1,62 @@
+# WezTeam Developer Guide
+
+WezTeam is a fork of [WezTerm](https://github.com/wezterm/wezterm) adding heterogeneous AI Agent team collaboration (TeamShell). Rust workspace, ~20 crates.
+
+## Build & Run
+
+```bash
+cargo build --release --package wezterm-gui   # main GUI binary
+cargo run --release --package wezterm-gui      # run it
+./1-build.sh                                    # build all release binaries (wezterm + gui + mux-server + tsh)
+```
+
+## Test & Lint
+
+```bash
+cargo nextest run                               # preferred test runner (Makefile uses this)
+cargo test --all                                # fallback if nextest not installed
+cargo +nightly fmt                              # format (requires nightly toolchain)
+cargo +nightly fmt --all -- --check             # CI format check
+cargo check                                     # type-check without codegen
+cargo check -p wezterm-escape-parser            # also check no_std crate
+cargo check -p wezterm-cell -p wezterm-surface -p wezterm-ssh
+```
+
+CI enforces: `cargo +nightly fmt --check` on PRs touching `*.rs`.
+
+## Key Directories
+
+| Dir | Purpose |
+|-----|---------|
+| `wezterm-gui/` | GUI frontend (main application entrypoint) |
+| `wezterm/` | Core terminal emulator CLI |
+| `wezterm-mux-server/` | Headless multiplexer server |
+| `wezterm-mux-server-impl/` | Mux server implementation |
+| `term/` | Terminal state model (escape sequences, cell grid) |
+| `termwiz/` | Terminal emulation library |
+| `config/` | Configuration parsing |
+| `tsh/` | TeamShell CLI (`teamshell-cli` crate, binary name `tsh`) |
+| `vtparse/` | VT parser (no_std compatible) |
+| `mux/` | Multiplexer abstraction |
+| `lua-api-crates/` | Lua binding crates |
+
+## Workspace Quirks
+
+- **Rust edition 2018** (see `.rustfmt.toml`)
+- **OpenSSL vendored** by default (`openssl/vendored` feature in workspace deps)
+- `wezterm-escape-parser` is `no_std` — always check it separately
+- `termwiz/codegen` and `wezterm-char-props/codegen` are **excluded** from workspace
+- `cargo install --path tsh` installs the `tsh` CLI
+- Packaging scripts: `1-build.sh` → `2-pkg-{linux,macos,windows}.sh` → `3-release.sh`
+
+## Architecture Notes
+
+- Upstream WezTerm code is preserved; TeamShell additions are isolated in `tsh/` and the tab-bar IPC layer
+- The `tsh` CLI communicates with wezterm via IPC (interprocess crate, Unix domain sockets / named pipes)
+- When modifying terminal behavior, work in `term/`; GUI changes go in `wezterm-gui/`
+- Lua config system: `config/` parses `wezterm.lua`, `lua-api-crates/` provides Lua-callable functions
+
+---
 
 <!-- TeamShell Protocol Start v2.0.0 -->
 # 📜 TeamShell 协作协议
