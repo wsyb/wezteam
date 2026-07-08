@@ -16,6 +16,7 @@ config.workspace = true
 dns-lookup.workspace = true
 futures.workspace = true
 hostname.workspace = true
+interprocess = { version = "2.4", features = ["tokio"] }
 lazy_static.workspace = true
 libc.workspace = true
 log.workspace = true
@@ -27,6 +28,7 @@ rcgen.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 smol.workspace = true
+teamshell-ipc.workspace = true
 termwiz = { workspace=true, features=["use_serde"] }
 tokio = { workspace=true, features = ["full"] }
 url.workspace = true

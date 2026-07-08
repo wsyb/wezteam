@@ -1030,7 +1030,7 @@ impl WaylandWindowInner {
     pub(crate) fn set_frame_cursor(
         &mut self,
         pointer: &smithay_client_toolkit::seat::pointer::ThemedPointer<
-            super::pointer::PointerUserData,
+            crate::os::wayland::pointer::PointerUserData,
         >,
         connection: &wayland_client::Connection,
         cursor: CursorIcon,

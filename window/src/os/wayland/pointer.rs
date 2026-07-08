@@ -63,7 +63,7 @@ impl PointerHandler for WaylandState {
     }
 }
 
-pub(super) struct PointerUserData {
+pub(crate) struct PointerUserData {
     pub(super) pdata: PointerData,
     pub(super) state: Mutex<PointerState>,
 }

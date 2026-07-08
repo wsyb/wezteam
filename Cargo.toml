@@ -5,6 +5,7 @@ members = [
   "strip-ansi-escapes",
   "sync-color-schemes",
   "deps/cairo",
+  "teamshell-ipc",
   "tsh",
   "wezterm",
   "wezterm-blob-leases",
@@ -87,6 +88,7 @@ encoding_rs = "0.8"
 enum-display-derive = "0.1"
 env-bootstrap = { path = "env-bootstrap" }
 env_logger = "0.11"
+teamshell-ipc = { path = "teamshell-ipc" }
 euclid = {version="0.22", default-features=false}
 fancy-regex = {version="0.14", default-features=false, features=[]}
 fastrand = "2.0"

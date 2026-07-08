@@ -38,6 +38,24 @@ pub fn fixup_snap() {
     }
 }
 
+#[cfg(unix)]
+pub fn add_exe_dir_to_path() {
+    if let Some(dir) = std::env::var_os("WEZTERM_EXECUTABLE_DIR") {
+        if let Some(path) = std::env::var_os("PATH") {
+            let dir = PathBuf::from(dir);
+            let mut paths = std::env::split_paths(&path).collect::<Vec<_>>();
+            if !paths.contains(&dir) {
+                paths.insert(0, dir);
+                let new_path = std::env::join_paths(paths).expect("unable to update PATH");
+                std::env::set_var("PATH", &new_path);
+            }
+        }
+    }
+}
+
+#[cfg(not(unix))]
+pub fn add_exe_dir_to_path() {}
+
 pub fn fixup_appimage() {
     if let Some(appimage) = std::env::var_os("APPIMAGE") {
         let appimage = std::path::PathBuf::from(appimage);
@@ -49,19 +67,6 @@ pub fn fixup_appimage() {
         // `WezTerm.AppImage foo`, which is super confusing for everyone!
         // Let's just unset that from the environment!
         std::env::remove_var("ARGV0");
-
-        // Since our AppImage includes multiple utilities, we want to
-        // be able to use them, so add that location to the PATH!
-        // WEZTERM_EXECUTABLE_DIR is set by `set_wezterm_executable`
-        // which is called before `fixup_appimage`
-        if let Some(dir) = std::env::var_os("WEZTERM_EXECUTABLE_DIR") {
-            if let Some(path) = std::env::var_os("PATH") {
-                let mut paths = std::env::split_paths(&path).collect::<Vec<_>>();
-                paths.insert(0, PathBuf::from(dir));
-                let new_path = std::env::join_paths(paths).expect("unable to update PATH");
-                std::env::set_var("PATH", &new_path);
-            }
-        }
 
         // This AppImage feature allows redirecting HOME and XDG_CONFIG_HOME
         // to live alongside the executable for portable use:
@@ -219,6 +224,7 @@ pub fn bootstrap() {
     #[cfg(target_os = "macos")]
     set_lang_from_locale();
 
+    add_exe_dir_to_path();
     fixup_appimage();
     fixup_snap();
 

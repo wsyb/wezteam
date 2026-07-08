@@ -34,15 +34,15 @@ if [ "$PLATFORM" = "Linux" ]; then
   fi
 fi
 
-cargo build -p wezterm --release
+# Build all packages together so cargo correctly tracks dependencies.
+# Individual -p builds can skip recompilation when shared deps change.
+# We build wezterm-gui separately because it needs custom features.
+cargo build -p wezterm -p wezterm-mux-server -p strip-ansi-escapes -p teamshell-cli --release
 if [ -n "$GUI_FEATURES" ]; then
   cargo build -p wezterm-gui --release --no-default-features --features "$GUI_FEATURES"
 else
   cargo build -p wezterm-gui --release
 fi
-cargo build -p wezterm-mux-server --release
-cargo build -p strip-ansi-escapes --release
-cargo build -p teamshell-cli --release
 
 echo
 echo "✅ Build complete! Binaries in target/release/"

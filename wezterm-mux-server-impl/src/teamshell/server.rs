@@ -1,12 +1,9 @@
 use super::handler::Handler;
 use super::protocol::IpcRequest;
 use anyhow::Context as _;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use interprocess::local_socket::traits::tokio::Listener as _;
 
-#[cfg(windows)]
-pub const PIPE_NAME: &str = r"\\.\pipe\TeamShell-wezteam";
-#[cfg(unix)]
-pub const SOCKET_PATH: &str = "/tmp/TeamShell-wezteam.sock";
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 pub fn spawn_server_thread() {
     std::thread::spawn(|| {
@@ -24,50 +21,15 @@ pub fn spawn_server_thread() {
     });
 }
 
-#[cfg(windows)]
 pub async fn start_server() -> anyhow::Result<()> {
-    use tokio::net::windows::named_pipe::ServerOptions;
+    let listener = teamshell_ipc::create_listener()
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
 
     loop {
-        let pipe = ServerOptions::new()
-            .first_pipe_instance(false)
-            .create(PIPE_NAME)
-            .with_context(|| format!("failed to create TeamShell named pipe {PIPE_NAME}"))?;
-
-        pipe.connect()
-            .await
-            .context("failed to accept TeamShell named pipe client")?;
-
-        tokio::spawn(async move {
-            if let Err(err) = handle_client(pipe).await {
-                log::error!("TeamShell client error: {:#}", err);
-            }
-        });
-    }
-}
-
-#[cfg(unix)]
-pub async fn start_server() -> anyhow::Result<()> {
-    use std::os::unix::fs::PermissionsExt;
-    use tokio::net::UnixListener;
-
-    match std::fs::remove_file(SOCKET_PATH) {
-        Ok(()) => {}
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
-        Err(err) => return Err(err).with_context(|| format!("failed to remove {SOCKET_PATH}")),
-    }
-
-    let listener = UnixListener::bind(SOCKET_PATH)
-        .with_context(|| format!("failed to bind TeamShell socket {SOCKET_PATH}"))?;
-
-    std::fs::set_permissions(SOCKET_PATH, std::fs::Permissions::from_mode(0o600))
-        .with_context(|| format!("failed to set permissions on {SOCKET_PATH}"))?;
-
-    loop {
-        let (stream, _) = listener
+        let stream = listener
             .accept()
             .await
-            .context("failed to accept TeamShell unix socket client")?;
+            .context("failed to accept TeamShell client")?;
 
         tokio::spawn(async move {
             if let Err(err) = handle_client(stream).await {
