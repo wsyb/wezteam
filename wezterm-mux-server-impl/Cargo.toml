@@ -16,7 +16,7 @@ config.workspace = true
 dns-lookup.workspace = true
 futures.workspace = true
 hostname.workspace = true
-interprocess = { version = "2.4", features = ["tokio"] }
+
 lazy_static.workspace = true
 libc.workspace = true
 log.workspace = true

@@ -1,69 +1,54 @@
-use interprocess::local_socket::prelude::*;
-use interprocess::local_socket::{GenericFilePath, GenericNamespaced, Name};
+use std::time::Duration;
 
-pub const ENDPOINT_PREFIX: &str = "TeamShell-wezteam";
+pub const TEAMSH_PORT: u16 = 31415;
+pub const TEAMSH_AUTH_TOKEN: &str = "teamshell-31415";
 
-pub fn socket_path() -> String {
-    if let Ok(path) = std::env::var("TEAMSH_SOCKET_PATH") {
-        return path;
-    }
-    if let Ok(dir) = std::env::var("WEZTERM_EXECUTABLE_DIR") {
-        return format!("{}/.teamshell.sock", dir.trim_end_matches('/'));
-    }
-    format!("/tmp/{}.sock", ENDPOINT_PREFIX)
+pub fn connect() -> Result<std::net::TcpStream, String> {
+    connect_with_retries(3, Duration::from_millis(100))
 }
 
-pub fn discover_endpoint() -> String {
-    if let Ok(endpoint) = std::env::var("HICLI_ENDPOINT") {
-        return endpoint;
-    }
-    if let Ok(pid) = std::env::var("HICLI_BACKEND_PID") {
-        return format!("{}-{}", ENDPOINT_PREFIX, pid);
-    }
-    socket_path()
-}
+pub fn connect_with_retries(
+    max_retries: usize,
+    initial_delay: Duration,
+) -> Result<std::net::TcpStream, String> {
+    let addr = format!("127.0.0.1:{}", TEAMSH_PORT);
 
-fn make_socket_name_inner(endpoint: &str) -> Result<Name<'static>, String> {
-    let endpoint_str: &'static str = Box::leak(endpoint.to_string().into_boxed_str());
-    if GenericNamespaced::is_supported() {
-        endpoint_str
-            .to_ns_name::<GenericNamespaced>()
-            .map_err(|e| format!("创建套接字名称失败: {}", e))
-    } else {
-        endpoint_str
-            .to_fs_name::<GenericFilePath>()
-            .map_err(|e| format!("创建套接字名称失败: {}", e))
-    }
-}
-
-pub fn make_socket_name(endpoint: &str) -> Result<Name<'static>, String> {
-    make_socket_name_inner(endpoint)
-}
-
-pub fn make_default_socket_name() -> Result<Name<'static>, String> {
-    make_socket_name_inner(&socket_path())
-}
-
-pub fn connect() -> Result<interprocess::local_socket::Stream, String> {
-    let endpoint = discover_endpoint();
-    let name = make_socket_name(&endpoint)?;
-    interprocess::local_socket::Stream::connect(name)
-        .map_err(|e| format!("无法连接到 teamshell 后端 ({}): {}", endpoint, e))
-}
-
-pub fn create_listener() -> Result<interprocess::local_socket::tokio::Listener, String> {
-    let path = socket_path();
-    let name = make_socket_name_inner(&path)?;
-
-    if std::path::Path::new(&path).exists() {
-        let _ = std::fs::remove_file(&path);
+    let mut delay = initial_delay;
+    for attempt in 0..max_retries {
+        match std::net::TcpStream::connect(&addr) {
+            Ok(stream) => {
+                stream
+                    .set_nodelay(true)
+                    .map_err(|e| format!("设置 TCP_NODELAY 失败: {}", e))?;
+                return Ok(stream);
+            }
+            Err(e) if attempt < max_retries - 1 => {
+                log::debug!(
+                    "连接失败，{}ms 后重试 ({}/{}): {}",
+                    delay.as_millis(),
+                    attempt + 1,
+                    max_retries,
+                    e
+                );
+                std::thread::sleep(delay);
+                delay *= 2;
+            }
+            Err(e) => {
+                return Err(format!("无法连接到 TeamShell 后端 ({}): {}", addr, e));
+            }
+        }
     }
 
-    let listener = interprocess::local_socket::ListenerOptions::new()
-        .name(name)
-        .create_tokio()
-        .map_err(|e| format!("failed to create TeamShell listener {}: {}", path, e))?;
+    unreachable!()
+}
 
-    log::info!("TeamShell server listening on {}", path);
-    Ok(listener)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn constants_are_valid() {
+        assert!(TEAMSH_PORT > 1024);
+        assert!(!TEAMSH_AUTH_TOKEN.is_empty());
+    }
 }

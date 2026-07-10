@@ -1,53 +1,25 @@
 use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
 
-use interprocess::local_socket::traits::Stream as _;
-
 use crate::protocol::{Request, Response};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
 pub fn send_request(request: &Request) -> Result<Response, String> {
-    let endpoint = teamshell_ipc::discover_endpoint();
-    let name = teamshell_ipc::make_socket_name(&endpoint)?;
+    let mut stream = teamshell_ipc::connect_with_retries(3, Duration::from_millis(100))?;
+    let _ = stream.set_read_timeout(Some(TIMEOUT));
+    let _ = stream.set_write_timeout(Some(TIMEOUT));
 
-    let max_retries = 3;
-    let mut delay = Duration::from_millis(100);
-    let mut stream = None;
-
-    for attempt in 0..max_retries {
-        match interprocess::local_socket::Stream::connect(name.clone()) {
-            Ok(s) => {
-                stream = Some(s);
-                break;
-            }
-            Err(e) if attempt < max_retries - 1 => {
-                eprintln!(
-                    "连接失败，{}ms 后重试 ({}/{}): {}",
-                    delay.as_millis(),
-                    attempt + 1,
-                    max_retries,
-                    e
-                );
-                std::thread::sleep(delay);
-                delay *= 2;
-            }
-            Err(e) => {
-                return Err(format!(
-                    "无法连接到 teamshell 后端 ({}): {}\n请确认后端正在运行。",
-                    endpoint, e
-                ));
-            }
-        }
-    }
-
-    let mut stream = stream.unwrap();
-
-    let _ = stream.set_recv_timeout(Some(TIMEOUT));
-    let _ = stream.set_send_timeout(Some(TIMEOUT));
-
+    let mut value = serde_json::to_value(request).map_err(|e| format!("序列化请求失败: {}", e))?;
+    let obj = value
+        .as_object_mut()
+        .ok_or_else(|| "请求序列化结果不是 JSON 对象".to_string())?;
+    obj.insert(
+        "auth_token".to_string(),
+        serde_json::Value::String(teamshell_ipc::TEAMSH_AUTH_TOKEN.to_string()),
+    );
     let request_json =
-        serde_json::to_string(request).map_err(|e| format!("序列化请求失败: {}", e))?;
+        serde_json::to_string(&value).map_err(|e| format!("序列化请求失败: {}", e))?;
 
     stream
         .write_all(request_json.as_bytes())

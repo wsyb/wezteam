@@ -52,9 +52,23 @@ CI enforces: `cargo +nightly fmt --check` on PRs touching `*.rs`.
 ## Architecture Notes
 
 - Upstream WezTerm code is preserved; TeamShell additions are isolated in `tsh/` and the tab-bar IPC layer
-- The `tsh` CLI communicates with wezterm via IPC (interprocess crate, Unix domain sockets / named pipes)
+- The `tsh` CLI communicates with wezterm via IPC (TCP loopback on fixed port 31415)
 - When modifying terminal behavior, work in `term/`; GUI changes go in `wezterm-gui/`
 - Lua config system: `config/` parses `wezterm.lua`, `lua-api-crates/` provides Lua-callable functions
+
+## TeamShell Debugging
+
+| 文件 | 路径 | 说明 |
+|------|------|------|
+| TeamShell 日志 | `RUNTIME_DIR/teamshell.log` | 专用日志，固定文件名，每次 wezterm 启动追加写入 |
+| WezTerm 主日志 | `RUNTIME_DIR/wezterm-gui-log-{pid}.txt` | 全局日志，含 TeamShell 消息 |
+
+IPC 连接：`tsh` 直连 `127.0.0.1:31415`（固定端口 + 固定 token），无需端口文件。
+
+快速查看：
+```bash
+cat /run/user/1000/wezterm/teamshell.log    # TeamShell 专用日志
+```
 
 ---
 

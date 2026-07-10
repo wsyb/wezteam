@@ -5,7 +5,7 @@ use tokio::io::{duplex, AsyncBufReadExt, AsyncWriteExt, BufReader};
 use wezterm_mux_server_impl::teamshell::handler::Handler;
 use wezterm_mux_server_impl::teamshell::output;
 use wezterm_mux_server_impl::teamshell::protocol::{IpcRequest, IpcResponse, TabState};
-use wezterm_mux_server_impl::teamshell::server::handle_stream;
+use wezterm_mux_server_impl::teamshell::server::handle_client;
 
 fn with_empty_mux() {
     Mux::set_mux(&Arc::new(Mux::new(None)));
@@ -58,10 +58,11 @@ async fn server_calls_handler_and_returns_real_response() {
     let (client, server) = duplex(1024);
     let mut client = BufReader::new(client);
 
-    let server_task = tokio::spawn(async move { handle_stream(server).await });
+    let token = "test-token";
+    let server_task = tokio::spawn(async move { handle_client(server, token).await });
 
     client
-        .write_all(b"{\"cmd\":\"close\",\"tab_index\":99}\n")
+        .write_all(b"{\"auth_token\":\"test-token\",\"cmd\":\"close\",\"tab_index\":99}\n")
         .await
         .unwrap();
 
