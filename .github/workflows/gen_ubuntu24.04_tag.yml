@@ -126,6 +126,7 @@ jobs:
       - name: "checkout repo"
         uses: actions/checkout@v7
       - name: "Checkout linuxbrew tap"
+        continue-on-error: true
         uses: actions/checkout@v7
         with:
           repository: "wez/homebrew-wezterm-linuxbrew"
@@ -157,6 +158,7 @@ jobs:
         shell: bash
         run: "bash ci/retry.sh gh release upload --clobber $(ci/tag-name.sh) wezterm-*.deb wezterm-*.xz *src.tar.gz *.AppImage *.sha256"
       - name: "Checkout flathub/org.wezfurlong.wezterm"
+        continue-on-error: true
         uses: actions/checkout@v7
         with:
           repository: "flathub/org.wezfurlong.wezterm"

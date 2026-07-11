@@ -110,6 +110,7 @@ jobs:
         shell: bash
         run: "bash ci/retry.sh gh release upload --clobber $(ci/tag-name.sh) WezTerm-*.zip WezTerm-*.exe *.sha256"
       - name: "Checkout winget-pkgs"
+        continue-on-error: true
         uses: actions/checkout@v7
         with:
           repository: "wez/winget-pkgs"

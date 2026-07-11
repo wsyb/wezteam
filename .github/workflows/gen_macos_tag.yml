@@ -104,6 +104,7 @@ jobs:
       - name: "checkout repo"
         uses: actions/checkout@v7
       - name: "Checkout homebrew tap"
+        continue-on-error: true
         uses: actions/checkout@v7
         with:
           repository: "wez/homebrew-wezterm"

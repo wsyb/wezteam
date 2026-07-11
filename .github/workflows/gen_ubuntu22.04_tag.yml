@@ -110,6 +110,7 @@ jobs:
       - name: "checkout repo"
         uses: actions/checkout@v7
       - name: "Upload to gemfury"
+        continue-on-error: true
         env:
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
         shell: bash
