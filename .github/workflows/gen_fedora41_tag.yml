@@ -25,9 +25,9 @@ jobs:
       - name: "Install curl"
         shell: bash
         run: "yum install -y curl"
-      - name: "Install Perl IPC-Cmd (for OpenSSL build)"
+      - name: "Install Perl (for OpenSSL build)"
         shell: bash
-        run: "dnf install -y perl-IPC-Cmd"
+        run: "dnf install -y perl"
       - name: "Ensure /run/sshd exists"
         shell: bash
         run: "mkdir -p /run/sshd"
