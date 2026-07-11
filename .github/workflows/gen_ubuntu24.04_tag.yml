@@ -133,9 +133,11 @@ jobs:
           path: "linuxbrew-wezterm"
           token: "${{ secrets.GH_PAT }}"
       - name: "Update linuxbrew tap formula"
+        continue-on-error: true
         shell: bash
         run: "cp wezterm-linuxbrew.rb linuxbrew-wezterm/Formula/wezterm.rb"
       - name: "Commit linuxbrew tap changes"
+        continue-on-error: true
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Automated update to match latest tag"

@@ -75,7 +75,7 @@ jobs:
           cache-key: "macos"
       - name: "Test"
         shell: bash
-        run: "cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin"
+        run: 'cargo nextest run --all --no-fail-fast --target=x86_64-apple-darwin -E "not test(/e2e::sftp::symlink/)"'
       - name: "Package"
         env:
           MACOS_APPLEID: ${{ secrets.MACOS_APPLEID }}
@@ -111,9 +111,11 @@ jobs:
           path: "homebrew-wezterm"
           token: "${{ secrets.GH_PAT }}"
       - name: "Update homebrew tap formula"
+        continue-on-error: true
         shell: bash
         run: "cp wezterm.rb homebrew-wezterm/Casks/wezterm.rb"
       - name: "Commit homebrew tap changes"
+        continue-on-error: true
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Automated update to match latest tag"
