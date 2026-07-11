@@ -38,7 +38,7 @@ case $OSTYPE in
     cp -r assets/shell-completion $zipdir/WezTerm.app/Contents/Resources
     tic -xe wezterm -o $zipdir/WezTerm.app/Contents/Resources/terminfo termwiz/data/wezterm.terminfo
 
-    for bin in wezterm wezterm-mux-server wezterm-gui strip-ansi-escapes ; do
+    for bin in wezterm wezterm-mux-server wezterm-gui strip-ansi-escapes tsh ; do
       # If the user ran a simple `cargo build --release`, then we want to allow
       # a single-arch package to be built
       if [[ -f $TARGET_DIR/release/$bin ]] ; then
@@ -116,6 +116,7 @@ case $OSTYPE in
       $TARGET_DIR/release/wezterm-mux-server.exe \
       $TARGET_DIR/release/wezterm-gui.exe \
       $TARGET_DIR/release/strip-ansi-escapes.exe \
+      $TARGET_DIR/release/tsh.exe \
       $TARGET_DIR/release/wezterm.pdb \
       assets/windows/conhost/conpty.dll \
       assets/windows/conhost/OpenConsole.exe \
@@ -158,7 +159,7 @@ source ~/.cargo/env
 
 cargo build --release \
       -p wezterm-gui -p wezterm -p wezterm-mux-server \
-      -p strip-ansi-escapes
+      -p strip-ansi-escapes -p teamshell-cli
 BUILDEOFEOF
 )
           BUILD_REQUIRES=$(cat <<BREQEOF
@@ -245,6 +246,7 @@ install -Dsm755 $TARGET_DIR/release/wezterm -t %{buildroot}/usr/bin
 install -Dsm755 $TARGET_DIR/release/wezterm-gui -t %{buildroot}/usr/bin
 install -Dsm755 $TARGET_DIR/release/wezterm-mux-server -t %{buildroot}/usr/bin
 install -Dsm755 $TARGET_DIR/release/strip-ansi-escapes -t %{buildroot}/usr/bin
+install -Dsm755 $TARGET_DIR/release/tsh -t %{buildroot}/usr/bin
 install -Dm644 assets/shell-integration/* -t %{buildroot}/etc/profile.d
 install -Dm644 assets/shell-completion/zsh %{buildroot}/usr/share/zsh/site-functions/_wezterm
 install -Dm644 assets/shell-completion/bash %{buildroot}/etc/bash_completion.d/wezterm
@@ -259,6 +261,7 @@ install -Dm644 assets/wezterm-nautilus.py %{buildroot}/usr/share/nautilus-python
 %files -n wezterm-common
 /usr/bin/wezterm
 /usr/bin/strip-ansi-escapes
+/usr/bin/tsh
 /usr/share/zsh/site-functions/_wezterm
 /etc/bash_completion.d/wezterm
 /etc/profile.d/*
@@ -337,6 +340,7 @@ EOF
         install -Dsm755 -t pkg/debian/usr/bin $TARGET_DIR/release/wezterm
         install -Dm755 -t pkg/debian/usr/bin assets/open-wezterm-here
         install -Dsm755 -t pkg/debian/usr/bin $TARGET_DIR/release/strip-ansi-escapes
+        install -Dsm755 -t pkg/debian/usr/bin $TARGET_DIR/release/tsh
 
         deps=$(cd pkg && dpkg-shlibdeps -O -e debian/usr/bin/*)
         mv pkg/debian/postinst pkg/debian/DEBIAN/postinst
@@ -404,6 +408,7 @@ source="
   $TARGET_DIR/release/wezterm
   $TARGET_DIR/release/wezterm-gui
   $TARGET_DIR/release/wezterm-mux-server
+  $TARGET_DIR/release/tsh
   assets/open-wezterm-here
   assets/wezterm.desktop
   assets/wezterm.appdata.xml
@@ -422,6 +427,7 @@ package() {
   install -Dm755 -t "\$pkgdir"/usr/bin "\$srcdir"/wezterm
   install -Dm755 -t "\$pkgdir"/usr/bin "\$srcdir"/wezterm-gui
   install -Dm755 -t "\$pkgdir"/usr/bin "\$srcdir"/wezterm-mux-server
+  install -Dm755 -t "\$pkgdir"/usr/bin "\$srcdir"/tsh
 
   install -Dm644 -t "\$pkgdir"/usr/share/applications "\$srcdir"/wezterm.desktop
   install -Dm644 -t "\$pkgdir"/usr/share/metainfo "\$srcdir"/wezterm.appdata.xml
