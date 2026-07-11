@@ -182,9 +182,19 @@ Claude: "登录功能已完成，Codex 评审通过，Qwen 测试通过，可直
 **macOS**：下载 `WezTerm-*-macos.zip` → 解压拖到 `/Applications`
 
 **Linux**：
-- Ubuntu/Debian：`wget ... && tar -xf ... && sudo dpkg -i .`
-- Fedora/CentOS：`wget ... && sudo dnf install ...`
-- 通用版：下载 AppImage，`chmod +x` 后运行
+```bash
+# Ubuntu/Debian — 下载 .deb 安装
+wget https://github.com/wsyb/wezteam/releases/download/v1.0.0/wezterm-1.0.0.Ubuntu24.04.deb
+sudo dpkg -i wezterm-1.0.0.Ubuntu24.04.deb
+
+# Fedora/CentOS — 下载 .rpm 安装
+wget https://github.com/wsyb/wezteam/releases/download/v1.0.0/wezterm-1.0.0-1.fedora41.x86_64.rpm
+sudo dnf install ./wezterm-1.0.0-1.fedora41.x86_64.rpm
+
+# 通用版 — 下载 AppImage
+chmod +x WezTerm-*.AppImage
+./WezTerm-*.AppImage
+```
 
 ---
 

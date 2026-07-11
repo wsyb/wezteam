@@ -177,14 +177,26 @@ The Agents handle the rest.
 
 ### Download
 
+Download the latest release from the [Releases page](https://github.com/wsyb/wezteam/releases).
+
 **Windows**: Download `WezTerm-*-setup.exe` → double-click to install
 
-**macOS**: Download `WezTerm-*-macos.zip` → extract and drag to `/Applications`
+**macOS**: Download `WezTerm-macos-*.zip` → extract and drag to `/Applications`
 
 **Linux**:
-- Ubuntu/Debian: `wget ... && tar -xf ... && sudo dpkg -i .`
-- Fedora/CentOS: `wget ... && sudo dnf install ...`
-- Universal: Download AppImage, `chmod +x` and run
+```bash
+# Ubuntu/Debian — download .deb and install
+wget https://github.com/wsyb/wezteam/releases/download/v1.0.0/wezterm-1.0.0.Ubuntu24.04.deb
+sudo dpkg -i wezterm-1.0.0.Ubuntu24.04.deb
+
+# Fedora/CentOS — download .rpm and install
+wget https://github.com/wsyb/wezteam/releases/download/v1.0.0/wezterm-1.0.0-1.fedora41.x86_64.rpm
+sudo dnf install ./wezterm-1.0.0-1.fedora41.x86_64.rpm
+
+# Universal — download AppImage
+chmod +x WezTerm-*.AppImage
+./WezTerm-*.AppImage
+```
 
 ---
 
