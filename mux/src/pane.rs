@@ -328,6 +328,11 @@ pub trait Pane: Downcast + Send + Sync {
     ) -> Option<procinfo::LocalProcessInfo> {
         None
     }
+    /// Lightweight CWD-only lookup: reads /proc/<pid>/cwd directly.
+    /// Avoids the expensive process tree scan of get_foreground_process_info.
+    fn get_foreground_process_cwd(&self, _policy: CachePolicy) -> Option<std::path::PathBuf> {
+        None
+    }
 
     fn tty_name(&self) -> Option<String> {
         None

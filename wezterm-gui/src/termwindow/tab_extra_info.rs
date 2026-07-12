@@ -11,6 +11,7 @@
 
 use mux::pane::CachePolicy;
 use std::path::Path;
+use url::Url;
 
 // ============================================================
 // Public API
@@ -30,27 +31,23 @@ pub struct TabExtraInfo {
 ///
 /// Entry point and the only interface between the data layer and the UI layer.
 pub fn get_tab_extra_info(pane: &dyn mux::pane::Pane, tab_title: &str) -> TabExtraInfo {
+    // Always get the REAL CWD from the process — never trust the title for CWD.
+    // The title is set by the shell prompt and doesn't update when you `cd`.
+    let real_cwd = get_pane_cwd(pane);
+
     let title_path = extract_reversed_path_from_title(tab_title);
-    let osc7_cwd = get_pane_cwd(pane);
     let title_is_path = title_path.is_some();
 
-    // Reversed path: only shown when title is not a path, derived from OSC 7 CWD
+    // Reversed path: only shown when title is not a path, derived from real CWD
     let reversed_path = if !title_is_path {
-        osc7_cwd.as_ref().map(|p| path_to_reversed(p))
+        real_cwd.as_ref().map(|p| path_to_reversed(p))
     } else {
         None
     };
 
-    // Normal CWD: title path normalized takes priority, then OSC 7
-    let normal_cwd = if title_is_path {
-        title_path.as_ref().map(|p| reversed_to_normal(p))
-    } else {
-        osc7_cwd
-    };
-
     TabExtraInfo {
         reversed_path,
-        git_branch: normal_cwd.as_ref().and_then(|p| get_git_branch(p)),
+        git_branch: real_cwd.as_ref().and_then(|p| get_git_branch(p)),
         current_command: get_current_command(pane),
     }
 }
@@ -104,11 +101,46 @@ fn strip_tab_index(title: &str) -> &str {
     title.splitn(2, ": ").last().unwrap_or(title)
 }
 
-/// Get pane current working directory (OSC 7, normal order)
+/// Get pane current working directory (normal order)
+///
+/// Two-layer fallback:
+///   1. OSC 7 URL → path string (handles file://hostname/path from zsh)
+///   2. Foreground process CWD (lightweight /proc/<pid>/cwd read)
 fn get_pane_cwd(pane: &dyn mux::pane::Pane) -> Option<String> {
-    pane.get_current_working_dir(CachePolicy::FetchImmediate)
-        .and_then(|url| url.to_file_path().ok())
-        .and_then(|path| path.into_os_string().into_string().ok())
+    let osc7_cwd = pane
+        .get_current_working_dir(CachePolicy::FetchImmediate)
+        .and_then(|url| url_to_path_string(&url));
+
+    let proc_cwd = pane
+        .get_foreground_process_cwd(CachePolicy::FetchImmediate)
+        .and_then(|path| {
+            let s = path.into_os_string().into_string().ok()?;
+            if s.is_empty() { None } else { Some(s) }
+        });
+
+    osc7_cwd.or(proc_cwd)
+}
+
+/// Convert a file:// URL to a filesystem path string.
+///
+/// Standard `Url::to_file_path()` rejects `file://hostname/path` (zsh sends this).
+/// This function falls back to manually extracting the path component when
+/// the standard conversion fails due to a non-empty host.
+fn url_to_path_string(url: &Url) -> Option<String> {
+    if let Ok(path) = url.to_file_path() {
+        return path.into_os_string().into_string().ok();
+    }
+    if url.scheme() == "file" {
+        let path_str = url.path();
+        if path_str != "/" && !path_str.is_empty() {
+            return Path::new(path_str)
+                .to_path_buf()
+                .into_os_string()
+                .into_string()
+                .ok();
+        }
+    }
+    None
 }
 
 // ============================================================
@@ -417,5 +449,40 @@ mod tests {
     #[test]
     fn test_format_command_single_arg() {
         assert_eq!(format_command("git", &["status".to_string()]), "git status");
+    }
+
+    // ---- url_to_path_string ----
+
+    #[test]
+    fn test_url_to_path_no_hostname() {
+        let url = url::Url::parse("file:///home/user/project").unwrap();
+        assert_eq!(url_to_path_string(&url), Some("/home/user/project".to_string()));
+    }
+
+    #[test]
+    fn test_url_to_path_with_hostname() {
+        let url = url::Url::parse("file://myhost/home/user/project").unwrap();
+        assert_eq!(url_to_path_string(&url), Some("/home/user/project".to_string()));
+    }
+
+    #[test]
+    fn test_url_to_path_with_hostname_windows_style() {
+        let url = url::Url::parse("file://myhost/D:/work/project").unwrap();
+        let result = url_to_path_string(&url);
+        assert!(result.is_some(), "should extract path from file://host/D:/...");
+        let path = result.unwrap();
+        assert!(path.contains("work"), "path should contain 'work': {}", path);
+    }
+
+    #[test]
+    fn test_url_to_path_non_file_scheme() {
+        let url = url::Url::parse("https://example.com/path").unwrap();
+        assert_eq!(url_to_path_string(&url), None);
+    }
+
+    #[test]
+    fn test_url_to_path_empty_path() {
+        let url = url::Url::parse("file://myhost").unwrap();
+        assert_eq!(url_to_path_string(&url), None);
     }
 }

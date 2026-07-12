@@ -545,6 +545,14 @@ impl Pane for LocalPane {
         self.divine_foreground_process(policy)
     }
 
+    fn get_foreground_process_cwd(&self, _policy: CachePolicy) -> Option<std::path::PathBuf> {
+        #[cfg(unix)]
+        if let Some(pid) = self.pty.lock().process_group_leader() {
+            return LocalProcessInfo::current_working_dir(pid as u32);
+        }
+        None
+    }
+
     fn get_foreground_process_name(&self, policy: CachePolicy) -> Option<String> {
         #[cfg(unix)]
         {

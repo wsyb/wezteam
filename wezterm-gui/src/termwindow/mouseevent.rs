@@ -447,7 +447,6 @@ impl super::TermWindow {
                 .min(max_width)
         };
         self.vertical_tab_bar_width_override = Some(new_width);
-        self.invalidate_fancy_tab_bar();
 
         // Update the hit area to follow the new separator position
         let handle_width = super::RESIZE_HANDLE_WIDTH;

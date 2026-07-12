@@ -54,10 +54,6 @@ const PLUS_BUTTON: &[Poly] = &[
 ];
 
 impl crate::TermWindow {
-    pub fn invalidate_fancy_tab_bar(&mut self) {
-        self.fancy_tab_bar.take();
-    }
-
     fn tab_bar_colors(&self) -> TabBarColors {
         self.config
             .colors

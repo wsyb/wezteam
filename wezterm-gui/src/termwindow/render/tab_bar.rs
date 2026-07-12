@@ -10,11 +10,9 @@ use window::color::LinearRgba;
 impl crate::TermWindow {
     pub fn paint_tab_bar(&mut self, layers: &mut TripleLayerQuadAllocator) -> anyhow::Result<()> {
         if self.config.use_fancy_tab_bar {
-            if self.fancy_tab_bar.is_none() {
-                let palette = self.palette().clone();
-                let tab_bar = self.build_fancy_tab_bar(&palette)?;
-                self.fancy_tab_bar.replace(tab_bar);
-            }
+            let palette = self.palette().clone();
+            let tab_bar = self.build_fancy_tab_bar(&palette)?;
+            self.fancy_tab_bar.replace(tab_bar);
 
             self.ui_items.append(&mut self.paint_fancy_tab_bar()?);
 
