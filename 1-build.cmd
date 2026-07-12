@@ -3,6 +3,10 @@ setlocal
 
 cd /d "%~dp0"
 
+rem set CARGO_BUILD_JOBS=8
+
+cargo clean
+
 echo Building release binaries...
 cargo build -p wezterm --release
 if errorlevel 1 goto failed
