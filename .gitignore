@@ -38,8 +38,10 @@
 /nix/result
 /build.log
 /path-test/
-/teamshell-*.html
+!/teamshell-proposal.html
+!/teamshell-terminal.html
 /docs/dev/
+/参赛/
 
 # =====================
 # Installer / package outputs

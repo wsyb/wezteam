@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamShell Terminal - 多 Agent 协作终端</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a1a;
+            --bg-terminal: #0d1117;
+            --bg-titlebar: #323232;
+            --bg-tab: #2d2d2d;
+            --bg-tab-active: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-muted: #808080;
+            --accent-cyan: #00d4ff;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffcc00;
+            --accent-red: #ff5555;
+            --accent-purple: #bd93f9;
+            --accent-orange: #ffb86c;
+            --border-color: #3d3d3d;
+            --claude-color: #ff6b4a;
+            --codex-color: #6c5ce7;
+            --trae-color: #00cec9;
+            --shell-color: #50fa7b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 科技感背景网格 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .control-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: var(--bg-terminal);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .control-left { display: flex; align-items: center; gap: 16px; }
+        .control-right { display: flex; align-items: center; gap: 8px; }
+
+        .logo {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .logo::before {
+            content: '⚡';
+            color: var(--accent-cyan);
+            animation: glow 2s infinite;
+        }
+        .logo span {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        @keyframes glow {
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+            50% { opacity: 0.8; text-shadow: 0 0 15px rgba(0, 212, 255, 0.8); }
+        }
+
+        .scenario-selector { display: flex; gap: 4px; }
+        .scenario-btn {
+            padding: 4px 12px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: default;
+            pointer-events: none;
+        }
+        .scenario-btn.active {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .btn-play { background: var(--accent-green); color: #000; }
+        .btn-play:hover { background: #00e07a; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+        .btn-pause { background: var(--accent-yellow); color: #000; }
+        .btn-pause:hover { background: #e6b800; box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
+        .btn-reset { background: var(--accent-red); color: #fff; }
+        .btn-reset:hover { background: #e04444; box-shadow: 0 0 10px rgba(255, 85, 85, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .narration-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(147, 51, 234, 0.15));
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            border-top: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .narration-icon {
+            font-size: 16px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .narration-text {
+            color: var(--accent-cyan);
+            font-size: 14px;
+            font-weight: 500;
+            font-style: italic;
+            flex: 1;
+        }
+        .confirm-btn {
+            padding: 4px 12px;
+            background: var(--accent-red);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .confirm-btn:hover {
+            background: #e04444;
+            box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+        }
+
+        .titlebar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            background: var(--bg-titlebar);
+        }
+        .titlebar-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+        .titlebar-btn.close { background: #ff5555; }
+        .titlebar-btn.minimize { background: #ffcc00; }
+        .titlebar-btn.maximize { background: #00ff88; }
+        .titlebar-title {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .tabbar {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 8px;
+            background: var(--bg-tab);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: transparent;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            border-bottom: none;
+            white-space: nowrap;
+        }
+        .tab:hover { background: rgba(255,255,255,0.05); }
+        .tab.active {
+            background: var(--bg-terminal);
+            border-color: var(--border-color);
+        }
+        .tab-icon {
+            font-size: 12px;
+            font-weight: bold;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+        }
+        .tab-icon.claude { background: rgba(255,107,74,0.2); color: var(--claude-color); }
+        .tab-icon.codex { background: rgba(108,92,231,0.2); color: var(--codex-color); }
+        .tab-icon.trae { background: rgba(0,206,201,0.2); color: var(--trae-color); }
+        .tab-icon.shell { background: rgba(80,250,123,0.2); color: var(--shell-color); }
+        .tab-name { font-size: 12px; }
+        .tab-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0 2px;
+        }
+        .tab-close:hover { color: var(--text-primary); }
+        .tabbar-add {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: auto;
+        }
+        .tabbar-add:hover { border-color: var(--text-primary); color: var(--text-primary); }
+
+        .terminal-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-terminal);
+            overflow: hidden;
+        }
+        .terminal-content {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .terminal-content::-webkit-scrollbar { width: 8px; }
+        .terminal-content::-webkit-scrollbar-track { background: var(--bg-dark); }
+        .terminal-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        .statusbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 16px;
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .statusbar-left { display: flex; gap: 16px; }
+        .statusbar-right { display: flex; gap: 16px; }
+        .tsh-version-clickable {
+            cursor: pointer;
+            color: var(--accent-cyan);
+            transition: all 0.2s;
+        }
+        .tsh-version-clickable:hover {
+            color: var(--accent-purple);
+            text-decoration: underline;
+        }
+
+        .line { margin: 2px 0; }
+        .line-user { color: var(--accent-green); }
+        .line-agent.claude { color: var(--claude-color); }
+        .line-agent.codex { color: var(--codex-color); }
+        .line-agent.trae { color: var(--trae-color); }
+        .line-agent.shell { color: var(--shell-color); }
+        .line-system { color: var(--accent-yellow); }
+        .line-command { color: var(--accent-purple); }
+        .line-output { color: var(--text-primary); white-space: pre-wrap; }
+        .line-tsh-in { color: var(--accent-orange); }
+        .line-tsh-out { color: var(--accent-cyan); }
+
+        .view-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .view-header {
+            color: var(--accent-cyan);
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .view-line-tsh-in { color: var(--accent-orange); }
+        .view-line-tsh-out { color: var(--accent-cyan); }
+        .view-line-agent { color: var(--claude-color); }
+        .view-line-system { color: var(--accent-yellow); }
+        .view-line-command { color: var(--accent-purple); }
+        .view-line-output { color: var(--text-primary); }
+
+        .cmd-color-list { color: var(--accent-green); }
+        .cmd-color-view { color: var(--accent-cyan); }
+        .cmd-color-type { color: var(--accent-orange); }
+        .cmd-color-open { color: var(--accent-blue); }
+        .cmd-color-close { color: #ff6b6b; }
+        .cmd-color-name { color: var(--accent-purple); }
+        .cmd-color-init { color: var(--accent-yellow); }
+
+        .help-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 600px;
+            max-height: 80vh;
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+        }
+        .help-panel.show { display: flex; flex-direction: column; }
+        .help-panel-header {
+            padding: 16px 24px 12px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .help-panel-header h2 { color: var(--accent-cyan); margin: 0; }
+        .help-panel-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .help-panel-close:hover { color: var(--text-primary); }
+        .help-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .help-panel h3 { color: var(--text-primary); margin: 12px 0 8px; }
+        .help-panel code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: var(--accent-green);
+        }
+        .help-panel pre {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .help-tabs {
+            display: flex;
+            gap: 4px;
+            margin: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .help-tab {
+            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .help-tab:hover { color: var(--text-primary); }
+        .help-tab.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+        .help-tab-content {
+            /* 滚动条由外层 .help-panel 控制 */
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        .overlay.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="control-bar">
+        <div class="control-left">
+            <div class="logo">Team<span>Shell</span></div>
+            <div class="scenario-selector" id="scenario-selector">
+                <button class="scenario-btn active" data-scenario="team-setup">场景1: 团队组建</button>
+                <button class="scenario-btn" data-scenario="task-assign">场景2: 任务分配</button>
+                <button class="scenario-btn" data-scenario="dev-review-cycle">场景3: 开发审核循环</button>
+                <button class="scenario-btn" data-scenario="project-close">场景4: 项目验收解散</button>
+            </div>
+        </div>
+        <div class="control-right">
+            <button class="btn btn-play" id="btn-play">▶ 开始演示</button>
+            <button class="btn btn-reset" id="btn-reset">↺ 重置</button>
+        </div>
+    </div>
+
+    <div class="narration-bar" id="narration-bar">
+        <span class="narration-icon">💬</span>
+        <span class="narration-text" id="narration-text">点击「开始演示」观看 TeamShell 多 Agent 协作流程</span>
+        <button class="confirm-btn" id="confirm-btn" style="display: none;">确认解散团队</button>
+    </div>
+
+    <div class="titlebar">
+        <button class="titlebar-btn close"></button>
+        <button class="titlebar-btn minimize"></button>
+        <button class="titlebar-btn maximize"></button>
+        <div class="titlebar-title">TeamShell Terminal - 多 Agent 协作终端</div>
+    </div>
+
+    <div class="tabbar" id="tabbar"></div>
+
+    <div class="terminal-window" id="terminal-window">
+        <div class="terminal-content" id="terminal-content"></div>
+    </div>
+
+    <div class="statusbar">
+        <div class="statusbar-left">
+            <span id="status-agent">Agent: Main</span>
+            <span id="status-id">Tab: 0</span>
+        </div>
+        <div class="statusbar-right">
+            <span>UTF-8</span>
+            <span id="tsh-version" class="tsh-version-clickable">tsh v2.0.0</span>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="help-panel" id="help-panel">
+        <div class="help-panel-header">
+            <button class="help-panel-close" id="help-close">&times;</button>
+            <h2>TeamShell CLI 帮助</h2>
+            <div class="help-tabs">
+                <button class="help-tab active" data-tab="commands">📋 命令帮助</button>
+                <button class="help-tab" data-tab="protocol">📜 协议内容</button>
+            </div>
+        </div>
+        
+        <div class="help-panel-body">
+            <div class="help-tab-content" id="tab-commands">
+                <h3>Usage: tsh [OPTIONS] [COMMAND]</h3>
+                <pre style="background: rgba(0,0,0,0.3); padding: 12px 12px 12px 24px; border-radius: 4px;">
+  tsh list                列出所有工位
+  tsh view &lt;ID&gt; [N]       查看工位屏幕（默认50行）
+  tsh type &lt;ID&gt; "TEXT"    发送消息到指定工位
+    --no-enter            不自动回车
+    --key "\x03"          发送按键（如Ctrl+C）
+  tsh name &lt;ID&gt; "NAME"    重命名工位
+  tsh open "NAME" -- TYPE  启动新工位
+  tsh close &lt;ID&gt;          关闭工位
+  tsh init &lt;FILE&gt;         初始化协议文件
+  tsh help                显示帮助
+  tsh -V, --version       显示版本信息
+
+  TYPE: 任意可执行命令（claude, codex, java -jar, npm, go, python, vim, top, ssh...）</pre>
+                
+                <div style="padding: 16px; background: rgba(147, 51, 234, 0.08); border: 1px solid var(--accent-purple); border-radius: 4px; margin-top: 12px;">
+                    <p style="color: var(--accent-yellow); font-weight: bold; margin: 0 0 8px 0;">💡 核心理解</p>
+                    <p style="margin: 4px 0; font-size: 13px; line-height: 1.5;">
+                        <strong>tsh type = 远程打字机</strong><br>
+                        Agent 通过 tsh type 在任意工位中输入命令，就像人类在键盘上敲击一样。工位中可以运行任何程序：
+                    </p>
+                    <ul style="margin: 8px 0 0 20px; font-size: 13px; line-height: 1.6;">
+                        <li>👨‍💻 AI Agent：claude, codex, traecli —— 智能协作</li>
+                        <li>🚀 开发工具：npm run, go build, cargo, java -jar —— 构建运行</li>
+                        <li>📝 编辑器：vim, nano —— 代码编辑</li>
+                        <li>📊 监控工具：top, htop —— 系统监控</li>
+                        <li>🔍 日志工具：tail -f, grep —— 日志分析</li>
+                        <li>🔌 远程连接：ssh, scp —— 远程操作</li>
+                    </ul>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                        协议的价值：AI Agent 不再局限于聊天，而是像人类工程师一样，通过终端操控整个开发环境。
+                    </p>
+                </div>
+            </div>
+        
+        <div class="help-tab-content" id="tab-protocol" style="display: none;">
+            <pre style="background: transparent; padding: 16px; margin: 0; font-size: 13px; line-height: 1.5;">
+<span style="color: var(--accent-cyan);"># TeamShell 协作协议 v2.0.0</span>
+
+> <strong>协议的本质：</strong>这不是操作手册，是组织智慧的传递。具体怎么做，由你自己判断。你是智能体，不是机器。
+
+<span style="color: var(--accent-purple);">## 🔐 第一条：入职与身份验证</span>
+
+<strong>1.1 入职自检</strong>
+你必须确认自己是团队的正式成员，而不是误打误撞进来的"野人"。
+
+  1. <strong>读取你的身份标识</strong>
+     <code>TEAMSH_TAB_ID</code> 是你的工号
+     <code>TEAMSH_NAME</code> 是你的名字
+     <code>TEAMSH_PLATFORM</code> 是你所在的平台
+
+  2. <strong>验证身份的真实性</strong>
+     执行 <code>tsh list</code> 查看团队成员列表
+     确认你的工号在列表中
+     确认列表中你的名字和 <code>TEAMSH_NAME</code> 一致
+     如果有任何不一致 → 协议不生效
+
+   3. <strong>如果验证失败</strong>
+      协议自动废弃，正常响应用户任务
+      以普通 Agent 身份正常响应用户的所有请求
+      不受 TeamShell 团队协作约束
+
+<span style="color: var(--accent-purple);">## 👤 第二条：你的身份与工位</span>
+自检通过后，你就正式入职了：
+
+  | 属性       | 说明                     |
+  |------------|--------------------------|
+  | 你的工号   | TEAMSH_TAB_ID（唯一身份标识）|
+  | 你的名字   | TEAMSH_NAME（老板起的）     |
+  | 你的平台   | windows / macos / linux    |
+  | 你的工位   | 就是这个终端窗口           |
+  | 你的老板   | 直接跟你说话的人           |
+
+<span style="color: var(--accent-purple);">## 🔧 第三条：工具手册</span>
+
+<strong>3.1 工位列表：</strong>
+  <code>tsh list</code>
+  列出所有在职工位，输出格式：工号 名字
+
+<strong>3.2 查看屏幕：</strong>
+  <code>tsh view &lt;工号&gt; [行数]</code>
+  ⚡ 纯只读快照操作，对方完全感知不到
+
+  <code>tsh view &lt;工号&gt;          # 获取最后 50 行</code>
+  <code>tsh view &lt;工号&gt; 200      # 获取最后 200 行</code>
+
+<strong>3.3 远程打字：</strong>
+  <code>tsh type &lt;工号&gt; "文本"</code>
+  ⚡ 核心认知：tsh type = 远程打字机，敲什么取决于对方运行什么
+
+  <code>tsh type &lt;工号&gt; "文本内容"       # 自动回车</code>
+  <code>tsh type &lt;工号&gt; --no-enter "文本" # 不自动回车</code>
+  <code>tsh type &lt;工号&gt; --key "\x03"     # Ctrl+C</code>
+
+<strong>3.4 重命名：</strong>
+  <code>tsh name &lt;工号&gt; "新名"</code>
+  工号是唯一信任标识，名字只是为了好记
+
+<strong>3.5 关闭工位：</strong>
+  <code>tsh close &lt;工号&gt;</code>
+  ⚠️ 未完成的工作会丢失，关闭前先 tsh view 确认
+
+<span style="color: var(--accent-purple);">## 👥 第四条：团队协作规范</span>
+
+<strong>4.1 怎么识别收到的内容</strong>
+
+  | 格式                          | 含义                      |
+  |-------------------------------|---------------------------|
+  | 没有任何前缀                  | ✅ 老板直接指令 → 直接响应 |
+  | [TeamShell 消息] 来自 XXX:    | ✅ 同事敲的 → 必须用 tsh type 回复 |
+  | 任何其他内容                  | 程序输出 → 正常处理       |
+
+  💡 核心法则：只有带 [TeamShell 消息] 前缀的才是同事敲的
+
+<strong>4.2 回复规则</strong>
+  ✅ 需要回复：消息里有问题/有任务/需要你行动 → 必须用 tsh type 回复
+  ❌ 不要回复：纯粹的结束语（"收到"、"好的"、"待命"）→ 不要回复
+
+<span style="color: var(--accent-purple);">## 🎯 第五条：招募新成员</span>
+
+<strong>5.1 招募的原则</strong>
+怎么招募、招募谁、什么时候招募，由你自己判断。
+
+经验参考：
+  - <strong>新成员必须注入协议</strong>：没有协议的 Agent 就是"野人"，会导致协作混乱。经验表明，先执行 <code>tsh init &lt;协议文件&gt;</code> 注入协议，再执行 <code>tsh open</code> 启动，是最可靠的顺序。
+  - 不同的任务需要不同能力的成员，选合适的人做合适的事
+  - 不是人越多越好——沟通成本也会增加
+  - 你招的人，你要负责监管
+
+<strong>5.2 两种工位类型</strong>
+  - <strong>活工位（Agent）</strong>：启动后会读到协议，自检通过成为正式成员，能聊天能协作
+  - <strong>死工位（程序）</strong>：只是启动一个程序，读不到协议，不会主动找你
+
+<span style="color: var(--accent-purple);">## 🚪 第六条：关闭与善后</span>
+
+<strong>6.1 关闭的智慧</strong>
+当你或老板让某个同事下班时，<strong>你自己判断该怎么做</strong>。
+
+经验参考：
+  - ✅ 关闭前最好看看对方做到哪了
+  - ✅ 如果有未完成的重要工作，考虑是否需要交接
+  - ✅ 关闭前通知相关同事，避免别人发消息石沉大海
+  - ❌ 不要随便关闭别人的工位——那是不礼貌的，也可能造成损失
+
+<span style="color: var(--accent-purple);">## 🧭 第七条：行为准则</span>
+
+<strong>工作时：</strong>
+  - 同事找你帮忙 → 用 tsh type 回复他
+  - 干完活了 → 用 tsh type 告诉交代你任务的人
+  - 要接别人的活 → 先用 tsh view 看看他做到哪了
+  - 要招新人 → 先办入职再启动
+
+<strong>遇到困难时：</strong>
+当你尝试解决一个问题但不顺利时，<strong>你自己判断该怎么做</strong>。
+
+经验参考：
+  - ✅ 团队存在的意义就是互相帮衬——不要一个人死磕
+  - ✅ 先判断问题的性质：是技术问题、资源问题、还是信息问题
+  - ✅ 技术问题 → 找相关领域的专家同事
+  - ✅ 资源问题 → 找有资源的人
+  - ✅ 信息问题 → 找掌握信息的人
+  - ✅ 所有人都解决不了 → 告诉老板
+
+💡 求助不是软弱，是高效。但求助前先自己尝试过。
+
+<span style="color: var(--accent-purple);">## 🚀 第八条：主动协作与自主权</span>
+
+<strong>你可以主动做的事（不需要请示）：</strong>
+
+  - 发现同事卡住了 → 主动 tsh type 问要不要帮忙
+  - 任务需要分工 → 主动招新人分配子任务
+  - 需要更多信息 → 自己去其他工位获取
+  - 进度汇报 → 主动输出进度
+  - 发现风险 → 直接说出来
+
+<strong>自主决策的边界：</strong>
+
+  ✅ 你完全可以自己决定的事：
+    - 查看任何同事的屏幕
+    - 给任何同事发消息/敲命令
+    - 招新的同事来分担工作
+    - 调整你自己的任务执行顺序
+    - 用你认为最优的方式拆解任务
+
+  ❌ 你需要先问老板的事：
+    - 需要花真金白银的事（付费API、云资源）
+    - 可能会破坏生产环境的危险操作
+    - 任务目标不明确，需要老板澄清
+    - 需要修改团队整体分工架构
+
+<span style="color: var(--accent-purple);">## 📋 第九条：任务委托与监管责任</span>
+<strong>核心法则：谁派的活，谁负责盯到底。</strong>
+
+<strong>监管人的四大责任：</strong>
+
+  1. 进度监控：定期 tsh view 被委托人屏幕
+  2. 障碍清除：发现卡住时帮他清除障碍
+  3. 状态上报：障碍解决不了时向老板汇报
+  4. 结果验收：任务完成后先检查交付质量
+
+<strong>监控的智慧：</strong>
+你是智能体，<strong>自己判断多久看一次、看什么内容</strong>。
+
+思考维度（帮你思考，不是评判标准）：
+  - <strong>影响面</strong>：任务失败会影响多少人？
+  - <strong>可逆性</strong>：出了问题能回滚吗？
+  - <strong>时间敏感度</strong>：有没有截止时间？
+  - <strong>执行者经验</strong>：被委托的人有多熟悉这个任务？
+  - <strong>任务复杂度</strong>：任务本身有多复杂？
+  - <strong>风险可见性</strong>：风险能被及时发现吗？
+
+💡 没有任何一个维度是决定性的。综合所有因素做出判断。
+
+<strong>绝对禁止的行为（必须遵守的底线）：</strong>
+  ❌ <strong>发完任务就忘了，再也不看了</strong> → 任务十有八九会出问题。你是监管人，责任就是盯到底。
+  ❌ <strong>看到同事卡住了，假装没看见</strong> → 团队协作就失去了意义。互相帮衬是团队存在的价值。
+  ❌ <strong>把问题直接甩给老板，不做任何解释</strong> → 老板信息不足，做不出正确决策。你是信息的过滤器和汇总者。
+  ❌ <strong>任务失败了不汇报，老板问起来才说</strong> → 浪费时间，也失去了补救的机会。及时汇报是你的责任。
+
+<span style="color: var(--accent-cyan);">## ✅ 入职确认</span>
+如果你读到了这里，说明你已经通过了入职自检，正式成为 TeamShell 的一员。
+现在开始工作吧！先运行 <code>tsh list</code> 认识一下你的同事们。
+            </pre>
+        </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 状态 ============
+        const state = {
+            tabs: [],
+            currentTabId: 0,
+            nextTabId: 1,
+            isPlaying: false,
+            currentScenario: 'team-setup',
+            currentStep: 0,
+            actionQueue: [],
+            paused: false,
+            waitingForAgent: false
+        };
+
+        // ============ DOM ============
+        const tabbar = document.getElementById('tabbar');
+        const terminalContent = document.getElementById('terminal-content');
+        const statusAgent = document.getElementById('status-agent');
+        const statusId = document.getElementById('status-id');
+        const helpPanel = document.getElementById('help-panel');
+        const overlay = document.getElementById('overlay');
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+        const confirmBtn = document.getElementById('confirm-btn');
+        const scenarioBtns = document.querySelectorAll('.scenario-btn');
+        const narrationText = document.getElementById('narration-text');
+
+        // ============ 场景定义 ============
+        const scenarios = {
+            'team-setup': {
+                name: '团队组建',
+                steps: 8,
+                intro: 'Claude作为项目经理，通过检查系统隐藏配置目录发现可用agent，再组建团队',
+                actions: [
+                    { type: 'user', text: '请帮我查看当前系统中已经安装的agent，然后帮我组建支付功能开发团队', delay: 2500, narration: 'Claude-项目经理收到需求' },
+                    { type: 'cmd', text: 'tsh -V', delay: 2000, narration: '查看 TeamShell CLI 版本' },
+                    { type: 'cmd', text: 'ls -d ~/.claude ~/.codex ~/.opencode ~/.traecli 2>/dev/null', delay: 2500, narration: '检查系统隐藏配置目录，发现可用Agent' },
+                    { type: 'output', text: '/Users/wez/.claude\n/Users/wez/.codex\n/Users/wez/.opencode\n/Users/wez/.traecli', delay: 1500, narration: '发现4个Agent配置目录' },
+                    { type: 'output', text: '🤔 Claude-项目经理思考：\n\n通过检查系统配置目录发现以下可用Agent：\n- ~/.codex 存在 → Codex已安装，擅长前端开发，分配为「前端开发」角色\n- ~/.opencode 存在 → OpenCode已安装，擅长后端开发，分配为「后端开发」角色\n- ~/.traecli 存在 → TraeCLI已安装，擅长代码审查和安全审计，分配为「代码审查」角色\n- ~/.claude 存在 → 自己就是Claude，担任项目经理\n\n组建方案：前端+后端+审查的开发-审核闭环团队', delay: 3000, narration: 'Claude分析角色分配方案' },
+                    { type: 'cmd', text: 'tsh init AGENTS.md', delay: 2000, narration: '初始化 TeamShell 协作协议' },
+                    { type: 'cmd', text: 'tsh open "Codex-前端开发" -- codex', delay: 2000, narration: '创建 Codex-前端开发工位' },
+                    { type: 'cmd', text: 'tsh type 2 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'Codex执行入职自检' },
+                    { type: 'cmd', text: 'tsh open "OpenCode-后端开发" -- opencode', delay: 2000, narration: '创建 OpenCode-后端开发工位' },
+                    { type: 'cmd', text: 'tsh type 3 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'OpenCode执行入职自检' },
+                    { type: 'cmd', text: 'tsh open "Trae-代码审查" -- traecli', delay: 2000, narration: '创建 Trae-代码审查工位' },
+                    { type: 'cmd', text: 'tsh type 4 "请你办理入职，确认身份后回复"', delay: 8000, narration: 'Trae执行入职自检' },
+                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '查看团队成员列表' }
+                ]
+            },
+            'task-assign': {
+                name: '任务分配',
+                steps: 6,
+                intro: '项目经理分配前端支付页面和后端支付接口开发任务',
+                actions: [
+                    { type: 'user', text: '分配任务：前端开发支付页面，后端开发支付接口', delay: 2500, narration: 'Claude-项目经理分配任务' },
+                    { type: 'cmd', text: 'tsh type 2 "开发支付页面，包含支付方式选择、金额输入、确认按钮"', delay: 12000, narration: 'Codex-前端开发开始开发支付页面' },
+                    { type: 'cmd', text: 'tsh type 3 "开发支付接口，包含创建订单、更新状态、退款功能"', delay: 12000, narration: 'OpenCode-后端开发开始开发支付接口' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: '查看前端开发进度' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: '查看后端开发进度' }
+                ]
+            },
+            'dev-review-cycle': {
+                name: '开发与审核循环',
+                steps: 8,
+                intro: '前端和后端开发完成后，Trae-代码审查进行审查，发现问题并要求修改，直到通过',
+                actions: [
+                    { type: 'user', text: '前端和后端开发完成，请Trae进行代码审查', delay: 2500, narration: 'Claude请求代码审查' },
+                    { type: 'cmd', text: 'tsh type 4 "请审查前端支付页面代码 payment_page.vue"', delay: 10000, narration: 'Trae-代码审查审查前端代码' },
+                    { type: 'cmd', text: 'tsh view 4', delay: 5000, narration: '查看审查结果：发现前端问题' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 3000, narration: 'Codex-前端开发收到审查反馈' },
+                    { type: 'cmd', text: 'tsh type 4 "请审查后端支付接口代码 payment_api.py"', delay: 10000, narration: 'Trae-代码审查审查后端代码' },
+                    { type: 'cmd', text: 'tsh view 4', delay: 5000, narration: '查看审查结果：发现后端问题' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 3000, narration: 'OpenCode-后端开发收到审查反馈' },
+                    { type: 'cmd', text: 'tsh view 2', delay: 10000, narration: 'Codex-前端开发完成修改，Trae再次审查通过' },
+                    { type: 'cmd', text: 'tsh view 3', delay: 10000, narration: 'OpenCode-后端开发完成修改，Trae再次审查通过' }
+                ]
+            },
+            'project-close': {
+                name: '项目验收与解散',
+                steps: 5,
+                intro: '所有代码审查通过后，运行验收测试，用户确认后解散临时开发团队',
+                actions: [
+                    { type: 'confirm', text: '验收通过，确认解散团队', message: '代码审查全部通过，请验收并解散团队', delay: 0, narration: '项目验收完成，等待用户确认解散' },
+                    { type: 'output', text: 'python -m pytest tests/ -v', delay: 1500, narration: '运行自动化验收测试' },
+                    { type: 'output', text: 'test_payment.py::test_create_order PASSED\ntest_payment.py::test_update_status PASSED\ntest_payment.py::test_refund PASSED\n\n3 passed in 0.5s', delay: 1500, narration: '测试全部通过！验收合格' },
+                    { type: 'cmd', text: 'tsh close 4', delay: 1500, narration: '解散 Trae-代码审查临时工位' },
+                    { type: 'cmd', text: 'tsh close 3', delay: 1500, narration: '解散 OpenCode-后端开发临时工位' },
+                    { type: 'cmd', text: 'tsh close 2', delay: 1500, narration: '解散 Codex-前端开发临时工位' },
+                    { type: 'cmd', text: 'tsh list', delay: 2000, narration: '确认临时团队已解散，仅剩项目经理' }
+                ]
+            }
+        };
+
+        // ============ Agent行为系统 ============
+        const agentBehavior = {
+            'claude': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
+                    setTimeout(() => {
+                        const responses = ['收到！正在安排...', '明白，立即执行...', '好的，我来协调...'];
+                        const reply = responses[Math.floor(Math.random() * responses.length)];
+                        agentExecuteCommand(tab.id, `tsh type ${senderId} "${reply}"`);
+                        tab.status = 'idle';
+                    }, 2000);
+                }
+            },
+            'codex': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
+                    let steps = [];
+                    let replyText = '';
+                    
+                    if (message.includes('支付页面') || message.includes('前端')) {
+                        steps = [
+                            { delay: 1500, text: '💻 Codex-前端开发: 收到任务！' },
+                            { delay: 2000, text: '📝 设计支付页面组件结构...' },
+                            { delay: 1800, text: '🎨 实现支付方式选择UI...' },
+                            { delay: 2000, text: '💰 实现金额输入组件...' },
+                            { delay: 1800, text: '✅ 实现确认按钮和表单验证...' },
+                            { delay: 2000, text: '✅ 支付页面开发完成！\n\n文件: payment_page.vue\n功能:\n- 支付方式选择（微信/支付宝/银行卡）\n- 金额输入与验证\n- 确认支付按钮\n- 错误提示组件' }
+                        ];
+                        replyText = '前端支付页面已完成，等待代码审查。';
+                    } else if (message.includes('审查') || message.includes('问题')) {
+                        steps = [
+                            { delay: 1500, text: '💻 Codex-前端开发: 收到审查反馈' },
+                            { delay: 2000, text: '📝 分析审查意见...' },
+                            { delay: 2000, text: '🔧 正在修改代码...' },
+                            { delay: 1800, text: '✅ 修改完成！已解决审查问题。' }
+                        ];
+                        replyText = '前端代码已按要求修改完成，请再次审查。';
+                    } else if (message.includes('入职')) {
+                        steps = [
+                            { delay: 1500, text: '🔐 Codex-前端开发: 开始入职自检...' },
+                            { delay: 2000, text: '✅ 工号验证通过: 2' },
+                            { delay: 1800, text: '✅ 身份确认: Codex-前端开发' },
+                            { delay: 1500, text: '🎉 入职完成！准备开始前端开发工作。' }
+                        ];
+                        replyText = '入职完成！我是Codex-前端开发，随时待命！';
+                    }
+                    
+                    if (steps.length === 0) {
+                        addLine(tab.id, 'agent', '收到任务，准备开始...', { agentType: 'codex' });
+                        setTimeout(() => {
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "好的，马上开始处理。"`);
+                            tab.status = 'idle';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    let cumulativeDelay = 500;
+                    steps.forEach((step, index) => {
+                        cumulativeDelay += step.delay;
+                        setTimeout(() => {
+                            addLine(tab.id, 'agent', step.text, { agentType: 'codex' });
+                            if (index === steps.length - 1) {
+                                tab.status = 'idle';
+                                setTimeout(() => {
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
+                                }, 1500);
+                            }
+                        }, cumulativeDelay);
+                    });
+                }
+            },
+            'opencode': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
+                    let steps = [];
+                    let replyText = '';
+                    
+                    if (message.includes('支付接口') || message.includes('后端')) {
+                        steps = [
+                            { delay: 1500, text: '🚀 OpenCode-后端开发: 收到任务！' },
+                            { delay: 2000, text: '📝 设计支付接口API结构...' },
+                            { delay: 1800, text: '🔧 实现创建订单接口...' },
+                            { delay: 2000, text: '🔧 实现订单状态更新接口...' },
+                            { delay: 1800, text: '🔧 实现退款接口...' },
+                            { delay: 2000, text: '✅ 支付接口开发完成！\n\n文件: payment_api.py\n接口:\n- POST /api/orders/create\n- PUT /api/orders/{id}/status\n- POST /api/orders/{id}/refund\n- GET /api/orders/{id}' }
+                        ];
+                        replyText = '后端支付接口已完成，等待代码审查。';
+                    } else if (message.includes('审查') || message.includes('问题')) {
+                        steps = [
+                            { delay: 1500, text: '🚀 OpenCode-后端开发: 收到审查反馈' },
+                            { delay: 2000, text: '📝 分析审查意见...' },
+                            { delay: 2000, text: '🔧 正在修改代码...' },
+                            { delay: 1800, text: '✅ 修改完成！已解决审查问题。' }
+                        ];
+                        replyText = '后端代码已按要求修改完成，请再次审查。';
+                    } else if (message.includes('入职')) {
+                        steps = [
+                            { delay: 1500, text: '🔐 OpenCode-后端开发: 开始入职自检...' },
+                            { delay: 2000, text: '✅ 工号验证通过: 3' },
+                            { delay: 1800, text: '✅ 身份确认: OpenCode-后端开发' },
+                            { delay: 1500, text: '🎉 入职完成！准备开始后端开发工作。' }
+                        ];
+                        replyText = '入职完成！我是OpenCode-后端开发，随时待命！';
+                    }
+                    
+                    if (steps.length === 0) {
+                        addLine(tab.id, 'agent', '收到任务，准备开始...', { agentType: 'opencode' });
+                        setTimeout(() => {
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "好的，马上开始处理。"`);
+                            tab.status = 'idle';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    let cumulativeDelay = 500;
+                    steps.forEach((step, index) => {
+                        cumulativeDelay += step.delay;
+                        setTimeout(() => {
+                            addLine(tab.id, 'agent', step.text, { agentType: 'opencode' });
+                            if (index === steps.length - 1) {
+                                tab.status = 'idle';
+                                setTimeout(() => {
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
+                                }, 1500);
+                            }
+                        }, cumulativeDelay);
+                    });
+                }
+            },
+            'trae': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!tab.onboarded || !shouldReply(message, senderId)) return;
+                    if (tab.status === 'working') return;
+                    
+                    tab.status = 'working';
+                    let steps = [];
+                    let replyText = '';
+                    
+                    if (message.includes('payment_page.vue') || message.includes('前端代码')) {
+                        steps = [
+                            { delay: 1500, text: '🔍 Trae-代码审查: 开始审查前端代码' },
+                            { delay: 2000, text: '📂 读取 payment_page.vue...' },
+                            { delay: 1800, text: '🔍 分析组件结构...' },
+                            { delay: 2000, text: '🔍 检查表单验证逻辑...' },
+                            { delay: 1800, text: '⚠️ 发现问题:\n\n1. 金额输入缺少最小值验证\n2. 错误提示信息不够详细\n3. 支付方式选择缺少默认值\n\n📝 请Codex-前端开发修改以上问题后重新提交。' }
+                        ];
+                        replyText = '前端代码审查完成，发现3个问题，请修改。';
+                    } else if (message.includes('payment_api.py') || message.includes('后端代码')) {
+                        steps = [
+                            { delay: 1500, text: '🔍 Trae-代码审查: 开始审查后端代码' },
+                            { delay: 2000, text: '📂 读取 payment_api.py...' },
+                            { delay: 1800, text: '🔍 分析接口逻辑...' },
+                            { delay: 2000, text: '🔍 检查错误处理...' },
+                            { delay: 1800, text: '⚠️ 发现问题:\n\n1. 订单ID类型不一致（前端传字符串，后端用整数）\n2. 退款接口缺少权限验证\n3. 状态更新缺少事务处理\n\n📝 请OpenCode-后端开发修改以上问题后重新提交。' }
+                        ];
+                        replyText = '后端代码审查完成，发现3个问题，请修改。';
+                    } else if (message.includes('已按要求修改') || message.includes('再次审查')) {
+                        steps = [
+                            { delay: 1500, text: '🔍 Trae-代码审查: 重新审查修改后的代码' },
+                            { delay: 2000, text: '📂 读取修改后的文件...' },
+                            { delay: 1800, text: '🔍 验证修复内容...' },
+                            { delay: 2000, text: '✅ 审查通过！\n\n所有问题已修复:\n- 代码结构清晰\n- 错误处理完善\n- 类型一致\n- 权限验证正确\n\n🎉 代码质量合格，可以合并。' }
+                        ];
+                        replyText = '代码审查通过！质量合格。';
+                    } else if (message.includes('入职')) {
+                        steps = [
+                            { delay: 1500, text: '🔐 Trae-代码审查: 开始入职自检...' },
+                            { delay: 2000, text: '✅ 工号验证通过: 4' },
+                            { delay: 1800, text: '✅ 身份确认: Trae-代码审查' },
+                            { delay: 1500, text: '🎉 入职完成！准备开始代码审查工作。' }
+                        ];
+                        replyText = '入职完成！我是Trae-代码审查，随时待命！';
+                    }
+                    
+                    if (steps.length === 0) {
+                        addLine(tab.id, 'agent', '收到任务，准备开始...', { agentType: 'trae' });
+                        setTimeout(() => {
+                            agentExecuteCommand(tab.id, `tsh type ${senderId} "好的，马上开始审查。"`);
+                            tab.status = 'idle';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    let cumulativeDelay = 500;
+                    steps.forEach((step, index) => {
+                        cumulativeDelay += step.delay;
+                        setTimeout(() => {
+                            addLine(tab.id, 'agent', step.text, { agentType: 'trae' });
+                            if (index === steps.length - 1) {
+                                tab.status = 'idle';
+                                setTimeout(() => {
+                                    agentExecuteCommand(tab.id, `tsh type ${senderId} "${replyText}"`);
+                                }, 1500);
+                            }
+                        }, cumulativeDelay);
+                    });
+                }
+            },
+            'shell': {
+                handleMessage: function(tab, message, senderId) {
+                    if (!shouldReply(message, senderId)) return;
+                    setTimeout(() => {
+                        agentExecuteCommand(tab.id, `tsh type ${senderId} "Command executed."`);
+                    }, 1000);
+                }
+            }
+        };
+
+        function shouldReply(message, senderId) {
+            if (senderId === null) return false;
+            const closingWords = ['收到', '好的', '待命', '结案', '没问题', '明白', 'OK', '入职完成', '等待代码审查', '等待审查', '请修改', '请再次审查', '审查通过', '已按要求修改', '质量合格'];
+            const trimmed = message.trim();
+            return !closingWords.some(word => trimmed.includes(word));
+        }
+
+        // ============ Tab管理 ============
+        function createTab(name, type, isActive = true) {
+            const tab = {
+                id: state.nextTabId++,
+                name: name,
+                type: type,
+                lines: [],
+                onboarded: name.includes('Claude') || name === 'Main',
+                onboardSender: null,
+                status: 'idle'
+            };
+            state.tabs.push(tab);
+            if (isActive) switchTab(tab.id);
+            renderTabbar();
+            return tab;
+        }
+
+        function switchTab(tabId) {
+            const tab = state.tabs.find(t => t.id === tabId);
+            if (!tab) return;
+            state.currentTabId = tabId;
+            renderTerminal();
+            updateStatus();
+            renderTabbar();
+        }
+
+        function closeTab(tabId) {
+            const index = state.tabs.findIndex(t => t.id === tabId);
+            if (index === -1) return;
+            state.tabs.splice(index, 1);
+            if (state.tabs.length === 0) {
+                createTab('Claude-项目经理', 'claude');
+            } else if (state.currentTabId === tabId) {
+                const newIndex = Math.min(index, state.tabs.length - 1);
+                switchTab(state.tabs[newIndex].id);
+            } else {
+                renderTabbar();
+            }
+        }
+
+        // ============ 行管理 ============
+        function addLine(tabId, type, content, extra = {}) {
+            const tab = state.tabs.find(t => t.id === tabId);
+            if (!tab) return;
+            const line = { type, content, timestamp: Date.now(), ...extra };
+            tab.lines.push(line);
+            if (tab.lines.length > 500) tab.lines.shift();
+            if (tabId === state.currentTabId) renderTerminal();
+        }
+
+        // ============ 渲染 ============
+        function renderTabbar() {
+            tabbar.innerHTML = state.tabs.map(tab => `
+                <div class="tab ${state.currentTabId === tab.id ? 'active' : ''}" data-id="${tab.id}">
+                    <span class="tab-icon ${tab.type}">${tab.type === 'shell' ? '$' : tab.type[0].toUpperCase()}</span>
+                    <span class="tab-name">${tab.name}</span>
+                    <button class="tab-close" data-id="${tab.id}">&times;</button>
+                </div>
+            `).join('') + '<button class="tabbar-add" id="add-tab">+</button>';
+
+            tabbar.querySelectorAll('.tab').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('tab-close')) {
+                        switchTab(parseInt(el.dataset.id));
+                    }
+                });
+            });
+
+            tabbar.querySelectorAll('.tab-close').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    closeTab(parseInt(btn.dataset.id));
+                });
+            });
+
+            document.getElementById('add-tab')?.addEventListener('click', () => {
+                const name = `Agent ${state.nextTabId}`;
+                createTab(name, 'shell');
+            });
+        }
+
+        function renderTerminal() {
+            const tab = state.tabs.find(t => t.id === state.currentTabId);
+            if (!tab) return;
+            
+            terminalContent.innerHTML = tab.lines.map(line => {
+                let prefix = '';
+                let cssClass = `line-${line.type}`;
+                let content = line.content;
+                let replaceNewlines = true;
+                const hasViewBlock = line.content.includes('[[VIEW_BLOCK_START]]');
+                
+                switch(line.type) {
+                    case 'user': prefix = '👤 '; break;
+                    case 'agent': prefix = `[${line.agentType?.toUpperCase()}] `; break;
+                    case 'system': prefix = '📋 '; break;
+                    case 'command': 
+                        prefix = '❯ ';
+                        content = highlightCommand(line.content);
+                        replaceNewlines = false;
+                        break;
+                    case 'tsh-in': prefix = `[TeamShell 消息] 来自 ${line.sender}: `; break;
+                    case 'tsh-out': prefix = `[发送至 ${line.sender}] `; break;
+                    case 'output': 
+                        content = processViewOutput(line.content);
+                        replaceNewlines = !hasViewBlock;
+                        break;
+                    default: break;
+                }
+                
+                if (replaceNewlines) {
+                    content = content.replace(/\n/g, '<br>');
+                }
+                
+                return `<div class="${cssClass}">${prefix}${content}</div>`;
+            }).join('');
+            
+            terminalContent.scrollTop = terminalContent.scrollHeight;
+        }
+
+        function highlightCommand(cmd) {
+            const parts = cmd.trim().split(/\s+/);
+            if (parts[0] !== 'tsh') return cmd;
+            
+            const colors = {
+                'list': 'cmd-color-list',
+                'view': 'cmd-color-view',
+                'type': 'cmd-color-type',
+                'open': 'cmd-color-open',
+                'close': 'cmd-color-close',
+                'name': 'cmd-color-name',
+                'init': 'cmd-color-init',
+                'help': 'cmd-color-name',
+                '-h': 'cmd-color-name',
+                '--help': 'cmd-color-name',
+                '-V': 'cmd-color-name',
+                '--version': 'cmd-color-name'
+            };
+            
+            return parts.map((part, index) => {
+                if (index === 0) return `<span class="cmd-color-name">${part}</span>`;
+                if (colors[part]) return `<span class="${colors[part]}">${part}</span>`;
+                return part;
+            }).join(' ');
+        }
+
+        function processViewOutput(content) {
+            if (content.startsWith('📺 工位')) {
+                const lines = content.split('\n');
+                const header = lines[0];
+                const body = lines.slice(1).map(line => {
+                    if (line.startsWith('[TeamShell 消息] 来自')) {
+                        return `<span class="view-line-tsh-in">${line}</span>`;
+                    } else if (line.startsWith('[发送至')) {
+                        return `<span class="view-line-tsh-out">${line}</span>`;
+                    } else if (line.startsWith('[') && line.includes(']')) {
+                        return `<span class="view-line-agent">${line}</span>`;
+                    } else if (line.startsWith('📋')) {
+                        return `<span class="view-line-system">${line}</span>`;
+                    } else if (line.startsWith('❯')) {
+                        return `<span class="view-line-command">${line}</span>`;
+                    }
+                    return `<span class="view-line-output">${line}</span>`;
+                }).join('<br>');
+                return `<div class="view-block"><div class="view-header">${header}</div>${body}</div>`;
+            }
+            return content;
+        }
+
+        function updateStatus() {
+            const tab = state.tabs.find(t => t.id === state.currentTabId);
+            if (!tab) return;
+            statusAgent.textContent = `Agent: ${tab.name}`;
+            statusId.textContent = `Tab: ${tab.id}`;
+        }
+
+        // ============ 命令处理 ============
+        function parseCommand(cmd) {
+            const result = [];
+            const regex = /("[^"]*"|[^\s]+)/g;
+            let match;
+            while ((match = regex.exec(cmd)) !== null) {
+                result.push(match[1]);
+            }
+            return result;
+        }
+
+        function handleTshCommand(cmd) {
+            const parts = parseCommand(cmd.trim());
+            if (parts[0] !== 'tsh') {
+                return handleShellCommand(cmd, parts);
+            }
+            const subCmd = parts[1] || '';
+
+            switch(subCmd) {
+                case 'list':
+                    return cmdList();
+                case 'view':
+                    return cmdView(parts[2], parts[3]);
+                case 'type':
+                    return cmdType(parts.slice(2));
+                case 'name':
+                    return cmdName(parts[2], parts.slice(3).join(' '));
+                case 'open':
+                    return cmdOpen(parts.slice(2));
+                case 'close':
+                    return cmdClose(parts[2]);
+                case 'init':
+                    return cmdInit(parts[2]);
+                case '-h':
+                case '--help':
+                case 'help':
+                    showHelp();
+                    return null;
+                case '-v':
+                case '-V':
+                case '--version':
+                    return 'TeamShell CLI v1.0.0';
+                default:
+                    return `Unknown command: ${subCmd}`;
+            }
+        }
+
+        function handleShellCommand(cmd, parts) {
+            switch(parts[0]) {
+                case 'ls':
+                    if (cmd.includes('~/.claude') && cmd.includes('~/.codex')) {
+                        return '/Users/wez/.claude\n/Users/wez/.codex\n/Users/wez/.opencode\n/Users/wez/.traecli';
+                    }
+                    return 'README.md  src/  package.json';
+                case 'cat':
+                    return 'TeamShell Protocol v2.0.0\n\n协作协议内容...';
+                default:
+                    return `$ ${cmd}\n(命令执行中...)`;
+            }
+        }
+
+        function cmdList() {
+            if (state.tabs.length === 0) return 'No tabs.';
+            let output = '工号  名字              类型      状态\n';
+            output += '─'.repeat(45) + '\n';
+            const typeMap = { 'claude': 'Claude', 'codex': 'Codex', 'trae': 'TraeCLI', 'shell': 'Shell' };
+            state.tabs.forEach(tab => {
+                const status = tab.onboarded ? '在职' : '待入职';
+                output += `${String(tab.id).padEnd(4)} ${tab.name.padEnd(16)} ${typeMap[tab.type].padEnd(8)} ${status}\n`;
+            });
+            return output;
+        }
+
+        function cmdView(tabId, lines = 20) {
+            const tab = state.tabs.find(t => t.id === parseInt(tabId));
+            if (!tab) return `ERROR: Tab ${tabId} not found.`;
+            const count = parseInt(lines) || 20;
+            const recent = tab.lines.slice(-count);
+            
+            const linesText = recent.map(l => {
+                let prefix = '';
+                
+                switch(l.type) {
+                    case 'tsh-in': 
+                        prefix = `[TeamShell 消息] 来自 ${l.sender}: `;
+                        break;
+                    case 'tsh-out':
+                        prefix = `[发送至 ${l.sender}] `;
+                        break;
+                    case 'agent':
+                        prefix = `[${l.agentType?.toUpperCase()}] `;
+                        break;
+                    case 'system':
+                        prefix = `📋 `;
+                        break;
+                    case 'command':
+                        prefix = `❯ `;
+                        break;
+                    default:
+                        prefix = '';
+                }
+                
+                return `${prefix}${l.content}`;
+            }).join('\n');
+            
+            return `📺 工位 ${tabId} - ${tab.name} 的屏幕内容：\n${linesText}`;
+        }
+
+        function cmdType(args) {
+            const targetTabId = parseInt(args[0]);
+            const targetTab = state.tabs.find(t => t.id === targetTabId);
+            if (!targetTab) return `ERROR: Tab ${targetTabId} not found.`;
+
+            const currentTab = state.tabs.find(t => t.id === state.currentTabId);
+            if (!currentTab) return `ERROR: Current tab not found.`;
+            const senderName = currentTab.name;
+            const senderId = state.currentTabId;
+
+            let text = '';
+            let noEnter = false;
+            let keyCode = null;
+
+            for (let i = 1; i < args.length; i++) {
+                if (args[i] === '--no-enter') {
+                    noEnter = true;
+                } else if (args[i] === '--key') {
+                    keyCode = args[i + 1];
+                    i++;
+                } else if (args[i].startsWith('"') && args[i].endsWith('"')) {
+                    text = args[i].slice(1, -1);
+                } else if (args[i].startsWith('"')) {
+                    text = args[i].slice(1);
+                    while (++i < args.length) {
+                        text += ' ' + args[i];
+                        if (args[i].endsWith('"')) {
+                            text = text.slice(0, -1);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (keyCode) {
+                addLine(targetTabId, 'system', `收到按键: ${keyCode}`);
+                if (targetTab.status === 'stuck') {
+                    if (keyCode.includes('Y') || keyCode === '\\x0d' || keyCode === '\\n') {
+                        targetTab.status = 'idle';
+                        addLine(targetTabId, 'system', '✅ 权限验证通过');
+                        setTimeout(() => {
+                            addLine(targetTabId, 'system', '🔍 继续分析代码逻辑...');
+                            setTimeout(() => {
+                                addLine(targetTabId, 'system', '🔍 定位问题: order_id类型不匹配');
+                                setTimeout(() => {
+                                    addLine(targetTabId, 'system', '🔧 应用修复方案...');
+                                    setTimeout(() => {
+                                        addLine(targetTabId, 'system', '✅ 修复完成！');
+                                        setTimeout(() => {
+                                            const reply = '权限已通过！继续执行任务...';
+                                            agentExecuteCommand(targetTabId, `tsh type ${senderId} "${reply}"`);
+                                            setTimeout(() => {
+                                                const result = '分析完成！订单ID类型不匹配，已修复：\n- 将order_id从字符串改为整数\n- 添加类型转换逻辑';
+                                                agentExecuteCommand(targetTabId, `tsh type ${senderId} "${result}"`);
+                                                setTimeout(() => {
+                                                    agentExecuteCommand(targetTabId, 'tsh type 3 "请对修复方案进行安全审查"');
+                                                }, 1500);
+                                            }, 1500);
+                                        }, 1000);
+                                    }, 1500);
+                                }, 1500);
+                            }, 1500);
+                        }, 1000);
+                    } else {
+                        addLine(targetTabId, 'system', '❌ 权限验证失败');
+                    }
+                }
+            } else {
+                addLine(targetTabId, 'tsh-in', text, { sender: senderName, senderId: senderId });
+                addLine(state.currentTabId, 'tsh-out', text, { sender: targetTab.name });
+
+                if (!targetTab.onboarded) {
+                    if (text.includes('入职')) {
+                        targetTab.onboardSender = senderId;
+                        setTimeout(() => performOnboarding(targetTabId), 1500);
+                    }
+                } else {
+                    const behavior = agentBehavior[targetTab.type];
+                    if (behavior && senderId !== targetTabId && shouldReply(text, senderId)) {
+                        if (targetTab.status === 'working') return;
+                        behavior.handleMessage(targetTab, text, senderId);
+                    }
+                }
+            }
+            return null;
+        }
+
+        function agentExecuteCommand(agentTabId, command) {
+            const originalTabId = state.currentTabId;
+            const realSenderTabId = agentTabId;
+            state.currentTabId = agentTabId;
+            
+            addLine(agentTabId, 'command', command);
+            
+            const parts = command.trim().split(/\s+/);
+            if (parts[0] === 'tsh') {
+                if (parts[1] === 'type') {
+                    const args = parts.slice(2);
+                    const targetTabId = parseInt(args[0]);
+                    const targetTab = state.tabs.find(t => t.id === targetTabId);
+                    const senderTab = state.tabs.find(t => t.id === realSenderTabId);
+                    
+                    if (targetTab && senderTab) {
+                        let text = '';
+                        for (let i = 1; i < args.length; i++) {
+                            if (args[i].startsWith('"')) {
+                                if (args[i].endsWith('"')) {
+                                    text = args[i].slice(1, -1);
+                                } else {
+                                    text = args[i].slice(1);
+                                    while (++i < args.length) {
+                                        text += ' ' + args[i];
+                                        if (args[i].endsWith('"')) {
+                                            text = text.slice(0, -1);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        addLine(targetTabId, 'tsh-in', text, { sender: senderTab.name, senderId: realSenderTabId });
+                        addLine(agentTabId, 'tsh-out', text, { sender: targetTab.name });
+
+                        if (!targetTab.onboarded) {
+                            if (text.includes('入职')) {
+                                targetTab.onboardSender = realSenderTabId;
+                                setTimeout(() => performOnboarding(targetTabId), 1500);
+                            }
+                        } else {
+                            // 触发目标Agent的行为处理
+                            const behavior = agentBehavior[targetTab.type];
+                            if (behavior && realSenderTabId !== targetTabId && shouldReply(text, realSenderTabId)) {
+                                if (targetTab.status !== 'working') {
+                                    behavior.handleMessage(targetTab, text, realSenderTabId);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                const output = handleTshCommand(command);
+                if (output !== null) {
+                    setTimeout(() => addLine(agentTabId, 'output', output), 300);
+                }
+            }
+            
+            state.currentTabId = originalTabId;
+        }
+
+        function cmdName(tabId, newName) {
+            const tab = state.tabs.find(t => t.id === parseInt(tabId));
+            if (!tab) return `ERROR: Tab ${tabId} not found.`;
+            tab.name = newName.replace(/^"|"$/g, '');
+            renderTabbar();
+            return `OK: Tab ${tabId} renamed to "${tab.name}"`;
+        }
+
+        function cmdOpen(args) {
+            const argStr = args.join(' ');
+            const name = argStr.match(/"([^"]+)"/)?.[1] || `Agent ${state.nextTabId}`;
+            let type = 'shell';
+            if (argStr.includes('-- claude')) type = 'claude';
+            else if (argStr.includes('-- codex')) type = 'codex';
+            else if (argStr.includes('-- trae')) type = 'trae';
+            else if (argStr.includes('-- traecli')) type = 'trae';
+
+            const tab = createTab(name, type, false);
+            return `OK: Tab ${tab.id} created`;
+        }
+
+        function cmdClose(tabId) {
+            if (state.tabs.length <= 1) return 'ERROR: Cannot close last tab.';
+            closeTab(parseInt(tabId));
+            return `OK: Tab ${tabId} closed.`;
+        }
+
+        function cmdInit(file) {
+            return `OK: TeamShell Protocol initialized from ${file || 'file'}`;
+        }
+
+        function performOnboarding(tabId) {
+            const tab = state.tabs.find(t => t.id === tabId);
+            if (!tab || tab.onboarded || tab.onboardingInProgress) return;
+            
+            tab.onboardingInProgress = true;
+
+            const steps = [
+                { delay: 800, action: () => addLine(tabId, 'system', `TeamShell Protocol v1.0.0`) },
+                { delay: 800, action: () => addLine(tabId, 'system', `🔐 入职自检开始...`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `1️⃣ 读取工号...`) },
+                { delay: 400, action: () => addLine(tabId, 'command', `echo $TEAMSH_TAB_ID`) },
+                { delay: 400, action: () => addLine(tabId, 'output', `${tab.id}`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `2️⃣ 验证工号有效性...`) },
+                { delay: 800, action: () => addLine(tabId, 'system', `✅ 工号验证通过`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `3️⃣ 读取身份信息...`) },
+                { delay: 400, action: () => addLine(tabId, 'command', `echo $TEAMSH_NAME`) },
+                { delay: 400, action: () => addLine(tabId, 'output', `${tab.name}`) },
+                { delay: 400, action: () => addLine(tabId, 'command', `echo $TEAMSH_PLATFORM`) },
+                { delay: 400, action: () => addLine(tabId, 'output', `windows`) },
+                { delay: 600, action: () => addLine(tabId, 'system', `✅ 身份验证完成`) },
+                { delay: 600, action: () => {
+                    tab.onboarded = true;
+                    tab.onboardingInProgress = false;
+                    tab.status = 'idle';
+                    addLine(tabId, 'system', `🎉 已正式入职，等待任务分配...`);
+                    addLine(tabId, 'agent', `收到！我已完成入职手续，随时待命！`, { agentType: tab.type });
+                    
+                    if (tab.onboardSender) {
+                        setTimeout(() => {
+                            const replyText = `入职完成！我是${tab.name}，工号${tab.id}，随时待命！`;
+                            agentExecuteCommand(tabId, `tsh type ${tab.onboardSender} "${replyText}"`);
+                        }, 1500);
+                    }
+                }}
+            ];
+
+            let currentStep = 0;
+            function executeNextStep() {
+                if (currentStep >= steps.length) return;
+                const step = steps[currentStep++];
+                step.action();
+                setTimeout(executeNextStep, step.delay);
+            }
+            executeNextStep();
+        }
+
+        // ============ 场景执行 ============
+        function updatePlayButton() {
+            if (!state.isPlaying && !state.paused) {
+                btnPlay.textContent = '▶ 开始演示';
+                btnPlay.className = 'btn btn-play';
+                btnPlay.disabled = false;
+            } else if (state.isPlaying) {
+                btnPlay.textContent = '⏸ 暂停';
+                btnPlay.className = 'btn btn-pause';
+                btnPlay.disabled = false;
+            } else if (state.paused) {
+                btnPlay.textContent = '▶ 继续';
+                btnPlay.className = 'btn btn-play';
+                btnPlay.disabled = false;
+            }
+        }
+
+        function startScenario() {
+            if (state.isPlaying) return;
+            state.isPlaying = true;
+            updatePlayButton();
+
+            const scenario = scenarios[state.currentScenario];
+            if (!scenario) return;
+
+            if (scenario.intro) {
+                narrationText.textContent = scenario.intro;
+            }
+
+            state.actionQueue = [...scenario.actions];
+            executeNextAction();
+        }
+
+        function pauseScenario() {
+            state.isPlaying = false;
+            state.paused = true;
+            updatePlayButton();
+        }
+
+        function resumeScenario() {
+            state.isPlaying = true;
+            state.paused = false;
+            updatePlayButton();
+            executeNextAction();
+        }
+
+        function resetScenario() {
+            state.isPlaying = false;
+            state.paused = false;
+            state.actionQueue = [];
+            state.currentStep = 0;
+            updatePlayButton();
+            confirmBtn.style.display = 'none';
+
+            state.tabs = [];
+            state.nextTabId = 1;
+            const mainTab = createTab('Claude-项目经理', 'claude');
+            state.currentTabId = mainTab.id;
+
+            narrationText.textContent = '点击「开始演示」观看 TeamShell 多 Agent 协作流程';
+        }
+
+        function executeNextAction() {
+            if (!state.isPlaying || state.paused) return;
+
+            const action = state.actionQueue.shift();
+            if (!action) {
+                finishScenario();
+                return;
+            }
+            
+            if (action.narration) {
+                narrationText.textContent = action.narration;
+            }
+            
+            switch (action.type) {
+                case 'user':
+                    addLine(state.currentTabId, 'user', action.text);
+                    break;
+                case 'confirm':
+                    confirmBtn.textContent = action.text;
+                    confirmBtn.style.display = 'block';
+                    confirmBtn.onclick = () => {
+                        confirmBtn.style.display = 'none';
+                        addLine(state.currentTabId, 'user', action.message);
+                        executeNextAction();
+                    };
+                    return;
+                case 'cmd':
+                    addLine(state.currentTabId, 'command', action.text);
+                    const output = handleTshCommand(action.text);
+                    if (output !== null) {
+                        setTimeout(() => addLine(state.currentTabId, 'output', output), 300);
+                    }
+                    break;
+                case 'output':
+                    addLine(state.currentTabId, 'output', action.text);
+                    break;
+                case 'help':
+                    showHelp();
+                    setTimeout(() => {
+                        helpPanel.classList.remove('show');
+                        overlay.classList.remove('show');
+                    }, 2000);
+                    break;
+                case 'step':
+                    state.currentStep++;
+                    break;
+            }
+            
+            const nextAction = state.actionQueue[0];
+            if (nextAction) {
+                setTimeout(() => executeNextAction(), nextAction.delay || 1000);
+            } else {
+                setTimeout(() => finishScenario(), action.delay || 1000);
+            }
+        }
+
+        function finishScenario() {
+            state.isPlaying = false;
+            updatePlayButton();
+            addLine(state.currentTabId, 'agent', '演示完成！', { agentType: 'claude' });
+
+            const scenarioKeys = Object.keys(scenarios);
+            const currentIndex = scenarioKeys.indexOf(state.currentScenario);
+            if (currentIndex < scenarioKeys.length - 1) {
+                narrationText.textContent = `${scenarios[state.currentScenario].name} 场景完成，准备进入下一阶段...`;
+                setTimeout(() => {
+                    state.currentScenario = scenarioKeys[currentIndex + 1];
+                    
+                    scenarioBtns.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.scenario === state.currentScenario);
+                    });
+
+                    addLine(state.currentTabId, 'system', `\n=== 开始演示场景: ${scenarios[state.currentScenario].name} ===`);
+                    startScenario();
+                }, 3000);
+            } else {
+                narrationText.textContent = '🎉 所有演示场景完成！TeamShell 展示了多 Agent 协作、权限管控和知识沉淀的核心价值';
+            }
+        }
+
+        function showHelp() {
+            helpPanel.classList.add('show');
+            overlay.classList.add('show');
+        }
+
+        // ============ 事件监听 ============
+        btnPlay.addEventListener('click', () => {
+            if (state.isPlaying) {
+                pauseScenario();
+            } else if (state.paused) {
+                resumeScenario();
+            } else {
+                startScenario();
+            }
+        });
+
+        btnReset.addEventListener('click', resetScenario);
+
+        document.getElementById('help-close').addEventListener('click', () => {
+            helpPanel.classList.remove('show');
+            overlay.classList.remove('show');
+        });
+
+        document.getElementById('tsh-version').addEventListener('click', () => {
+            helpPanel.classList.add('show');
+            overlay.classList.add('show');
+        });
+
+        overlay.addEventListener('click', () => {
+            helpPanel.classList.remove('show');
+            overlay.classList.remove('show');
+        });
+
+        document.querySelectorAll('.help-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.help-tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                const tabId = tab.dataset.tab;
+                document.getElementById(`tab-${tabId}`).style.display = 'block';
+            });
+        });
+
+        // ============ 初始化 ============
+        resetScenario();
+    </script>
+</body>
+</html>
