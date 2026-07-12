@@ -21,8 +21,10 @@
 .*.sw*
 .DS_Store
 /.atomcode/
+/.claude/
 /.codex/
 /.gemini/
+/.opencode/
 /.codeartsdoer/
 /.mimicode/
 
