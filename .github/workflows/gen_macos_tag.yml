@@ -122,7 +122,7 @@ jobs:
         run: "cp wezterm.rb homebrew-wezterm/Casks/wezterm.rb"
       - name: "Commit homebrew tap changes"
         continue-on-error: true
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Automated update to match latest tag"
           repository: "homebrew-wezterm"
